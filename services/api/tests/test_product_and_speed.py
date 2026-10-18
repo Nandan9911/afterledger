@@ -29,6 +29,25 @@ def test_each_tier_goes_first_to_its_fastest_endpoint_and_keeps_the_others(tmp_p
     assert offline_settings(tmp_path).route_groups("flash")[0][0] == "gemini-3.8-flash"
 
 
+def test_the_conversation_agents_answer_on_flash_lite_and_a_setting_can_move_any_agent(tmp_path: Path) -> None:
+    """Every agent that runs while the family waits for a reply is on Flash-Lite; AL_AGENT_TIERS moves an agent to
+    another tier without a new build, and anything it does not name, or names wrongly, stays as it was."""
+    from afterledger.agents.specs import AGENTS
+    assert {a: AGENTS[a].tier for a in ("listener", "situation_extractor", "gap_planner", "tone_critic")} == \
+        dict.fromkeys(("listener", "situation_extractor", "gap_planner", "tone_critic"), "lite")
+    s = offline_settings(tmp_path, agent_tiers="situation_extractor=flash, gap_planner = pro,tone_critic=huge,nobody")
+    assert s.agent_tier("situation_extractor", "lite") == "flash"
+    assert s.agent_tier("gap_planner", "lite") == "pro"
+    assert s.agent_tier("tone_critic", "lite") == "lite"
+    assert s.agent_tier("listener", "lite") == "lite"
+    assert offline_settings(tmp_path).agent_tier("gap_planner", "lite") == "lite"
+    from afterledger.runtime import build_deps  # and it is the model the agent is built with
+    deps = build_deps(offline_settings(tmp_path, llm="replay", llm_replay_dir=str(tmp_path), agent_tiers="gap_planner=pro"))
+    assert deps.models.model_for(AGENTS["gap_planner"]).model == s.model_pro
+    assert deps.models.model_for(AGENTS["situation_extractor"]).model == s.model_lite
+    assert deps.models.model_for(AGENTS["reader_a"]).model == s.model_flash
+
+
 def test_the_public_site_shows_only_the_chosen_families_in_their_order(tmp_path: Path) -> None:
     s = offline_settings(tmp_path, site="product", demo_families="verma, sato,unknown")
     assert s.product

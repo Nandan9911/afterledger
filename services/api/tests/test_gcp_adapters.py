@@ -397,6 +397,42 @@ async def test_check_grounding() -> None:
     assert r.method == "lexical"                            # says which check decided
 
 
+async def test_check_grounding_sends_a_long_page_whole_and_within_the_limits() -> None:
+    """Live, 16 of 62 checks were refused (400) for pages of curly quotes and dashes cut at 10,000 characters, which
+    the API counts wider; and a quote far down a long page was checked against its first 10,000 characters only."""
+    from google.cloud import discoveryengine as de
+
+    from afterledger.adapters.gcp import grounding
+    from afterledger.adapters.gcp.grounding import CheckGrounding
+
+    class Client:
+        def __init__(self) -> None:
+            self.requests: list[Any] = []
+
+        async def check_grounding(self, request: Any) -> Any:
+            self.requests.append(request)
+            return de.CheckGroundingResponse(support_score=0.9, claims=[de.CheckGroundingResponse.Claim(
+                claim_text="x", citation_indices=[len(request.facts) - 1], grounding_check_required=False)])
+
+    wide = ("The Code’s rules — for a deceased customer’s account — say “we will act promptly”. " * 900).strip()
+    quote_far_down = wide + " Funds are released within 14 days of receiving all documents."
+    c = CheckGrounding("proj", fallback=LexicalGrounding(), client=Client())
+    r = await c.check("The bank releases the funds within 14 days.", [("a", "Short page."), ("b", quote_far_down)])
+    facts = c.client.requests[0].facts
+    assert len(facts) > 3 and facts[0].fact_text == "Short page."
+    assert all(len(f.fact_text.encode("utf-8")) <= grounding.FACT_BYTES for f in facts)
+    assert "within 14 days" in facts[-1].fact_text and all(f.attributes["source"] == "b" for f in facts[1:])
+    assert " ".join(f.fact_text for f in facts[1:]) == quote_far_down          # nothing lost or doubled at the cuts
+    assert r.claims[0]["citations"] == [1]                                      # a piece cites the fact it came from
+    # nothing to check, or nothing to check against: the lexical check decides, without a refused request
+    assert (await c.check("  ", [("a", "Short page.")])).method == "lexical"
+    assert (await c.check("A claim.", [("a", "")])).method == "lexical"
+    assert len(c.client.requests) == 1
+    many = [(f"s{i}", "word " * 3000) for i in range(120)]            # two pieces each: 240, more than the API takes
+    await c.check("A claim.", many)
+    assert len(c.client.requests[-1].facts) == grounding.MAX_FACTS
+
+
 # ---------------------------------------------------------------------------------------------
 # The live web: tiers, pages, search
 # ---------------------------------------------------------------------------------------------
@@ -599,6 +635,36 @@ async def test_gemini_search() -> None:
     call = models.calls[0]
     assert call["model"] == "gemini-3.5-flash-lite" and call["config"].tools[0].google_search is not None
     assert "about FR" in call["contents"]
+
+
+async def test_a_search_that_does_not_answer_is_asked_once_more_then_given_up() -> None:
+    """Live, one search gave no answer for 8 minutes and held up a research run."""
+    import asyncio
+
+    from afterledger.adapters.gcp.web import GeminiSearch
+    from afterledger.health import ServiceHealth
+
+    class Hanging:
+        def __init__(self, answer_on: int) -> None:
+            self.calls, self.answer_on = 0, answer_on
+
+        async def generate_content(self, **kw: Any) -> Any:
+            self.calls += 1
+            if self.calls < self.answer_on:
+                await asyncio.sleep(60)
+            from google.genai import types
+            return types.GenerateContentResponse(candidates=[])
+
+    health = ServiceHealth()
+    slow = Hanging(answer_on=2)
+    search = GeminiSearch("m", client=SimpleNamespace(aio=SimpleNamespace(models=slow)), health=health)
+    search.timeout_s = 0.05
+    assert await search.search("q") == [] and slow.calls == 2         # the second try answered (with nothing)
+    stuck = Hanging(answer_on=99)
+    search = GeminiSearch("m", client=SimpleNamespace(aio=SimpleNamespace(models=stuck)), health=health)
+    search.timeout_s = 0.05
+    assert await search.search("q") == [] and stuck.calls == 2
+    assert "google_search" in health.failures
 
 
 async def test_agent_search_falls_back_to_the_web() -> None:

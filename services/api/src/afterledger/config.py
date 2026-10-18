@@ -111,6 +111,8 @@ class Settings(BaseSettings):
     # India on 18 October 2026: Flash-Lite answered in 0.4-1 s in asia-south1 (0.9-1.3 s on global), Gemini 3.8 Flash
     # in 2.6-3 s on the us endpoint and 5-66 s on global. The main endpoint stays the backup. Empty: main endpoint.
     llm_tier_locations: str = Field("", alias="AL_LLM_TIER_LOCATIONS")
+    # an agent's model tier, over its spec's: "gap_planner=flash,situation_extractor=flash" (lite, flash or pro)
+    agent_tiers: str = Field("", alias="AL_AGENT_TIERS")
     # How long a slow endpoint is passed over before it is tried again: twice as long each further time in a row.
     llm_slow_cooldown_s: float = Field(300, alias="AL_LLM_SLOW_COOLDOWN_S")
     # Seconds without an answer before the same request also goes to the backup endpoint (twice this for pro,
@@ -162,6 +164,14 @@ class Settings(BaseSettings):
     @property
     def families_dir(self) -> Path:
         return self.data_dir / "families"
+
+    def agent_tier(self, agent: str, default: str) -> str:
+        """The tier an agent runs on: its spec's, unless AL_AGENT_TIERS names another for it."""
+        for part in (self.agent_tiers or "").split(","):
+            name, _, tier = part.partition("=")
+            if name.strip() == agent and tier.strip() in ("lite", "flash", "pro"):
+                return tier.strip()
+        return default
 
     def model_for(self, tier: str) -> str:
         return {"flash": self.model_flash, "pro": self.model_pro, "lite": self.model_lite}.get(

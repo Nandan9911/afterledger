@@ -326,6 +326,10 @@ class GeminiSearch:
     """Google Search through Gemini's grounding tool: the model searches, and the pages it grounded its answer
     on are the results. Grounding links are redirects, so each is followed to the page itself."""
 
+    # A search usually answers in about 5 s. Live on 18 October 2026 one gave no answer for 8 minutes and held up a
+    # research run, so a search is given this long, asked once more, and then reported empty.
+    timeout_s = 30.0
+
     def __init__(self, model: str, institution_domains: set[str] | None = None, client: Any = None,
                  http: httpx.AsyncClient | None = None, health: Any = None):
         self.health = health
@@ -346,14 +350,24 @@ class GeminiSearch:
         prompt = (f"Search the web for official pages (a regulator, the law, a court, a government body, or the "
                   f"institution itself) that answer: {query}.{where}{only} Prefer pages in "
                   f"{lang or 'the language of that country'} and in English. Answer in two sentences.")
-        try:
-            response = await self.client.aio.models.generate_content(
-                model=self.model, contents=prompt,
-                config=types.GenerateContentConfig(tools=[types.Tool(google_search=types.GoogleSearch())]))
-        except Exception as e:
-            log.warning("search failed for %r: %s", query, e)
+        response = None
+        for attempt in (1, 2):
+            try:
+                response = await asyncio.wait_for(self.client.aio.models.generate_content(
+                    model=self.model, contents=prompt,
+                    config=types.GenerateContentConfig(tools=[types.Tool(google_search=types.GoogleSearch())])),
+                    timeout=self.timeout_s)
+                break
+            except TimeoutError:
+                log.warning("search for %r gave no answer in %.0f s (try %d)", query, self.timeout_s, attempt)
+            except Exception as e:
+                log.warning("search failed for %r: %s", query, e)
+                if self.health is not None:
+                    self.health.failed("google_search", e)  # a strict live run stops here
+                return []
+        if response is None:
             if self.health is not None:
-                self.health.failed("google_search", e)      # a strict live run stops here
+                self.health.failed("google_search", f"no answer after {self.timeout_s:.0f} s, twice")
             return []
         if self.health is not None:
             self.health.succeeded("google_search")

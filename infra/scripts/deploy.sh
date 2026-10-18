@@ -11,7 +11,8 @@
 # CASE_BUDGET_USD (3 on the public site; empty: no limit on a case's optional model work), TIMEZONE (Asia/Kolkata),
 # BUCKET, TAG, SITE (product: no evaluation pages, sample cases only; empty: everything), DEMO_FAMILIES
 # (verma,nair,sato), WEB_MIN_INSTANCES (0; 1 keeps the web app warm), LLM_TIER_LOCATIONS (each model tier's fastest
-# Gemini endpoint), FIREBASE (yes: publish the Firebase Hosting address https://PROJECT_ID.web.app at the end, when
+# Gemini endpoint), AGENT_TIERS (an agent on another model tier than its own, e.g. situation_extractor=flash;
+# empty: each on its own), FIREBASE (yes: publish the Firebase Hosting address https://PROJECT_ID.web.app at the end, when
 # the firebase CLI is signed in; no: skip it), ADMIN_EMAIL, ADMIN_PASSWORD and ADMIN_NAME (the one admin account,
 # who manages the others; kept from the last deploy when not given).
 # Running it again updates the deployment.
@@ -243,6 +244,7 @@ else
 fi
 # AL_STRICT_LIVE false: a Google service that fails is reported on /v1/meta and the work goes on without it
 [ -z "$CASE_BUDGET_USD" ] || echo "AL_CASE_BUDGET_USD: \"$CASE_BUDGET_USD\"" >> "$ENV_FILE"
+[ -z "${AGENT_TIERS:-}" ] || echo "AL_AGENT_TIERS: \"$AGENT_TIERS\"" >> "$ENV_FILE"
 gcloud run deploy afterledger-api --image "$REGISTRY/api:$TAG" --region "$REGION" --service-account "$SA" \
   --allow-unauthenticated --max-instances 1 --min-instances "$MIN_INSTANCES" --no-cpu-throttling \
   --cpu 2 --memory 2Gi --timeout 3600 --concurrency 80 --session-affinity --cpu-boost \

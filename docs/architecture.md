@@ -78,10 +78,13 @@ researchers as parallel workers, a pair per question group.
 |---|---|---|
 | flash | `gemini-3.8-flash` | most agents |
 | pro | `gemini-3.1-pro-preview` | the closer look (reader C), adjudicators, the plan compiler |
-| lite | `gemini-3.5-flash-lite` | triage, name splitting, tone, intent, the payment-rail profile; live web search |
+| lite | `gemini-3.5-flash-lite` | the intake conversation (listening, the situation, the next question, tone), triage, name splitting, intent, the payment-rail profile; live web search |
 | live | `gemini-3.8-live` | spoken conversation |
 
 Gemini 3 models are tuned for their default sampling, so only the thinking level is set (low, medium or high).
+`AL_AGENT_TIERS` moves an agent to another tier without a new build (`situation_extractor=flash,gap_planner=flash`).
+The intake agents moved from flash to lite on 18 October 2026, after a live test: each reply took 8-14 s with the
+two of them on Gemini 3.8 Flash (3-8 s each), against under a second each on Flash-Lite in asia-south1.
 With `AL_LLM_RECORD_DIR` set, a live run also writes each call as a cassette that `AL_LLM=replay` plays back
 (`AL_LLM_REPLAY_STRICT=true` makes a call with no cassette an error instead of a scripted answer).
 

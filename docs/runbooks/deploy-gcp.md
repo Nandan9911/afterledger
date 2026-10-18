@@ -71,6 +71,7 @@ environment variables in front of the command:
 | `DEMO_FAMILIES` | `verma,nair,sato` | the sample families the public site shows (empty: all six) |
 | `CASE_BUDGET_USD` | `3` on the public site | what one case may spend on optional model work, in US dollars (empty: no limit) |
 | `WEB_MIN_INSTANCES` | `0` | `1` keeps the web app warm as well |
+| `AGENT_TIERS` | empty | an agent on another model tier than its own, for example `situation_extractor=flash,gap_planner=flash`; the intake conversation (listener, situation_extractor, gap_planner, tone_critic) runs on Flash-Lite by default |
 | `LLM_TIER_LOCATIONS` | `lite=asia-south1,flash=us` | the Gemini endpoint tried first for each model tier, picked by measured speed (Flash-Lite answers in under a second from Mumbai; Gemini 3.8 Flash is several times faster on `us` than on `global`); the others stay as fallbacks |
 | `FIREBASE` | `yes` | publishes `https://PROJECT_ID.web.app` through Firebase Hosting at the end (needs the `firebase` CLI signed in; see B below); `no` skips it |
 

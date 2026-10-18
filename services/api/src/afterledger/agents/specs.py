@@ -41,9 +41,9 @@ def _a(name: str, module: str, tier: str, thinking: str | None, output: type[Bas
 AGENTS: dict[str, AgentSpec] = {a.name: a for a in [
     # M1 intake
     _a("listener", "intake", "lite", "low", S.ListenerOut, description="Transcribes and translates each turn"),
-    _a("situation_extractor", "intake", "flash", "low", S.SituationOut,
+    _a("situation_extractor", "intake", "lite", "low", S.SituationOut,
        description="Keeps the situation model up to date from the conversation"),
-    _a("gap_planner", "intake", "flash", "low", S.GapOut, description="Chooses the one next question worth asking"),
+    _a("gap_planner", "intake", "lite", "low", S.GapOut, description="Chooses the one next question worth asking"),
     _a("tone_critic", "intake", "lite", "low", S.ToneOut, description="Checks tone and puts the question in the family's language"),
     _a("locale_detector", "intake", "lite", "low", S.LocaleOut, description="Languages, scripts and channel"),
     # M2 jurisdiction

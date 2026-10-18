@@ -16,7 +16,7 @@ from afterledger.config import Settings, get_settings
 OFFLINE = {"mode": "offline", "store": "local", "llm": "scripted", "seed_on_start": False, "demo_bundles": None,
            "internal_token": None, "llm_record_dir": None, "llm_replay_dir": None,
            # a laptop's .env may set up the public site and its fast endpoints; the tests start from the full site
-           "site": "", "demo_families": "", "llm_tier_locations": "",
+           "site": "", "demo_families": "", "llm_tier_locations": "", "agent_tiers": "",
            "auth": "auto", "auth_secret": None, "admin_email": None, "admin_password": None}
 
 

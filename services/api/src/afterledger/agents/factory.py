@@ -9,6 +9,7 @@ Whatever the mode, the outermost model is MeteredLlm, so every call is budgeted,
 """
 from __future__ import annotations
 
+import dataclasses
 import logging
 from typing import Any
 
@@ -90,6 +91,9 @@ class ModelProvider:
                            overload_pause_s=float(self.settings.llm_overload_pause_s or 0))
 
     def model_for(self, spec: AgentSpec):
+        tier = self.settings.agent_tier(spec.name, spec.tier)      # AL_AGENT_TIERS, when it names this agent
+        if tier != spec.tier:
+            spec = dataclasses.replace(spec, tier=tier)
         base = self._base(spec)
         timeout = None
         if self.mode == "gemini":             # a live request is never left hanging: one stuck connection is retried
