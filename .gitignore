@@ -46,3 +46,6 @@ Thumbs.db
 infra/terraform/.terraform/
 infra/terraform/*.tfstate*
 infra/terraform/.terraform.lock.hcl
+
+# Deliverables made for the submission (deck, write-up, launch steps): kept on the laptop, never published
+Claude outputs/
