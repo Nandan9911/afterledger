@@ -1,0 +1,219 @@
+# The Tanaka family (Munich, with a Japanese father). Fictional people; the conflict-of-laws rules shown
+# are real (the EU Succession Regulation and Japan's Act on General Rules for Application of Laws).
+key: tanaka
+story_day: 2026-10-14
+title: Hiroshi Tanaka
+family_label: The Tanakas
+where: Munich, Germany, with a Japanese father
+spoken: German
+shows: Two countries' laws disagree about who inherits. AfterLedger says so, shows both sources, and still prepares each bank's steps
+languages: [de, en]
+countries: [DE, JP]
+timezone: Europe/Berlin            # the story's clock: activity times are this family's local times
+viewer: p_anna
+order: 6
+
+deceased:
+  id: p_hiroshi
+  display_name: Hiroshi Tanaka
+  names:
+    - {text: Hiroshi Tanaka, script: Latn, seen_on: family}
+    - {text: Hiroshi TANAKA, script: Latn, seen_on: death_cert}
+    - {text: 田中 浩, script: Hani, lang: ja, reading: タナカ ヒロシ}
+    - {text: タナカ ヒロシ, script: Kana, lang: ja, seen_on: toto_passbook}
+  birth_date: 1949-11-03
+  death_date: 2026-09-24
+  death_place: München
+  death_country: DE
+  death_cause: illness
+  nationalities: [JP]
+  residences: [{country: DE, city: München}]
+  occupation: Retired engineer; lived in Munich for 23 years
+  initials: HT
+
+people:
+  - id: p_anna
+    display_name: Anna Tanaka-Müller
+    names:
+      - {text: Anna Tanaka-Müller, script: Latn}
+    relationship: daughter
+    roles: [claimant, heir, helper]
+    languages: [de, en]
+    channel: text
+    country: DE
+    city: München
+    address: Hohenzollernstraße 41, 80801 München
+    age: 44
+    initials: AT
+    color: "#CFE3F5"
+  - id: p_kenta
+    display_name: Kenta Tanaka
+    names:
+      - {text: Kenta Tanaka, script: Latn}
+      - {text: 田中 健太, script: Hani, lang: ja, reading: タナカ ケンタ}
+      - {text: タナカ ケンタ, script: Kana, lang: ja, seen_on: toto_passbook}
+    relationship: son
+    roles: [heir]
+    languages: [ja, en]
+    channel: text
+    country: JP
+    city: Tokyo
+    age: 41
+    initials: KT
+    color: "#F3D9C4"
+
+holdings:
+  - {id: h_isar, institution_id: de_isarbank, kind: current, label: Girokonto, value: "48215.60", found_from: [isar_statement], claim: c_isar}
+  - {id: h_toto, institution_id: jp_toto_bank, kind: savings, label: 普通預金, account_mask: "5218", value: "3480000", found_from: [toto_passbook], claim: c_toto}
+
+claims:
+  - id: c_isar
+    institution_id: de_isarbank
+    holdings: [h_isar]
+    plan: DE/bank_inheritance@de_isarbank
+    facts: {has_notarial_will: "no"}
+    expected_route: [law_first]
+  - id: c_toto
+    institution_id: jp_toto_bank
+    holdings: [h_toto]
+    plan: JP/bank_inheritance@jp_toto_bank
+    facts: {}
+    expected_route: [law_first]
+
+answers:
+  has_will: "no"
+  has_notarial_will: "no"
+  heirs_abroad: "yes"               # Anna lives in Munich (asked when a live run has no country for an heir)
+  claimant: p_anna
+
+leads:
+  - key: drv_pension
+    category: pension
+    kind: entitlement
+    group: drv_pension
+    institution_id: de_drv
+    title: His German state pension
+    sentence: The Deutsche Rentenversicherung paid his pension at the end of each month. It is owed up to the end of September, the month he died; anything paid for a later month goes back.
+    investigator_note: "DRV BUND ALTERSRENTE credits of €1,684.20 on 30 July and 30 August."
+    how_to_confirm: The pension office is usually told by the registry office; a letter from it will follow.
+    next_step_note: The September payment belongs to his estate. A payment for October or later was made under reserve, so his bank sends it back when the pension insurance asks, and may not keep it for itself.
+    signals: {cadence: monthly, product_match: partial}
+    cites: [de_pension_until_month_of_death, de_pension_paid_end_of_month, de_pension_after_death_reserved, de_pension_bank_returns]
+    label: likely
+    status: open
+decoys: [rent, utilities]
+
+groups:
+  drv_pension: {counterparty: Deutsche Rentenversicherung, kind: government, interpretation: "His German state pension.", alternatives: []}
+  rent: {counterparty: Hausverwaltung, kind: housing, interpretation: "Rent for the flat in Leopoldstraße.", alternatives: []}
+  utilities: {counterparty: Stadtwerke München, kind: utility, interpretation: "Electricity and water.", alternatives: []}
+
+coverage: {}
+
+jurisdiction:
+  succession_law: contested
+  contested: true
+  summary: "Two countries' rules disagree about which law decides who inherits. Germany follows where he lived; Japan follows his nationality. Both sources are shown, and each bank's steps are prepared; a lawyer should confirm which law applies before either bank pays."
+  summary_local: "Die Regeln zweier Länder widersprechen sich, welches Recht über die Erbfolge entscheidet: Deutschland stellt auf den letzten gewöhnlichen Aufenthalt ab, Japan auf die Staatsangehörigkeit. Eine Anwältin oder ein Anwalt sollte klären, welches Recht gilt."
+  findings:
+    - {assertion_ids: [eu_650_art21_1], rule: "Under the EU Succession Regulation, succession as a whole follows the law of the State where he was habitually resident: Germany.", points_to: DE}
+    - {assertion_ids: [jp_national_law], rule: "Japan's conflict-of-laws rule makes succession follow the law of his nationality: Japan.", points_to: JP}
+  adjudication:
+    contested: true
+    decision: "Germany's rule points to German law and Japan's points to Japanese law. Neither is set aside here; both are shown, and a lawyer should confirm which applies."
+    keep: [eu_650_art21_1, jp_national_law]
+    contested_ids: [eu_650_art21_1, jp_national_law]
+    reasons: "Each country's authorities apply their own conflict rule. Whether the exception for a manifestly closer connection (art. 21(2)) applies is a judgement for a lawyer."
+  legs:
+    - {country: DE, succession_law: contested, papers_from: [DE], certification: [], cites: [eu_650_art21_1, de_isarbank_erbschein], contested: true, note: "Isarbank usually needs a certificate of inheritance (Erbschein) or a European Certificate of Succession."}
+    - {country: JP, succession_law: contested, papers_from: [DE, JP], certification: [], cites: [jp_national_law, jp_toto_foreign_signature], contested: true, note: "Toto Bank accepts a signature certificate from a Japanese consulate for heirs living abroad."}
+  cites: [eu_650_art21_1, eu_650_art21_2, jp_national_law]
+
+intake:
+  started_on: 2026-09-29
+  by: p_anna
+  turns:
+    - role: assistant
+      lang: de
+      text: Es tut uns sehr leid um Ihren Verlust. Wer ist verstorben, und wann?
+      translation: We are very sorry for your loss. Who has died, and when?
+    - role: family
+      person: p_anna
+      lang: de
+      channel: text
+      text: Mein Vater, Hiroshi Tanaka. Er ist am 24. September in München nach langer Krankheit gestorben. Er war Japaner, hat aber seit über zwanzig Jahren hier gelebt.
+      translation: My father, Hiroshi Tanaka. He died on 24 September in Munich after a long illness. He was Japanese but had lived here for over twenty years.
+    - role: assistant
+      lang: de
+      text: Wer gehört zur Familie? Gibt es ein Testament?
+      translation: Who is in the family? Is there a will?
+    - role: family
+      person: p_anna
+      lang: de
+      channel: text
+      text: Meine Mutter ist 2019 gestorben. Mein Bruder Kenta lebt in Tokio. Ein Testament haben wir nicht gefunden.
+      translation: My mother died in 2019. My brother Kenta lives in Tokyo. We haven't found a will.
+    - role: assistant
+      lang: de
+      text: Hatte er Konten in Deutschland und in Japan?
+      translation: Did he have accounts in Germany and in Japan?
+      why: A Japanese national living in Germany can fall under two countries' rules, so we check which applies to each account.
+      cites: [eu_650_art21_1, jp_national_law]
+    - role: family
+      person: p_anna
+      lang: de
+      channel: text
+      text: Ja, ein Girokonto bei der Isarbank hier und ein Sparbuch bei der Toto Bank in Tokio.
+      translation: Yes, a current account at Isarbank here and a passbook account at Toto Bank in Tokyo.
+  situation:
+    1:
+      deceased_name: Hiroshi Tanaka
+      died_on: 2026-09-24
+      died_in: München
+      death_country: DE
+      death_cause: illness
+      country_codes: [DE, JP]
+      family:
+        - {name: Anna Tanaka-Müller, relationship: daughter, city: München, country: DE, languages: [de, en], roles: [claimant, heir, helper]}
+      will: unknown
+      mode: family
+      unknowns: [other heirs, will]
+    2:
+      family:
+        - {name: Kenta Tanaka, relationship: son, city: Tokyo, country: JP, languages: [ja, en], roles: [heir]}
+      will: "no"
+      unknowns: [accounts]
+    3:
+      holdings_mentioned: [a current account at Isarbank, a passbook account at Toto Bank in Tokyo]
+      urgent: ["Which country's law decides who inherits has to be settled before either bank pays."]
+      unknowns: []
+
+timeline:
+  - {on: 2026-09-29, do: intake}
+  - {on: 2026-09-29, do: confirm_summary, by: p_anna}
+  - {on: 2026-09-30, do: upload, paper: death_cert, by: p_anna}
+  - {on: 2026-09-30, do: upload, paper: isar_statement, by: p_anna}
+  - {on: 2026-10-02, do: upload, paper: toto_passbook, by: p_anna}
+  - {on: 2026-10-03, do: upload, paper: rowing_club, by: p_anna}
+  - {on: 2026-10-03, do: confirm_people, by: p_anna}
+  - {on: 2026-10-05, do: approve_plan, claim: c_isar, by: p_anna}
+  - {on: 2026-10-05, do: approve_plan, claim: c_toto, by: p_anna}
+  - {on: 2026-10-14, do: today}
+
+expected_today:
+  tasks: [step:c_isar:law_first, step:c_toto:get_signature_cert]
+  totals: {EUR: {known: "48215.60"}, JPY: {known: "3480000"}}
+
+today_greeting_local:
+  Anna: "Guten Morgen, Anna. Zwei Dinge brauchen die Familie."
+today_tasks:
+  - kind: handoff
+    institution_id: de_isarbank
+    title: Ask a lawyer which country's law applies
+    body: "Germany's rule points to German law, because he lived in Munich; Japan's rule points to Japanese law, because he was Japanese. A lawyer who handles German-Japanese estates can confirm which applies, and both banks wait for that."
+    local: {lang: de, title: Anwalt fragen, welches Recht gilt, body: "Nach deutschem Recht gilt das Recht des letzten Wohnsitzes, nach japanischem Recht das der Staatsangehörigkeit. Beide Banken warten auf diese Klärung."}
+  - kind: acquire
+    institution_id: jp_toto_bank
+    title: Get a signature certificate from the Japanese consulate in Munich
+    body: "Toto Bank accepts a signature certificate from a Japanese embassy or consulate instead of a seal certificate, for heirs living abroad."
+    local: {lang: de, title: Unterschriftsbeglaubigung beim japanischen Generalkonsulat München, body: "Die Toto Bank akzeptiert für Erben im Ausland eine Unterschriftsbeglaubigung des japanischen Konsulats anstelle eines Siegelzertifikats."}

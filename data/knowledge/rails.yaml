@@ -1,0 +1,80 @@
+# How each country's statements name payments, and what recurring payments usually point to.
+# 'patterns' are case-insensitive regular expressions over the narration. They seed the offline
+# baseline for discovery; live agents use them as context, not as rules.
+rails:
+  - id: IN
+    country: IN
+    conventions:
+      - {prefix: "ACH D- / NACH", meaning: "A direct debit under a mandate the account holder signed (e.g. a SIP or an insurance premium)"}
+      - {prefix: "NACH CR", meaning: "A credit through the national clearing house (dividends, refunds, salaries)"}
+      - {prefix: "UPI/", meaning: "An instant payment; the next part is usually the other person's name"}
+      - {prefix: "NEFT / IMPS / RTGS", meaning: "Bank transfers; the next part is usually the payee or payer"}
+      - {prefix: "ATM WDL", meaning: "Cash taken at an ATM"}
+      - {prefix: "INT CREDIT / INT.PD", meaning: "Interest paid by the bank"}
+      - {prefix: "EMI", meaning: "A loan instalment"}
+    patterns:
+      - {id: pmjjby, rx: "PMJJBY", kind: entitlement, category: life_cover, title: "PMJJBY life cover of ₹2,00,000",
+         product_match: "yes", cites: [in_pmjjby_premium, in_pmjjby_cover, in_pmjjby_age], institution_id: in_pmjjby}
+      - {id: pmsby, rx: "PMSBY", kind: entitlement, category: accident_cover, title: "PMSBY accident cover",
+         product_match: "yes", cites: [in_pmsby_premium, in_pmsby_accident_only], institution_id: in_pmsby}
+      - {id: mf_sip, rx: "SIP|CAMS|KFIN|MUTUAL FUND", kind: asset, category: mutual_fund, title: "Mutual fund units bought by a monthly SIP",
+         product_match: "yes", cites: [in_sebi_applies_amc], institution_id: in_cams}
+      - {id: locker, rx: "LOCKER", kind: asset, category: locker, title: "A safe deposit locker",
+         product_match: "yes", cites: [in_rbi_299_locker_nominee, in_rbi_320_locker_15_days]}
+      - {id: dividend, rx: "DIV(IDEND)?\\b", kind: asset, category: shares, title: "Shares paying dividends",
+         product_match: "no", cites: [in_sebi_threshold_physical]}
+      - {id: loan_emi, rx: "\\bEMI\\b|LOAN", kind: debt, category: loan, title: "A loan with monthly instalments",
+         product_match: "yes", cites: []}
+      - {id: pension_credit, rx: "PENSION", kind: entitlement, category: pension, title: "A pension, and possibly a family pension",
+         product_match: "partial", cites: [in_rbi_295_credit_after]}
+      - {id: insurance_premium, rx: "PREM(IUM)?\\b", kind: asset, category: life_cover, title: "An insurance policy",
+         product_match: "partial", cites: []}
+    decoys: ["ELEC", "BILL", "UPI/.*(PHARMA|MEDICAL|STORE)", "ATM WDL", "CASH DEP"]
+  - id: JP
+    country: JP
+    conventions:
+      - {prefix: "ﾌﾘｶｴ / 口座振替", meaning: "A direct debit"}
+      - {prefix: "ﾌﾘｺﾐ / 振込", meaning: "A transfer"}
+      - {prefix: "ｶｰﾄﾞ", meaning: "A card or card loan repayment"}
+      - {prefix: "利息", meaning: "Interest"}
+    patterns:
+      - {id: card_loan, rx: "ｶｰﾄﾞﾛｰﾝ|カードローン|ﾅﾆﾜｶｰﾄﾞ", kind: debt, category: card_loan, title: "A card loan",
+         product_match: "yes", cites: [jp_civil_896_debts]}
+      - {id: life_premium, rx: "ｾｲﾒｲ|生命", kind: asset, category: life_cover, title: "A life insurance policy",
+         product_match: "yes", cites: [jp_liaj_inquiry]}
+      - {id: pension_jp, rx: "ﾈﾝｷﾝ|年金", kind: entitlement, category: pension, title: "A public pension", product_match: "partial", cites: []}
+  - id: GB
+    country: GB
+    conventions:
+      - {prefix: "DD", meaning: "Direct debit"}
+      - {prefix: "SO", meaning: "Standing order"}
+      - {prefix: "FPI / FPO", meaning: "Faster payment in / out"}
+      - {prefix: "BGC", meaning: "Bank giro credit (often a pension or salary)"}
+    patterns:
+      - {id: premium_bonds, rx: "NS&I|NSANDI|PREMIUM BOND", kind: asset, category: premium_bonds, title: "Premium Bonds with NS&I",
+         product_match: "yes", cites: [gb_nsi_12_months, gb_nsi_claim_online], institution_id: gb_nsandi}
+      - {id: pension_gb, rx: "PENSION", kind: entitlement, category: pension, title: "A workplace pension", product_match: "partial",
+         cites: [gb_leedsmills_return]}
+  - id: US
+    country: US
+    conventions:
+      - {prefix: "XXSOC SEC / SSA TREAS 310", meaning: "A Social Security payment from the Treasury"}
+      - {prefix: "PPD / ACH", meaning: "An automatic deposit or debit"}
+      - {prefix: "PAYROLL", meaning: "Salary from an employer"}
+    patterns:
+      - {id: social_security, rx: "SOC SEC|SSA TREAS", kind: entitlement, category: social_security, title: "Social Security benefits",
+         product_match: "yes", cites: [us_ssa_month_of_death, us_ssa_255]}
+      - {id: payroll, rx: "PAYROLL|SALARY", kind: entitlement, category: employer, title: "Final pay and benefits from the employer",
+         product_match: "partial", cites: []}
+      - {id: life_premium_us, rx: "LIFE.*PREM|PREM.*LIFE", kind: asset, category: life_cover, title: "A life insurance policy",
+         product_match: "yes", cites: [us_naic_locator]}
+  - id: SG
+    country: SG
+    conventions:
+      - {prefix: "GIRO", meaning: "A direct debit or credit"}
+      - {prefix: "FAST / PayNow", meaning: "An instant transfer"}
+    patterns:
+      - {id: salary_sg, rx: "SALARY|SAL CR|PAYROLL", kind: entitlement, category: employer, title: "Final salary and unused leave",
+         product_match: "partial", cites: [sg_straits_final_pay]}
+      - {id: card_sg, rx: "CARD PAYMENT|CC PAYMENT", kind: debt, category: credit_card, title: "A credit card balance",
+         product_match: "yes", cites: [sg_merlion_card]}

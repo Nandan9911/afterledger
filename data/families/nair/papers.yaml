@@ -1,0 +1,350 @@
+# The Nair family's papers (Kochi and Singapore). The banks, the chit company and the employer are
+# fictional; the death certificate and the CPF statement use generic layouts with a sample watermark.
+# Dates are written for the story day 14 October 2026 and shift with it.
+papers:
+  # --------------------------------------------------------------------------------------------
+  - id: death_cert
+    title: Singapore death certificate
+    doc_type: death_certificate
+    country: SG
+    languages: [en]
+    scripts: [Latn]
+    origin: upload
+    uploaded_by: p_arjun
+    uploaded_on: 2026-09-17
+    template: certificate
+    style: {accent: "#9B1C1C", lang: en, size: 9}
+    pre_title: "Republic of Singapore · Registry of Births and Deaths (sample specimen)"
+    titles:
+      - {text: "CERTIFICATE OF DEATH", size: 13}
+    subtitle: "Specimen for the AfterLedger demo · Not an official record"
+    sections:
+      - kv:
+          - ["Name of deceased", "SURESH NARAYANAN NAIR", deceased_name]
+          - ["Identification no.", "G0000417Z (FIN)", id_number]
+          - ["Sex", "Male", sex]
+          - ["Age", "54 years", age]
+          - ["Date of death", "{d:2026-09-11|dmy_slash}", date_of_death]
+          - ["Place of death", "Residence, Tampines, Singapore", place_of_death]
+          - ["Nationality", "Indian", nationality]
+          - ["Cause of death", "Ischaemic heart disease", cause_of_death]
+          - ["Informant", "ARJUN SURESH NAIR, son", informant]
+          - ["Registration no.", "SYN-D-2026-117044", registration_number]
+          - ["Date of registration", "{d:2026-09-12|dmy_slash}", registration_date]
+        label_w: 180
+    stamp: {text: "REGISTRAR · SPECIMEN", round: true}
+    signature: {label: "Registrar of Deaths", name: "T. W. Lim"}
+    note: "This is a sample document created for the AfterLedger demo. It has no legal effect."
+    fields:
+      deceased_name: {value: SURESH NARAYANAN NAIR}
+      id_number: {value: G0000417Z}
+      date_of_death: {value: 2026-09-11}
+      place_of_death: {value: Singapore}
+      registration_number: {value: SYN-D-2026-117044}
+      registration_date: {value: 2026-09-12}
+
+  # --------------------------------------------------------------------------------------------
+  - id: cpf_statement
+    title: CPF statement
+    doc_type: cpf_statement
+    institution_id: sg_cpf_board
+    holding_id: h_cpf
+    country: SG
+    languages: [en]
+    scripts: [Latn]
+    origin: upload
+    uploaded_by: p_arjun
+    uploaded_on: 2026-09-17
+    template: certificate
+    style: {accent: "#0E5E6F", lang: en, size: 9}
+    pre_title: "Central Provident Fund statement (sample specimen for the AfterLedger demo)"
+    titles:
+      - {text: "CPF ACCOUNT BALANCES", size: 13}
+    sections:
+      - kv:
+          - [Member, SURESH N NAIR, member_name]
+          - [FIN, G0000417Z, id_number]
+          - [As at, "{d:2026-08-31|d_mon_y}", statement_date]
+          - [Ordinary Account, "S$61,204.18", oa]
+          - [Special Account, "S$52,340.66", sa]
+          - [MediSave Account, "S$33,275.16", ma]
+          - [Total, "S$146,820.00", total_balance]
+          - [Nomination, NO NOMINATION MADE, nomination]
+        label_w: 160
+    note: "Sample document. Balances are illustrative and belong to a fictional member."
+    fields:
+      member_name: {value: SURESH N NAIR}
+      id_number: {value: G0000417Z}
+      total_balance: {value: "146820.00"}
+      nomination: {value: NO NOMINATION MADE}
+
+  # --------------------------------------------------------------------------------------------
+  - id: merlion_statement
+    title: Merlion Savings Bank statement
+    doc_type: bank_statement
+    institution_id: sg_merlion_savings
+    holding_id: h_merlion
+    country: SG
+    languages: [en]
+    scripts: [Latn]
+    origin: upload
+    uploaded_by: p_arjun
+    uploaded_on: 2026-09-17
+    template: statement
+    style: {accent: "#B03A2E", lang: en, size: 8.6}
+    brand: {name: MERLION SAVINGS BANK, line: "Tampines branch · Fictional bank created for the AfterLedger demo"}
+    heading: STATEMENT OF ACCOUNT - EVERYDAY SAVINGS
+    kv:
+      - [Name, NAIR SURESH NARAYANAN, account_holder]
+      - [Account no., "021-55-7781", account_number]
+      - [Account type, EVERYDAY SAVINGS, account_type]
+      - [Period, "{d:2026-06-01|d_mon_y} to {d:2026-09-30|d_mon_y}", period]
+    continued: "MERLION SAVINGS BANK · Statement of account (continued) · 021-55-7781"
+    columns:
+      - {key: date, label: Date, width: 0.13}
+      - {key: narration, label: Transaction, width: 0.41}
+      - {key: debit, label: Withdrawal, width: 0.15, align: right}
+      - {key: credit, label: Deposit, width: 0.15, align: right}
+      - {key: balance, label: Balance, width: 0.16, align: right}
+    ledger:
+      start: 2026-06-01
+      end: 2026-09-30
+      date_style: d_mon_y
+      amount_style: en
+      group_by: month
+      bf_label: BALANCE B/F
+      opening: 13241.10
+      recurring:
+        - {narration: SALARY STRAITS MARINE ENGRG, credit: 6850.00, day: 31, months: [6, 7, 8], seq: 10, meta: {group: salary}}
+        - {narration: REMIT PERIYAR BANK NRE 2290, debit: 1000.00, day: 2, months: [6, 7, 8, 9], seq: 20, meta: {group: remit_nre}}
+        - {narration: MERLION CARD PAYMENT 3306, debit: [1720.15, 1968.40, 2104.75], day: 12, months: [6, 7, 8], seq: 22, meta: {group: card_payment}}
+        - {narration: GIRO SP SERVICES, debit: [142.30, 151.80, 163.20], day: 18, months: [6, 7, 8], seq: 24, meta: {group: utilities}}
+        - {narration: GIRO HDB RENT TAMPINES, debit: 1150.00, day: 1, months: [6, 7, 8, 9], seq: 26, meta: {group: rent}}
+      lines:
+        - {date: 2026-06-14, narration: NETS FAIRPRICE TAMPINES, debit: 186.40}
+        - {date: 2026-07-09, narration: NETS FAIRPRICE TAMPINES, debit: 204.15}
+        - {date: 2026-08-07, narration: NETS FAIRPRICE TAMPINES, debit: solve}
+        - {date: 2026-09-05, narration: NETS FAIRPRICE TAMPINES, debit: 96.80}
+      anchors:
+        - {closing: 18240.55}
+    summary_fields: {closing_balance: closing}
+    closing_note: "Closing balance on {d:2026-09-30|d_mon_y}: {closing}"
+    fine_print: "Merlion Savings Bank is a fictional bank created for the AfterLedger demo; this is a sample document."
+    fields:
+      account_holder: {value: NAIR SURESH NARAYANAN}
+      account_number: {value: 021-55-7781}
+
+  # --------------------------------------------------------------------------------------------
+  - id: card_statement
+    title: Merlion credit card statement
+    doc_type: card_statement
+    institution_id: sg_merlion_savings
+    holding_id: h_card
+    country: SG
+    languages: [en]
+    scripts: [Latn]
+    origin: upload
+    uploaded_by: p_arjun
+    uploaded_on: 2026-09-17
+    template: statement
+    style: {accent: "#B03A2E", lang: en, size: 8.6}
+    brand: {name: MERLION SAVINGS BANK, line: "Credit cards · Fictional bank created for the AfterLedger demo"}
+    heading: CREDIT CARD STATEMENT
+    kv:
+      - [Cardholder, NAIR SURESH NARAYANAN, account_holder]
+      - [Card no., "4417-XXXX-XXXX-3306", account_number]
+      - [Card, MERLION EVERYDAY VISA, account_type]
+      - [Statement date, "{d:2026-09-20|d_mon_y}", statement_date]
+      - [Total amount due, "S$2,310.40", outstanding]
+      - [Payment due date, "{d:2026-10-12|d_mon_y}", due_date]
+    columns:
+      - {key: date, label: Date, width: 0.14}
+      - {key: narration, label: Description, width: 0.46}
+      - {key: credit, label: Charges, width: 0.13, align: right}
+      - {key: debit, label: Payments, width: 0.13, align: right}
+      - {key: balance, label: Balance, width: 0.14, align: right}
+    ledger:
+      start: 2026-08-21
+      end: 2026-09-20
+      date_style: d_mon_y
+      amount_style: en
+      group_by: breaks
+      page_breaks: []
+      bf_label: PREVIOUS BALANCE
+      opening: 2104.75
+      lines:
+        - {date: 2026-08-23, narration: SINGTEL MOBILE, credit: 68.90}
+        - {date: 2026-08-28, narration: COLD STORAGE TAMPINES, credit: 214.35}
+        - {date: 2026-09-02, narration: SCOOT TR SINGAPORE-KOCHI, credit: 1284.00}
+        - {date: 2026-09-06, narration: GUARDIAN PHARMACY, credit: 58.40}
+        - {date: 2026-09-09, narration: MUSTAFA CENTRE, credit: 488.55}
+        - {date: 2026-09-12, narration: PAYMENT RECEIVED - THANK YOU, debit: 2104.75}
+        - {date: 2026-09-15, narration: ANNUAL FEE 2026-27, credit: 196.20}
+    closing_note: "Total amount due: S$2,310.40"
+    fine_print: "Sample document."
+    fields:
+      account_holder: {value: NAIR SURESH NARAYANAN}
+      outstanding: {value: "2310.40"}
+      account_type: {value: MERLION EVERYDAY VISA}
+
+  # --------------------------------------------------------------------------------------------
+  - id: nre_statement
+    title: Periyar Bank NRE statement
+    doc_type: bank_statement
+    institution_id: in_periyar_bank
+    holding_id: h_nre
+    country: IN
+    languages: [en]
+    scripts: [Latn]
+    origin: upload
+    uploaded_by: p_arjun
+    uploaded_on: 2026-09-18
+    template: statement
+    style: {accent: "#1F618D", lang: en, size: 8.6}
+    brand: {name: PERIYAR BANK, line: "Ernakulam North branch, Kochi 682018 · IFSC PERY0000214 · Fictional bank for the AfterLedger demo"}
+    heading: STATEMENT OF ACCOUNT - NRE SAVINGS
+    kv:
+      - [Customer name, SURESH NARAYANAN NAIR, account_holder]
+      - [Account number, XXXXXXXX2290, account_number]
+      - [Account type, NRE SAVINGS, account_type]
+      - [Nomination, "REGISTERED: LAKSHMI NAIR", nomination]
+      - [Address, "TC 41/1022, ELAMAKKARA, KOCHI 682026", address]
+      - [Period, "{d:2026-04-01|dmy_slash} to {d:2026-09-30|dmy_slash}", period]
+    continued: "PERIYAR BANK · NRE savings (continued) · XXXXXXXX2290"
+    columns:
+      - {key: date, label: Date, width: 0.11}
+      - {key: narration, label: Narration, width: 0.43}
+      - {key: debit, label: Debit, width: 0.15, align: right}
+      - {key: credit, label: Credit, width: 0.15, align: right}
+      - {key: balance, label: Balance, width: 0.16, align: right}
+    ledger:
+      start: 2026-04-01
+      end: 2026-09-30
+      date_style: dmy2
+      amount_style: in
+      group_by: breaks
+      page_breaks: [2026-07-01]
+      bf_label: BALANCE B/F
+      opening: 234364.00
+      recurring:
+        - {narration: INWARD REMIT SGP MERLION SAV, credit: 62000.00, day: 4, months: [4, 5, 6, 7, 8, 9], seq: 10, meta: {group: remit_nre}}
+        - {narration: TRF TO NRO A/C 2291, debit: 10000.00, day: 4, months: [4, 5, 6, 7, 8, 9], seq: 20, meta: {group: nre_to_nro}}
+      lines:
+        - {date: 2026-04-30, narration: INT CREDIT NRE SB, credit: 1012.00}
+        - {date: 2026-05-18, narration: UPI/KSEB/EKM, debit: 2410.00}
+        - {date: 2026-06-21, narration: NEFT/ST TERESAS SCHOOL FEES, debit: 48500.00}
+        - {date: 2026-07-31, narration: INT CREDIT NRE SB, credit: 1094.00}
+        - {date: 2026-08-14, narration: NEFT/ANUGRAHA BUILDERS/RENOVATION, debit: solve}
+      anchors:
+        - {closing: 412560.00}
+    summary_fields: {closing_balance: closing}
+    closing_note: "Closing balance as on {d:2026-09-30|dmy_slash}: {closing}"
+    fine_print: "Periyar Bank is a fictional bank created for the AfterLedger demo; this is a sample document."
+    fields:
+      account_holder: {value: SURESH NARAYANAN NAIR}
+      account_number: {value: XXXXXXXX2290}
+      nomination: {value: "REGISTERED: LAKSHMI NAIR"}
+
+  # --------------------------------------------------------------------------------------------
+  - id: nro_statement
+    title: Periyar Bank NRO statement
+    doc_type: bank_statement
+    institution_id: in_periyar_bank
+    holding_id: h_nro
+    country: IN
+    languages: [en]
+    scripts: [Latn]
+    origin: upload
+    uploaded_by: p_arjun
+    uploaded_on: 2026-09-18
+    template: statement
+    style: {accent: "#1F618D", lang: en, size: 8.6}
+    brand: {name: PERIYAR BANK, line: "Ernakulam North branch, Kochi 682018 · IFSC PERY0000214 · Fictional bank for the AfterLedger demo"}
+    heading: STATEMENT OF ACCOUNT - NRO SAVINGS
+    kv:
+      - [Customer name, SURESH NARAYANAN NAIR, account_holder]
+      - [Account number, XXXXXXXX2291, account_number]
+      - [Account type, NRO SAVINGS, account_type]
+      - [Nomination, NOT REGISTERED, nomination]
+      - [Period, "{d:2025-10-01|dmy_slash} to {d:2026-09-30|dmy_slash}", period]
+    continued: "PERIYAR BANK · NRO savings (continued) · XXXXXXXX2291"
+    columns:
+      - {key: date, label: Date, width: 0.11}
+      - {key: narration, label: Narration, width: 0.43}
+      - {key: debit, label: Debit, width: 0.15, align: right}
+      - {key: credit, label: Credit, width: 0.15, align: right}
+      - {key: balance, label: Balance, width: 0.16, align: right}
+    ledger:
+      start: 2025-10-01
+      end: 2026-09-30
+      date_style: dmy2
+      amount_style: in
+      group_by: breaks
+      page_breaks: [2026-04-01]
+      bf_label: BALANCE B/F
+      opening: 148627.20
+      recurring:
+        - {narration: TRF FROM NRE A/C 2290, credit: 10000.00, day: 4, seq: 10, meta: {group: nre_to_nro}}
+        - {narration: NEFT/SARASWATHY AMMA/KOCHI, debit: 5000.00, day: 5, seq: 20, meta: {group: saraswathy}}
+        - {narration: UPI/KWA WATER/EKM, debit: [312.00, 298.00, 305.00, 322.00, 340.00, 351.00, 333.00, 318.00, 309.00, 301.00, 296.00, 315.00], day: 22, seq: 30, meta: {group: water}}
+      lines:
+        - {date: 2026-03-31, narration: INT CREDIT NRO SB, credit: 2104.00}
+        - {date: 2026-03-31, narration: TDS ON INTEREST, debit: 631.20}
+        - {date: 2026-06-09, narration: CASH WDL ELAMAKKARA, debit: solve}
+      anchors:
+        - {closing: 186300.00}
+    summary_fields: {closing_balance: closing}
+    closing_note: "Closing balance as on {d:2026-09-30|dmy_slash}: {closing}"
+    fine_print: "Periyar Bank is a fictional bank created for the AfterLedger demo; this is a sample document."
+    fields:
+      account_holder: {value: SURESH NARAYANAN NAIR}
+      account_number: {value: XXXXXXXX2291}
+      nomination: {value: NOT REGISTERED}
+
+  # --------------------------------------------------------------------------------------------
+  - id: lakshmi_notes
+    title: Lakshmi's notes
+    doc_type: handwritten_note
+    country: IN
+    languages: [ml]
+    scripts: [Mlym]
+    origin: photo
+    uploaded_by: p_arjun
+    uploaded_on: 2026-09-18
+    template: notes
+    style: {accent: "#1F3B8A", lang: ml}
+    lines:
+      - {text: "സുരേഷ് — പണത്തിന്റെ കാര്യങ്ങൾ", field: note_1}
+      - {text: "പെരിയാർ ബാങ്ക് — NRE, NRO", field: note_2}
+      - {text: "പെരിയാർ ചിട്ടി — മാസം 5000", field: note_3}
+      - {text: "സ്വർണ്ണം — ബാങ്ക് ലോക്കർ", field: note_4}
+    photo: {angle: -2.4, blur: 0.8, tint: "#F7F1E3"}
+    fields:
+      note_1: {value: "സുരേഷ് — പണത്തിന്റെ കാര്യങ്ങൾ", translation: "Suresh - money matters"}
+      note_2: {value: "പെരിയാർ ബാങ്ക് — NRE, NRO", translation: "Periyar Bank - NRE, NRO"}
+      note_3: {value: "പെരിയാർ ചിട്ടി — മാസം 5000", translation: "Periyar chit - 5000 a month"}
+      note_4: {value: "സ്വർണ്ണം — ബാങ്ക് ലോക്കർ", translation: "Gold - bank locker"}
+
+  # --------------------------------------------------------------------------------------------
+  - id: lakshmi_pan
+    title: Lakshmi's PAN card
+    doc_type: identity_card
+    country: IN
+    languages: [en]
+    scripts: [Latn]
+    origin: photo
+    uploaded_by: p_arjun
+    uploaded_on: 2026-09-18
+    subject_person: p_lakshmi
+    template: card
+    style: {accent: "#24508F", lang: en}
+    header: "PERMANENT ACCOUNT NUMBER CARD (SPECIMEN)"
+    kv:
+      - [Name, LAKSHMI NAIR, holder_name]
+      - [Father's name, GOPALAKRISHNA PILLAI, father_name]
+      - [Date of birth, "{d:1975-01-23|dmy_slash}", birth_date]
+      - [PAN, ZZZPN0233L, pan]
+    photo: {angle: -1.5, blur: 0.5, tint: "#F6F6F2"}
+    fields:
+      holder_name: {value: LAKSHMI NAIR}
+      pan: {value: ZZZPN0233L}

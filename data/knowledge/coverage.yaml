@@ -1,0 +1,37 @@
+# What families in each country usually hold, so discovery can check that nothing common is missed.
+coverage:
+  - id: IN
+    items:
+      - {id: bank_accounts, label: Bank accounts and deposits, categories: [savings, current, fixed_deposit, nre, nro], plan: IN/bank_deposit}
+      - {id: life_cover, label: "Life cover, including PMJJBY", categories: [life_policy, government_cover, life_cover], plan: IN/life_insurance_claim}
+      - {id: mutual_funds, label: Mutual funds, categories: [mutual_fund], plan: IN/mutual_fund}
+      - {id: shares, label: Shares, categories: [demat, shares_physical, shares], plan: IN/demat_transmission}
+      - {id: pension, label: Pension, categories: [pension, family_pension], plan: IN/family_pension}
+      - {id: provident_fund, label: Provident fund, categories: [provident_fund]}
+      - {id: lockers, label: Bank lockers, categories: [locker], plan: IN/locker}
+      - {id: post_office, label: Post office savings, categories: [post_office], ask: "Did he have any post office savings, such as a savings account or a deposit at the post office?"}
+      - {id: loans, label: Loans and cards, categories: [loan, credit_card, card_loan]}
+  - id: JP
+    items:
+      - {id: bank_accounts, label: 銀行・信用金庫の預金 (bank and shinkin accounts), categories: [savings, current, fixed_deposit]}
+      - {id: life_cover, label: 生命保険 (life insurance), categories: [life_policy, life_cover], plan: JP/life_insurance_inquiry}
+      - {id: debts, label: 借入・カードローン (loans and card loans), categories: [card_loan, loan, credit_card], plan: JP/renunciation_decision}
+      - {id: pension, label: 年金 (pensions), categories: [pension]}
+  - id: GB
+    items:
+      - {id: bank_accounts, label: Bank and building society accounts, categories: [savings, current]}
+      - {id: premium_bonds, label: NS&I and Premium Bonds, categories: [premium_bonds], plan: GB/premium_bonds@gb_nsandi}
+      - {id: pensions, label: Workplace and state pensions, categories: [pension]}
+      - {id: government, label: Benefits and council tax (Tell Us Once), categories: [social_security], plan: GB/tell_us_once}
+  - id: US
+    items:
+      - {id: bank_accounts, label: Bank accounts, categories: [savings, current]}
+      - {id: social_security, label: Social Security, categories: [social_security], plan: US/social_security}
+      - {id: life_cover, label: Life insurance (and lost policies), categories: [life_policy, life_cover], plan: US/naic_locator}
+      - {id: employer, label: Final pay, 401(k) and group life, categories: [employer_benefit, salary]}
+  - id: SG
+    items:
+      - {id: bank_accounts, label: Bank accounts, categories: [savings, current]}
+      - {id: cpf, label: CPF savings, categories: [cpf], plan: SG/cpf_no_nomination}
+      - {id: employer, label: Final salary and leave, categories: [salary], plan: SG/employer_final_pay@sg_straits_marine}
+      - {id: cards, label: Credit cards, categories: [credit_card]}

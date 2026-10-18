@@ -1,0 +1,320 @@
+# The Sato family (Osaka). Fictional people; the Japanese rules applied are real (Civil Code, the
+# Legal Affairs Bureau's heir information certificate), and the fictional institutions' rules are
+# stored with their sources in data/knowledge.
+key: sato
+story_day: 2026-10-14
+title: 佐藤 健二
+title_en: Kenji Sato
+family_label: The Satos
+where: Osaka, Japan
+spoken: Japanese
+shows: Era-year dates and katakana names; a card loan with a three-month decision; bank forms with seal boxes
+languages: [ja, en]
+countries: [JP]
+timezone: Asia/Tokyo            # the story's clock: activity times are this family's local times
+viewer: p_daisuke
+order: 2
+today_greeting_local: おはようございます、大輔さん。今日は3つのことがあります。
+
+deceased:
+  id: p_kenji
+  display_name: 佐藤 健二
+  display_name_en: Kenji Sato
+  names:
+    - {text: 佐藤 健二, script: Hani, lang: ja, reading: サトウ ケンジ, seen_on: family}
+    - {text: サトウ ケンジ, script: Kana, lang: ja, seen_on: naniwa_passbook}
+  birth_date: 1958-04-18
+  death_date: 2026-09-07
+  death_place: 大阪市
+  death_country: JP
+  death_cause: illness
+  nationalities: [JP]
+  residences: [{country: JP, city: 吹田市}]
+  occupation: 元会社員（年金受給者） · Retired office worker on a public pension
+  initials: 健
+
+people:
+  - id: p_keiko
+    display_name: 佐藤 恵子
+    display_name_en: Keiko Sato
+    names:
+      - {text: 佐藤 恵子, script: Hani, lang: ja, reading: サトウ ケイコ}
+    relationship: wife
+    roles: [heir, beneficiary]
+    languages: [ja]
+    channel: voice
+    country: JP
+    city: 吹田市
+    address: 大阪府吹田市千里山東2丁目14番7号
+    age: 65
+    initials: 恵
+    color: "#F3D9C4"
+  - id: p_daisuke
+    display_name: 佐藤 大輔
+    display_name_en: Daisuke Sato
+    names:
+      - {text: 佐藤 大輔, script: Hani, lang: ja, reading: サトウ ダイスケ}
+    relationship: son
+    roles: [heir, claimant, helper]
+    languages: [ja, en]
+    channel: text
+    country: JP
+    city: 豊中市
+    address: 大阪府豊中市新千里東町1丁目5番3-1204号
+    age: 38
+    initials: 大
+    color: "#CFE3F5"
+  - id: p_yumi
+    display_name: 山田 由美
+    display_name_en: Yumi Yamada
+    names:
+      - {text: 山田 由美, script: Hani, lang: ja, reading: ヤマダ ユミ}
+    relationship: daughter
+    roles: [heir]
+    languages: [ja]
+    channel: text
+    country: JP
+    city: 神戸市
+    address: 兵庫県神戸市東灘区本山北町3丁目6番10号
+    age: 35
+    initials: 由
+    color: "#E6DCF2"
+
+holdings:
+  - {id: h_naniwa, institution_id: jp_naniwa_bank, kind: savings, label: 普通預金, account_mask: "4567", value: "1284560", found_from: [naniwa_passbook], claim: c_naniwa}
+  - {id: h_yodogawa, institution_id: jp_yodogawa_shinkin, kind: savings, label: 普通預金, account_mask: "7412", value: "612300", found_from: [yodogawa_passbook], claim: c_yodogawa}
+  - {id: h_minato, institution_id: jp_minato_seimei, kind: life_policy, label: 死亡保険金, value: "3000000", nominee: "yes", nominee_person_id: p_keiko, found_from: [minato_policy], claim: c_minato}
+  - {id: h_card_loan, institution_id: jp_naniwa_card, kind: card_loan, direction: debt, label: カードローン, value: "2140000", found_from: [card_statement], claim: c_card}
+
+claims:
+  - id: c_naniwa
+    institution_id: jp_naniwa_bank
+    holdings: [h_naniwa]
+    plan: JP/bank_inheritance@jp_naniwa_bank
+    facts: {}
+    expected_route: []
+    explain:
+      match: Naniwa
+      summary: "Naniwa Bank pays out only once the heirs have decided to accept the inheritance. The card loan may be larger than his savings, so compare the balances first."
+      summary_local: "相続するかどうかを決めてから、浪速銀行の手続きを進めます。カードローンの残高が預金より多いかもしれないので、まず残高を比べます。"
+      steps:
+        - step_id: ""
+          who: 佐藤 大輔
+          cites: [jp_heir_cert_free, jp_heir_cert_replaces]
+          text: "Get certified copies of the heir information chart from the Legal Affairs Bureau. They are free and replace the bundle of family registers."
+          text_local: "法定相続情報一覧図の写しを法務局でもらう。無料です。戸籍の束の代わりに使えます。"
+        - step_id: submit
+          who: 佐藤 大輔
+          text: "Fill in Naniwa Bank's inheritance request form. A draft with furigana and seal boxes is ready; all three heirs' registered seals and seal certificates are needed."
+          text_local: "浪速銀行の相続手続依頼書に記入する。フリガナと押印欄つきの下書きを用意しました。相続人3人の実印と印鑑証明書が必要です。"
+        - step_id: balance_first
+          who: 佐藤 大輔
+          text: "Ask for a balance certificate and compare it with the card loan balance. Decide by the deadline from the result."
+          text_local: "残高証明書を請求し、ローン残高と比べる。比べた結果をもとに、期限までに決めます。"
+  - id: c_yodogawa
+    institution_id: jp_yodogawa_shinkin
+    holdings: [h_yodogawa]
+    plan: JP/bank_inheritance@jp_yodogawa_shinkin
+    facts: {}
+    expected_route: []
+  - id: c_minato
+    institution_id: jp_minato_seimei
+    holdings: [h_minato]
+    plan: JP/life_insurance_claim@jp_minato_seimei
+    facts: {beneficiary_named: "yes"}
+    expected_route: [claim]
+  - id: c_card
+    institution_id: jp_naniwa_card
+    holdings: [h_card_loan]
+    plan: JP/card_debt@jp_naniwa_card
+    facts: {}
+    expected_route: []
+  - id: c_renounce
+    institution_id: jp_family_court
+    holdings: []
+    plan: JP/renunciation_decision
+    facts: {}
+    expected_route: []
+
+answers:
+  claimant: p_daisuke
+
+leads:
+  - key: minato
+    category: life_cover
+    kind: asset
+    holding_kind: life_policy
+    group: minato_premium
+    institution_id: jp_minato_seimei
+    title: A Minato Seimei life policy
+    title_local: みなと生命の保険
+    sentence: ¥9,850 went to Minato Seimei on the 26th of every month, a life insurance premium. The policy is among the papers.
+    sentence_local: 毎月26日に9,850円がミナトセイメイに引き落とされています。生命保険の保険料で、保険証券も届いています。
+    investigator_note: "MINATO SEIMEI debits of ¥9,850 each month (ミナトセイメイ)."
+    how_to_confirm: Check who the policy names as beneficiary.
+    signals: {cadence: monthly, product_match: "yes"}
+    cites: [jp_minato_documents]
+    label: sure
+    status: confirmed
+    holding: h_minato
+  - key: pension
+    category: pension
+    kind: entitlement
+    group: pension
+    institution_id: jp_nenkin
+    title: His public pension
+    title_local: 公的年金
+    sentence: ¥186,400 of public pension arrived on the 15th of every even month. The Japan Pension Service has to be told of the death.
+    sentence_local: 偶数月の15日に年金186,400円が入っています。日本年金機構への届出が必要です。
+    investigator_note: "NENKIN credits of ¥186,400 on 15 April, 15 June and 15 August (ネンキン)."
+    how_to_confirm: Look for his pension certificate or a pension notice.
+    next_step_note: The pension owed up to September, the month he died, can be claimed as unpaid pension (未支給年金) by Keiko, who shared his household, with the combined death report and claim form. If the Japan Pension Service holds his My Number, no separate death report is needed.
+    signals: {cadence: monthly, product_match: partial}
+    cites: [jp_pension_unpaid_family, jp_pension_unpaid_order, jp_pension_unpaid_form, jp_pension_report_my_number]
+    label: likely
+    status: open
+  - key: card_loan
+    category: card_loan
+    kind: debt
+    holding_kind: card_loan
+    group: card_loan
+    institution_id: jp_naniwa_card
+    title: A card loan with Naniwa Card
+    title_local: ナニワカードのカードローン
+    sentence: ¥32,000 went to Naniwa Card on the 27th of each month; its statement shows ¥2,140,000 still owed.
+    sentence_local: 毎月27日に32,000円がナニワカードに返済されています。明細では残高2,140,000円です。
+    monthly: "32000"
+    cites: [jp_naniwa_card_balance]
+    label: sure
+    status: confirmed
+    holding: h_card_loan
+decoys: [electricity, gas]
+
+groups:
+  pension: {counterparty: Japan Pension Service, kind: government, interpretation: "His public pension, paid in even months.", alternatives: []}
+  card_loan: {counterparty: Naniwa Card, kind: lender, interpretation: "Repayments on a card loan.", alternatives: []}
+  minato_premium: {counterparty: Minato Seimei, kind: insurer, interpretation: "A life insurance premium.", alternatives: []}
+  electricity: {counterparty: Kansai Electric Power, kind: utility, interpretation: "Electricity.", alternatives: []}
+  gas: {counterparty: Osaka Gas, kind: utility, interpretation: "Gas.", alternatives: []}
+
+coverage:
+  bank_accounts: {status: found, detail: "Naniwa Bank, Yodogawa Shinkin"}
+  life_cover: {status: found, detail: Minato Seimei}
+  debts: {status: found, detail: "Naniwa Card, ¥2,140,000"}
+  pension: {status: lead, detail: Public pension}
+
+jurisdiction:
+  succession_law: JP
+  contested: false
+  summary: Japan, for every holding. He was a Japanese national living in Osaka.
+  summary_local: 日本の法律が適用されます。財産はすべて日本にあります。
+  findings:
+    - {assertion_ids: [jp_civil_887_children, jp_civil_890_spouse], rule: "The spouse is always an heir, alongside the children.", points_to: JP}
+  legs:
+    - {country: JP, succession_law: JP, papers_from: [JP], certification: [], cites: [jp_civil_887_children, jp_civil_890_spouse], note: ""}
+  cites: [jp_civil_887_children, jp_civil_890_spouse, jp_civil_896_debts]
+
+intake:
+  started_on: 2026-09-12
+  by: p_daisuke
+  turns:
+    - role: assistant
+      lang: ja
+      text: このたびはご愁傷さまでございます。まず、どなたがいつお亡くなりになったか教えていただけますか。
+      translation: We are very sorry for your loss. First, could you tell us who passed away, and when?
+    - role: family
+      person: p_daisuke
+      lang: ja
+      channel: text
+      text: 父の佐藤健二です。9月7日に大阪の病院で亡くなりました。心筋梗塞でした。
+      translation: My father, Kenji Sato. He died on 7 September in a hospital in Osaka. It was a heart attack.
+    - role: assistant
+      lang: ja
+      text: ご家族はどなたがいらっしゃいますか。遺言書はありましたか。
+      translation: Who is in the family? Was there a will?
+      why: The spouse and children are the heirs under the Civil Code, and every heir signs the bank forms.
+      cites: [jp_civil_887_children, jp_civil_890_spouse]
+    - role: family
+      person: p_daisuke
+      lang: ja
+      channel: text
+      text: 母の恵子と、妹の由美（結婚して山田です）と私です。遺言書は見つかっていません。
+      translation: My mother Keiko, my younger sister Yumi (married, now Yamada) and me. We haven't found a will.
+    - role: assistant
+      lang: ja
+      text: 通帳や保険証券、ローンの書類などはお手元にありますか。
+      translation: Do you have passbooks, insurance policies or loan papers at hand?
+    - role: family
+      person: p_daisuke
+      lang: ja
+      channel: text
+      text: 浪速銀行と淀川信用金庫の通帳、みなと生命の保険証券があります。ナニワカードから請求書も届いています。
+      translation: We have passbooks from Naniwa Bank and Yodogawa Shinkin and a Minato Seimei policy. A bill has also come from Naniwa Card.
+  situation:
+    1:
+      deceased_name: 佐藤 健二
+      deceased_name_en: Kenji Sato
+      family_label: The Satos
+      died_on: 2026-09-07
+      died_in: 大阪市
+      death_country: JP
+      death_cause: illness
+      country_codes: [JP]
+      family:
+        - {name: 佐藤 大輔, name_en: Daisuke Sato, relationship: son, city: 豊中市, country: JP, languages: [ja, en], roles: [heir, claimant, helper]}
+      will: unknown
+      mode: family
+      unknowns: [other heirs, will, papers at hand]
+    2:
+      family:
+        - {name: 佐藤 恵子, name_en: Keiko Sato, relationship: wife, city: 吹田市, country: JP, languages: [ja], roles: [heir]}
+        - {name: 山田 由美, name_en: Yumi Yamada, relationship: daughter, city: 神戸市, country: JP, languages: [ja], roles: [heir]}
+      will: "no"
+      unknowns: [papers at hand]
+    3:
+      holdings_mentioned: [浪速銀行の預金, 淀川信用金庫の預金, みなと生命の保険, ナニワカードの借入]
+      papers_at_hand: [通帳2冊, 保険証券, カードの請求書]
+      urgent: ["借入があるので、3か月以内に相続するか放棄するかを決める必要があります。 · With a debt in the estate, the heirs must decide within three months whether to accept or renounce."]
+      unknowns: []
+
+timeline:
+  - {on: 2026-09-12, do: intake}
+  - {on: 2026-09-12, do: confirm_summary, by: p_daisuke}
+  - {on: 2026-09-13, do: upload, paper: death_cert, by: p_daisuke}
+  - {on: 2026-09-13, do: upload, paper: naniwa_passbook, by: p_daisuke}
+  - {on: 2026-09-13, do: upload, paper: yodogawa_passbook, by: p_daisuke}
+  - {on: 2026-09-13, do: upload, paper: minato_policy, by: p_daisuke}
+  - {on: 2026-09-13, do: upload, paper: card_statement, by: p_daisuke}
+  - {on: 2026-09-14, do: confirm_people, by: p_daisuke}
+  - {on: 2026-09-14, do: mark_leads, by: p_daisuke}
+  - {on: 2026-09-16, do: approve_plan, claim: c_minato, by: p_keiko}
+  - {on: 2026-09-18, do: approve_plan, claim: c_card, by: p_daisuke}
+  - {on: 2026-09-18, do: claim_event, claim: c_card, event: notified, note: "大輔さんがナニワカードに連絡しました。 Daisuke told Naniwa Card of the death."}
+  - {on: 2026-10-06, do: start_procedure, plan: JP/heir_information_certificate, event: submitted, by: p_daisuke,
+     note: "法務局に申出済み。 Daisuke applied at the Legal Affairs Bureau."}
+  - {on: 2026-10-06, do: approve_plan, claim: c_naniwa, by: p_daisuke}
+  - {on: 2026-10-06, do: prepare_pack, claim: c_naniwa}
+  - {on: 2026-10-13, do: prepare_pack, claim: c_minato}
+  - {on: 2026-10-14, do: today}
+
+expected_today:
+  tasks: [step:c_naniwa:balance_first, sign:c_minato, step:c_renounce:decide]
+  totals: {known: "4896860", paid: "0", in_progress: "4896860", owed: "2140000", unknown_leads: 1}
+  deadline: {clock: decide_3m, due_on: 2026-12-07}
+
+today_tasks:
+  - kind: acquire
+    institution_id: jp_naniwa_bank
+    title: Ask Naniwa Bank and Naniwa Card for balance certificates
+    body: Compare what he had in the bank with what he owed on the card loan before deciding. Any one heir can ask.
+    local: {lang: ja, title: 浪速銀行とナニワカードに残高証明書を請求する, body: 預金とカードローンの残高を比べてから決めます。相続人1人で請求できます。}
+  - kind: sign
+    institution_id: jp_minato_seimei
+    title: Claim the Minato Seimei death benefit
+    body: Keiko signs and seals the claim form, and sends it with the copy of the medical certificate of death and her ID.
+    local: {lang: ja, title: みなと生命の死亡保険金を請求する, body: 恵子さんが請求書に署名・押印し、死亡診断書の写しと本人確認書類を添えて送ります。}
+  - kind: decide
+    institution_id: jp_family_court
+    title: Decide by 7 December whether to accept or renounce
+    body: "The card loan may be more than his savings. Until the family decides, don't withdraw or spend his money: using it can count as accepting his debts too."
+    local: {lang: ja, title: 12月7日までに、相続するか放棄するかを決める, body: カードローンの残高が預金より多いかもしれません。決めるまでは、預金を引き出したり使ったりしないでください。}

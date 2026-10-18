@@ -1,0 +1,131 @@
+# Everything `python tools/dev.py check` checks, on every push and pull request, plus the browser tests and the
+# container builds. Nothing here calls a model or a Google Cloud service: the whole flow runs on scripted responses.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUTF8: '1'
+  NEXT_TELEMETRY_DISABLED: '1'
+
+jobs:
+  api:
+    name: API (lint, knowledge audit, contract, tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.11.32'
+      - run: uv sync --frozen --all-extras --group dev --python 3.12
+      - run: uv run ruff check src tests
+      - name: Every quote on its page, every plan and form
+        run: uv run afterledger audit-knowledge
+      - name: The API contract matches the code
+        run: |
+          uv run afterledger export-openapi "$RUNNER_TEMP/openapi.json"
+          diff -q "$RUNNER_TEMP/openapi.json" ../../packages/contracts/openapi.json \
+            || (echo "packages/contracts is out of date: run python tools/dev.py contracts" && exit 1)
+      - name: Tests, including the end-to-end runs over the six demo families
+        run: uv run pytest -q
+
+  web:
+    name: Web (messages, types, lint, unit tests, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @afterledger/web check:messages
+      - run: pnpm --filter @afterledger/web typecheck
+      - run: pnpm --filter @afterledger/web lint
+      - run: pnpm --filter @afterledger/web test
+      - run: pnpm --filter @afterledger/web build
+        env:
+          AL_API_BASE: http://localhost:8080
+
+  e2e:
+    name: Browser tests (Playwright and axe)
+    needs: [api, web]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.11.32'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: uv sync --frozen --all-extras --python 3.12
+        working-directory: services/api
+      - run: pnpm install --frozen-lockfile
+      - name: Build the six demo cases
+        run: uv run afterledger build-demos --out ../../.data/demo_bundles --no-eval
+        working-directory: services/api
+      - run: pnpm --filter @afterledger/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @afterledger/web e2e
+        env:
+          CI: '1'
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7
+
+  terraform:
+    name: Terraform (format and validate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v5
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.16.5'
+      - run: terraform fmt -check
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate
+
+  images:
+    name: Container images build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v5
+      - name: API image (builds the demo cases inside)
+        run: DOCKER_BUILDKIT=1 docker build -f services/api/Dockerfile -t afterledger-api:ci .
+      - name: Web image
+        run: DOCKER_BUILDKIT=1 docker build -f apps/web/Dockerfile -t afterledger-web:ci .
+      - name: The API image starts and answers
+        run: |
+          docker run -d --name api -p 8080:8080 -e AL_SEED_ON_START=false afterledger-api:ci
+          for i in $(seq 1 30); do curl -fsS http://localhost:8080/v1/health && exit 0; sleep 2; done
+          docker logs api; exit 1

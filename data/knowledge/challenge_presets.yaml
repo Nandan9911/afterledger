@@ -1,0 +1,25 @@
+# Ready-made questions for the live challenge. "prepared" means scripted responses exist for an offline
+# run (data/eval/research_fixtures/<country>.yaml); any other country is researched only in a live run.
+presets:
+  - key: fr_life
+    country: FR
+    lang: fr
+    holding_kind: life_policy
+    institution: null
+    situation: Any life insurer. No will. Asked in French by a daughter.
+    question: « Mon père est décédé à Lyon en août. Avait-il une assurance-vie, et comment le savoir ? »
+    translation: My father died in Lyon in August. Did he have life insurance, and how can I find out?
+    title: L'assurance-vie de votre père
+    asked_by: Question de Claire, Lyon
+    prepared: true
+  - key: eg_bank
+    country: EG
+    lang: ar
+    holding_kind: savings
+    institution: null
+    situation: A bank account in Egypt. Asked in Arabic by a son living in Abu Dhabi.
+    question: توفي والدي في القاهرة، وله حساب في بنك هناك. ما المستندات التي يطلبها البنك لصرف الرصيد للورثة؟
+    translation: My father died in Cairo, and he had an account at a bank there. Which documents does the bank need to pay the balance to the heirs?
+    title: حساب والدك في بنك في مصر
+    asked_by: سؤال من كريم، أبوظبي
+    prepared: true

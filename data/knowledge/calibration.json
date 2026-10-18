@@ -1,0 +1,239 @@
+{
+ "_note": "Refitted on 2026-10-15 from the demo cases a live model prepared (clarke, morales, nair, sato, tanaka, verma). A bin with at least 20 items holds its measured accuracy, (right + 1) / (items + 2); a smaller bin keeps the value set by hand, and n says how many items it had. `afterledger calibrate` shows what a new refit would change.",
+ "_status": "fitted",
+ "reading": {
+  "base_rate": 0.7,
+  "bins": [
+   {
+    "signals": {
+     "status": "matched",
+     "photo": false
+    },
+    "p": 0.991,
+    "n": 107
+   },
+   {
+    "signals": {
+     "status": "matched",
+     "photo": true
+    },
+    "p": 0.974,
+    "n": 37
+   },
+   {
+    "signals": {
+     "status": "matched",
+     "photo": true,
+     "kind": "name"
+    },
+    "p": 0.97,
+    "n": 10
+   },
+   {
+    "signals": {
+     "status": "resolved",
+     "photo": false
+    },
+    "p": 0.96,
+    "n": 9
+   },
+   {
+    "signals": {
+     "status": "resolved",
+     "photo": true
+    },
+    "p": 0.9,
+    "n": 8
+   },
+   {
+    "signals": {
+     "status": "resolved",
+     "photo": true,
+     "check": "balance"
+    },
+    "p": 0.93,
+    "n": 0
+   },
+   {
+    "signals": {
+     "status": "one_path"
+    },
+    "p": 0.82,
+    "n": 0
+   },
+   {
+    "signals": {
+     "status": "one_path",
+     "photo": true
+    },
+    "p": 0.75,
+    "n": 0
+   },
+   {
+    "signals": {
+     "status": "disagree"
+    },
+    "p": 0.4,
+    "n": 0
+   },
+   {
+    "signals": {
+     "status": "family_confirmed"
+    },
+    "p": 0.999,
+    "n": 0
+   }
+  ]
+ },
+ "people": {
+  "base_rate": 0.6,
+  "bins": [
+   {
+    "signals": {
+     "evidence": "identifier"
+    },
+    "p": 0.98,
+    "n": 0
+   },
+   {
+    "signals": {
+     "evidence": "account_number"
+    },
+    "p": 0.97,
+    "n": 0
+   },
+   {
+    "signals": {
+     "evidence": "same_paper_role"
+    },
+    "p": 0.95,
+    "n": 0
+   },
+   {
+    "signals": {
+     "evidence": "name_only"
+    },
+    "p": 0.6,
+    "n": 0
+   },
+   {
+    "signals": {
+     "evidence": "family"
+    },
+    "p": 0.99,
+    "n": 0
+   }
+  ]
+ },
+ "discovery": {
+  "base_rate": 0.4,
+  "bins": [
+   {
+    "signals": {
+     "cadence": "yearly",
+     "product_match": "yes"
+    },
+    "p": 0.96,
+    "n": 3
+   },
+   {
+    "signals": {
+     "cadence": "yearly",
+     "product_match": "yes",
+     "paper": "no",
+     "known_rent": "yes"
+    },
+    "p": 0.8,
+    "n": 0
+   },
+   {
+    "signals": {
+     "cadence": "monthly",
+     "product_match": "yes"
+    },
+    "p": 0.96,
+    "n": 4
+   },
+   {
+    "signals": {
+     "cadence": "monthly",
+     "product_match": "yes",
+     "debt": "yes"
+    },
+    "p": 0.97,
+    "n": 0
+   },
+   {
+    "signals": {
+     "cadence": "four_weekly",
+     "product_match": "yes"
+    },
+    "p": 0.96,
+    "n": 1
+   },
+   {
+    "signals": {
+     "cadence": "quarterly",
+     "product_match": "no"
+    },
+    "p": 0.5,
+    "n": 0
+   },
+   {
+    "signals": {
+     "cadence": "irregular",
+     "product_match": "yes"
+    },
+    "p": 0.78,
+    "n": 2
+   },
+   {
+    "signals": {
+     "cadence": "irregular",
+     "product_match": "no"
+    },
+    "p": 0.45,
+    "n": 2
+   },
+   {
+    "signals": {
+     "cadence": "monthly",
+     "product_match": "partial"
+    },
+    "p": 0.75,
+    "n": 2
+   },
+   {
+    "signals": {
+     "source": "family_note"
+    },
+    "p": 0.72,
+    "n": 0
+   },
+   {
+    "signals": {
+     "source": "family_note",
+     "confirmed": "yes"
+    },
+    "p": 0.85,
+    "n": 0
+   }
+  ]
+ },
+ "_fitted": {
+  "on": "2026-10-15",
+  "live_cases": [
+   "clarke",
+   "morales",
+   "nair",
+   "sato",
+   "tanaka",
+   "verma"
+  ],
+  "items": {
+   "reading": 171,
+   "discovery": 19
+  },
+  "min_items": 20
+ }
+}

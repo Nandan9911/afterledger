@@ -1,0 +1,60 @@
+# Forms of fictional British institutions in the demo. They are written for the demo in the style of a
+# building society's bereavement form; nothing here reproduces a real institution's form.
+forms:
+  # ------------------------------------------------------------------------------------------------
+  - key: GB/pennine_bereavement
+    title: Bereavement notification and claim form (Pennine Building Society)
+    institution_kind: bank
+    language: en
+    source_note: "Pennine Building Society is a fictional building society created for the AfterLedger demo; this is its form as the demo defines it. Synthetic demo filling."
+    heading:
+      - "PENNINE BUILDING SOCIETY"
+      - {text: "Bereavement notification and claim form", size: 11}
+      - {text: "Please complete in black ink. Use one form for all accounts held by the person who has died.", size: 8.4}
+    blocks:
+      - {type: section, title: "1. About the person who has died"}
+      - type: fields
+        fields:
+          - {id: deceased_name, label: "Full name", path: deceased.display}
+          - {id: deceased_birth, label: "Date of birth", path: deceased.birth.long}
+          - {id: deceased_death, label: "Date of death", path: deceased.death.long}
+          - {id: deceased_address, label: "Last address", path: deceased.address_any}
+      - {type: section, title: "2. Accounts held with the Society"}
+      - type: table
+        id: accounts
+        min_rows: 2
+        no_label: "No."
+        columns:
+          - {key: kind, label: "Account", width: 0.34}
+          - {key: number, label: "Account number", width: 0.3}
+          - {key: amount, label: "Balance, if known", width: 0.24, align: right}
+      - {type: section, title: "3. Did they leave a will?"}
+      - type: checks
+        items:
+          - {id: will_yes, label: "Yes - please send a copy of the will with this form", path: checks.will_yes}
+          - {id: will_no, label: "No", path: checks.will_no}
+      - {type: section, title: "4. Executors or personal representatives"}
+      - type: fields
+        fields:
+          - {id: executor_name, label: "Full name", path: executor.name}
+          - {id: executor_relationship, label: "Relationship to the person who has died", path: executor.relationship}
+          - {id: executor_address, label: "Address", path: executor.address}
+          - {id: executor_phone, label: "Daytime telephone", path: executor.phone, fill_by: family}
+          - {id: executor_email, label: "Email", path: executor.email, fill_by: family}
+      - {type: section, title: "5. Where should we pay the money?"}
+      - type: fields
+        fields:
+          - {id: pay_name, label: "Account name", path: payee.name, fill_by: family}
+          - {id: pay_sort_code, label: "Sort code", path: payee.sort_code, fill_by: family}
+          - {id: pay_account, label: "Account number", path: payee.account, fill_by: family}
+      - {type: section, title: "6. Declaration"}
+      - {type: text, text: "I/we declare that the information on this form is correct and that I am/we are entitled to deal with the estate of the person named above. I/we ask the Society to close the accounts listed and pay the balances, with interest to the date of closure, as shown in section 5. If the Society pays on this form and it later proves that I/we were not entitled to receive the money, I/we will repay it to the Society."}
+      - type: signatures
+        items:
+          - {label: "Signature of executor or personal representative", name_field: sign_name}
+      - type: fields
+        fields:
+          - {id: date, label: "Date", path: dates.long}
+      - {type: note, text: "Up to £30,000 in total, the Society usually releases the money without a grant of probate or letters of administration. Above that amount we will ask to see the grant."}
+      - {type: office, text: "FOR SOCIETY USE: identification checked · death certificate seen · will copied"}
+    value_paths: {sign_name: executor.name}

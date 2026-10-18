@@ -1,0 +1,406 @@
+# Indian regulators' model forms, re-typeset field by field from their published text so values can be
+# placed and read back exactly. The wording of declarations is kept; long notes are shortened where
+# marked. 'path' names a value in the pack context (forms/context.py).
+forms:
+  # ------------------------------------------------------------------------------------------------
+  - key: IN/rbi_annex_v
+    title: Claim form for accounts with a nominee or survivorship clause (RBI Annex V)
+    institution_kind: bank
+    language: en
+    source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+    source_note: "Re-typeset from Annex V of the RBI (Commercial Banks - Responsible Business Conduct) Directions, 2025, as updated on 1 October 2026. Synthetic demo filling."
+    heading:
+      - "Annex V - Claim form for Accounts with Nominee / Survivorship clause"
+      - {text: "Application Form for Settlement of Claim in Deposit Accounts / Release of Contents of Safe Deposit Lockers / Return of Articles in Safe Custody kept by Deceased Customer (cases with Nomination or Joint Account with Survivorship clause)", size: 8.5}
+    blocks:
+      - type: fields
+        fields:
+          - {id: date, label: "Date", path: date}
+          - {id: bank, label: "To the Branch Manager, Bank", path: institution.name}
+          - {id: branch, label: "Branch", path: institution.branch}
+          - {id: deceased_name, label: "Name of Deceased Customer (Shri/ Smt./ Kum.)", path: deceased.name}
+          - {id: claimants, label: "Nominee(s)/ Survivor(s) making the claim", path: claimant.name}
+          - {id: expired_on, label: "who expired on", path: deceased.date_of_death}
+      - {type: section, title: "2. Information about the deceased customer"}
+      - type: fields
+        fields:
+          - {id: date_place, label: "(a) Date and Place of Death", path: deceased.date_place}
+          - {id: cert_no, label: "(b) Death Certificate No.", path: deceased.death_cert_no}
+          - {id: cert_date, label: "dated", path: deceased.death_cert_date}
+          - {id: cert_authority, label: "Authority", path: deceased.death_cert_authority}
+          - {id: age, label: "(c) Age (as on the date of death), Yrs.", path: deceased.age}
+          - {id: marital, label: "(d) Marital Status", path: deceased.marital_status}
+          - {id: address, label: "(e) Address", path: deceased.address}
+      - {type: section, title: "3. Claim for payment of the balance with accrued interest - a. Deposit Accounts"}
+      - type: table
+        id: deposits
+        min_rows: 2
+        columns:
+          - {key: nature, label: "Nature of Deposits (SB/ CA/ TD, etc.)", width: 0.26}
+          - {key: account, label: "Account No.", width: 0.26}
+          - {key: amount, label: "Amount", width: 0.2, align: right}
+          - {key: maturity, label: "Date of Maturity (TD)", width: 0.22}
+      - {type: section, title: "4.1 Transfer the balance payable to the account(s) of the Nominee(s)/ Survivor(s)"}
+      - type: fields
+        fields:
+          - {id: nominee_name, label: "Name", path: claimant.name}
+          - {id: nominee_address, label: "Address", path: claimant.address}
+          - {id: nominee_mobile, label: "Mobile Number", path: claimant.mobile, fill_by: family}
+          - {id: nominee_bank, label: "Bank Name, Account Type & Number, IFSC", path: claimant.bank, fill_by: family}
+      - {type: section, title: "5. I/ We undertake that"}
+      - {type: text, text: "(i) I/ We shall hold/ receive the aforesaid amount / articles in a fiduciary capacity as a trustee of the rightful beneficiary(ies) and any settlement made to me / us shall not affect their rights. (ii) The aforesaid accounts / safe deposit locker / safe custody articles are not the subject matter of any dispute and that there is no Court order restraining me / us from claiming or the bank from settling the claim in my / our favour or otherwise. (iii) I/ We authorise the bank to exercise its right to lien and set-off..."}
+      - {type: section, title: "6. Documents attached"}
+      - type: checks
+        items:
+          - {id: att_death_cert, label: "Death certificate (of deceased customer)", path: checks.death_cert}
+          - {id: att_ovd, label: "Officially Valid Document in support of the identity and address of the Nominee(s) / Survivor(s) making the claim", path: checks.ovd}
+      - {type: text, text: "7. The facts stated above are true and correct to the best of my/ our knowledge and belief."}
+      - type: signatures
+        items:
+          - {label: "8. Signature/ Thumb impression of the Nominee/ Survivor", name_field: sign_name}
+      - {type: note, text: "Note: In case a claimant is unable to sign, she / he may place the thumb impression in the presence of a witness known to the bank."}
+      - {type: office, text: "FOR OFFICE USE (may be prepared by the bank as per its official requirement)"}
+    value_paths: {sign_name: claimant.name}
+
+  # ------------------------------------------------------------------------------------------------
+  - key: IN/rbi_annex_vi
+    title: Claim form for accounts without a nominee (RBI Annex VI)
+    institution_kind: bank
+    language: en
+    source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+    source_note: "Re-typeset from Annex VI of the RBI (Commercial Banks - Responsible Business Conduct) Directions, 2025, as updated on 1 October 2026. Synthetic demo filling."
+    heading:
+      - "Annex VI - Claim form for Accounts without Nominee / Survivorship clause"
+      - {text: "Application Form for Settlement of Claim in Deposit Accounts / Release of Contents of Safe Deposit Lockers / Return of Articles in Safe Custody kept by Deceased Customer (cases other than Nomination or Joint Account with Survivorship clause)", size: 8.5}
+    blocks:
+      - type: fields
+        fields:
+          - {id: date, label: "Date", path: date}
+          - {id: bank, label: "To the Branch Manager, Bank", path: institution.name}
+          - {id: branch, label: "Branch", path: institution.branch}
+          - {id: deceased_name, label: "Name of Deceased Customer (Shri/ Smt./ Kum.)", path: deceased.name}
+          - {id: claimants, label: "Claimant(s)", path: claimant.name}
+          - {id: expired_on, label: "who expired on", path: deceased.date_of_death}
+      - {type: section, title: "2. Information about the deceased customer"}
+      - type: fields
+        fields:
+          - {id: date_place, label: "(a) Date and Place of Death", path: deceased.date_place}
+          - {id: cert_no, label: "(b) Death Certificate No.", path: deceased.death_cert_no}
+          - {id: cert_date, label: "dated", path: deceased.death_cert_date}
+          - {id: cert_authority, label: "Authority", path: deceased.death_cert_authority}
+          - {id: age, label: "(c) Age, Yrs.", path: deceased.age}
+          - {id: marital, label: "(d) Marital Status", path: deceased.marital_status}
+          - {id: address, label: "(e) Address", path: deceased.address}
+          - {id: religion, label: "(f) Religion", path: deceased.religion}
+          - {id: succession_law, label: "Law of succession applicable", path: deceased.succession_law}
+      - {type: section, title: "(g) Name, Relation & Age of the legal heir(s) of the deceased"}
+      - type: table
+        id: heirs
+        min_rows: 3
+        columns:
+          - {key: name_address, label: "Name & Address", width: 0.34}
+          - {key: age, label: "Age", width: 0.07}
+          - {key: relation, label: "Relation", width: 0.12}
+          - {key: contact, label: "Mobile Number & Email", width: 0.2}
+          - {key: disclaimer, label: "Signing Letter of Disclaimer/ No Objection (Yes/ No)", width: 0.21}
+      - {type: section, title: "3. Claim for payment of the balance with accrued interest - a. Deposit Accounts"}
+      - type: table
+        id: deposits
+        min_rows: 2
+        columns:
+          - {key: nature, label: "Nature of Deposits (SB/ CA/ TD, etc.)", width: 0.26}
+          - {key: account, label: "Account No.", width: 0.26}
+          - {key: amount, label: "Amount", width: 0.2, align: right}
+          - {key: maturity, label: "Date of Maturity (TD)", width: 0.22}
+      - type: fields
+        fields:
+          - {id: deposits_total, label: "Total", path: deposits_total}
+      - {type: section, title: "4.1 I / We undertake that"}
+      - {type: text, text: "(i) I / We shall hold / receive the aforesaid amount / payment in a fiduciary capacity as a trustee of the rightful beneficiary(ies) and any settlement made to me / us shall not affect their rights. (ii) The aforesaid accounts / safe deposit lockers / safe custody articles are not the subject matter of any dispute and that there is no Court order restraining me/ us from claiming or the bank from settling the claim in my / our favour or otherwise. (iii) ... right to lien and set-off ... (iv) To indemnify and hold the bank harmless against any claims, suits, legal proceedings by any legal heirs, executors, administrators, legal representatives, arising out of/ in connection with the settlement of this deceased claim in accordance with this request letter."}
+      - {type: section, title: "4.2 I/ We declare that (select the applicable option)"}
+      - type: checks
+        items:
+          - {id: no_will, label: "there is no Will left behind by the Deceased to the best of my / our knowledge and belief.", path: checks.no_will}
+      - {type: section, title: "4.3 I / We lodge my / our claim in terms of (select the applicable option)"}
+      - type: checks
+        items:
+          - {id: basis_lhc, label: "Legal Heir Certificate (copy enclosed).", path: checks.basis_lhc}
+          - {id: basis_declaration, label: "Declaration/ Affidavit from an independent person regarding the legal heir(s) of the deceased depositor (copy enclosed).", path: checks.basis_declaration}
+          - {id: basis_sc, label: "Succession Certificate (copy enclosed).", path: checks.basis_sc}
+      - {type: section, title: "5.1 Transfer the balance payable to the account of claimant(s)"}
+      - type: fields
+        fields:
+          - {id: payee_name, label: "Name of Claimant", path: claimant.name}
+          - {id: payee_bank, label: "Bank Name and A/c No., IFSC, Branch", path: claimant.bank, fill_by: family}
+      - {type: section, title: "6. Documents attached (select the applicable documents)"}
+      - type: checks
+        items:
+          - {id: att_death_cert, label: "Death certificate (of deceased customer)", path: checks.death_cert}
+          - {id: att_ovd, label: "Officially Valid Document in support of the identity and address of the Claimant(s) making the claim.", path: checks.ovd}
+          - {id: att_lhc, label: "Legal Heir Certificate", path: checks.basis_lhc}
+          - {id: att_declaration, label: "Declaration / Affidavit from an independent person regarding the legal heir(s) of the deceased customer", path: checks.basis_declaration}
+          - {id: att_indemnity, label: "Bond of indemnity signed by Claimant(s)", path: checks.indemnity}
+          - {id: att_disclaimer, label: "Letter of disclaimer / no objection from non-claimant legal heir(s)", path: checks.disclaimer}
+      - {type: text, text: "7. The facts stated above are true and correct to the best of my / our knowledge and belief."}
+      - type: signatures
+        items:
+          - {label: "8. Signature / Thumb impression of the claimant", name_field: sign_name}
+      - {type: note, text: "Note: In case a claimant is unable to sign, she / he may place the thumb impression in the presence of a witness known to the bank."}
+      - {type: office, text: "FOR OFFICE USE (may be prepared by the bank as per its own requirement)"}
+    value_paths: {sign_name: claimant.name}
+
+  # ------------------------------------------------------------------------------------------------
+  - key: IN/rbi_annex_vii
+    title: Bond of indemnity (RBI Annex VII)
+    institution_kind: bank
+    language: en
+    stamp_paper: true
+    source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+    source_note: "Re-typeset from Annex VII of the RBI Directions, 2025 (updated 1 October 2026). To be executed on stamp paper of the value the state's Stamp Act requires; this filled text is to be copied onto it."
+    heading:
+      - "Annex VII - Bond of indemnity / Surety for Deposit Accounts"
+      - {text: "BOND OF INDEMNITY (To be duly stamped as per the Stamp Act applicable to the State)", size: 9.5}
+    blocks:
+      - type: fields
+        fields:
+          - {id: bank, label: "To: the Bank", path: institution.name}
+          - {id: branch, label: "Branch", path: institution.branch}
+          - {id: deceased_name, label: "In the matter of the deposits of the late", path: deceased.name}
+          - {id: claimant_name, label: "Claimant(s) giving this indemnity", path: claimant.name}
+          - {id: relation, label: "Relationship to the deceased", path: claimant.relationship}
+          - {id: amount, label: "Amount payable", path: deposits_total}
+      - {type: text, text: "In consideration of the bank paying the balance in the above accounts to the claimant(s) without production of a Succession Certificate, Letter of Administration, Probate of Will or Court Order, the claimant(s) undertake to indemnify the bank against all claims, demands, proceedings, losses and expenses that may arise from making such payment, and to repay the amount to the bank, or to the person the bank directs, if any other person establishes a better title to it. (Text shortened from the model bond; the full model wording goes on the stamp paper.)"}
+      - type: signatures
+        items:
+          - {label: "Signature of claimant (before a witness)", name_field: sign_name}
+          - {label: "Witness 1 - name, address and signature"}
+          - {label: "Witness 2 - name, address and signature"}
+      - {type: note, text: "* Surety is applicable only in case of claims above the threshold limit."}
+    value_paths: {sign_name: claimant.name}
+
+  # ------------------------------------------------------------------------------------------------
+  - key: IN/rbi_annex_viii
+    title: Letter of disclaimer or no objection (RBI Annex VIII)
+    institution_kind: bank
+    language: en
+    stamp_paper: true
+    per_signer: true
+    source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+    source_note: "Re-typeset from Annex VIII of the RBI Directions, 2025 (updated 1 October 2026). To be duly stamped as per the Stamp Act applicable to the State."
+    heading:
+      - "Annex VIII - Letter of disclaimer / No objection"
+      - {text: "(To be duly stamped as per the Stamp Act applicable to the State)", size: 8.5}
+    blocks:
+      - type: fields
+        fields:
+          - {id: bank, label: "The Branch Manager, Bank", path: institution.name}
+          - {id: branch, label: "Branch", path: institution.branch}
+          - {id: heir_name, label: "I, (name of the legal heir)", path: signer.name}
+          - {id: heir_relation, label: "relationship to the deceased", path: signer.relationship}
+          - {id: deceased_name, label: "legal heir of the late", path: deceased.name}
+          - {id: claimant_name, label: "have no objection to the bank paying the claim to", path: claimant.name}
+          - {id: amount, label: "in respect of deposits amounting to", path: deposits_total}
+      - {type: text, text: "I hereby disclaim my right, title and interest in the said deposits in favour of the above claimant and state that I have no objection to the bank settling the claim in favour of the claimant. (Shortened from the model letter; the full wording goes on the stamp paper.)"}
+      - type: signatures
+        items:
+          - {label: "Signature of the legal heir", name_field: sign_name}
+    value_paths: {sign_name: signer.name}
+
+  # ------------------------------------------------------------------------------------------------
+  - key: IN/rbi_annex_ix
+    title: Declaration about the legal heirs by an independent person (RBI Annex IX)
+    institution_kind: bank
+    language: en
+    stamp_paper: true
+    source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+    source_note: "Re-typeset from Annex IX of the RBI Directions, 2025 (updated 1 October 2026). To be duly stamped as per the Stamp Act applicable to the State."
+    heading:
+      - "Annex IX - Declaration / Affidavit"
+      - {text: "(To be duly stamped as per the Stamp Act applicable to the State)", size: 8.5}
+    blocks:
+      - type: fields
+        fields:
+          - {id: declarant_name, label: "I, (name of the independent person)", path: declarant.name}
+          - {id: declarant_address, label: "residing at", path: declarant.address, fill_by: family}
+          - {id: deceased_name, label: "know the family of the late", path: deceased.name}
+          - {id: died_on, label: "who died on", path: deceased.date_of_death}
+      - {type: text, text: "do hereby solemnly affirm and say that the deceased left behind the following person(s) as his / her only legal heir(s), that I am not a party to the claim, and that what is stated here is true to the best of my knowledge and belief."}
+      - type: table
+        id: heirs_short
+        min_rows: 3
+        columns:
+          - {key: name, label: "Name of legal heir", width: 0.4}
+          - {key: relation, label: "Relation", width: 0.24}
+          - {key: age, label: "Age", width: 0.12}
+      - type: signatures
+        items:
+          - {label: "Signature of the declarant", name_field: sign_name}
+    value_paths: {sign_name: declarant.name}
+
+  # ------------------------------------------------------------------------------------------------
+  - key: IN/sebi_annexure_3
+    title: Transmission request form (SEBI Annexure-3)
+    institution_kind: depository
+    language: en
+    source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+    source_note: "Re-typeset from Annexure-3 of SEBI circular HO/38/13/11(14)2026-MIRSD-POD/I/17111/2026 (23 July 2026). Synthetic demo filling."
+    heading:
+      - "Annexure-3"
+      - {text: "Transmission Request Form (For Transmission under other than QTP Category) (For Transmission of Securities / Units on death of the Sole holder / all holders)", size: 9}
+    blocks:
+      - type: fields
+        fields:
+          - {id: date, label: "Date", path: date}
+          - {id: to, label: "To: <Company Name>/<Fund Name>/RTA Name/DP", path: institution.name}
+      - {type: section, title: "Part A - Claimant and Deceased Holder information"}
+      - type: fields
+        fields:
+          - {id: dp_client, label: "DP ID / Client ID / Folio No.", path: dp.dp_client}
+          - {id: deceased_name, label: "Deceased Holder Name", path: deceased.name}
+          - {id: claimant_name, label: "Claimant Name", path: claimant.name}
+          - {id: claimant_pan, label: "Claimant PAN / PEKRN (Mention only number)", path: claimant.pan}
+      - {type: section, title: "Part B - Details of Securities"}
+      - {type: text, text: "I/We, the Nominee / Legal Heir / Claimant of the above referred deceased investor(s), hereby inform you about the demise of the above-mentioned security/unit holder(s) and request you to transmit the securities/units held by the deceased security/unit holder(s) as listed below in my/our favor in my/our capacity as Legal Heir."}
+      - type: table
+        id: securities
+        min_rows: 2
+        columns:
+          - {key: company, label: "Company / Fund Name with Scheme Name", width: 0.36}
+          - {key: folio, label: "Folio No. / DP-Client ID", width: 0.24}
+          - {key: qty, label: "No. of Securities / Units Held", width: 0.16, align: right}
+          - {key: cert, label: "Certificate No. (physical)", width: 0.16}
+      - {type: section, title: "Bank Account Details of the Claimant"}
+      - type: fields
+        fields:
+          - {id: bank_name, label: "Bank Name", path: claimant.bank_name, fill_by: family}
+          - {id: bank_account, label: "Account No. / IFSC", path: claimant.bank, fill_by: family}
+      - {type: section, title: "Part E - Declaration and Responsibility Clause"}
+      - {type: text, text: "I/We confirm that the above documents have been submitted and that the information, facts, and particulars furnished by me/us in this undertaking and the accompanying documents are true, correct, and complete to the best of my/our knowledge and belief, and no material information / fact has been concealed or misrepresented therein."}
+      - type: fields
+        fields:
+          - {id: place, label: "Place", path: claimant.city}
+      - type: signatures
+        items:
+          - {label: "Claimant Signature", name_field: sign_name}
+      - {type: note, text: "Note: Where any person required to sign this document is unable to sign, he/she may affix his/her left thumb impression in lieu of signature."}
+    value_paths: {sign_name: claimant.name}
+
+  # ------------------------------------------------------------------------------------------------
+  - key: IN/sebi_annexure_4
+    title: Indemnity bond for transmission (SEBI Annexure-4)
+    institution_kind: depository
+    language: en
+    stamp_paper: true
+    notarised: true
+    source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+    source_note: "Re-typeset from Annexure-4 of the SEBI circular of 23 July 2026. To be executed on non-judicial stamp paper of the value the claimant's state requires, and notarised."
+    heading:
+      - "Annexure-4"
+      - {text: "Indemnity Bond (to be executed on non-judicial stamp paper and notarised)", size: 9.5}
+    blocks:
+      - type: fields
+        fields:
+          - {id: claimant_name, label: "I, (name of claimant)", path: claimant.name}
+          - {id: claimant_address, label: "residing at", path: claimant.address}
+          - {id: deceased_name, label: "claimant to the securities of the late", path: deceased.name}
+          - {id: dp_client, label: "held in DP ID / Client ID", path: dp.dp_client}
+          - {id: value, label: "of the value of", path: securities_total}
+      - {type: text, text: "In consideration of the securities being transmitted to me without production of a Succession Certificate, Probate of Will or Letter of Administration, I indemnify and keep indemnified the processing entity against all claims, losses, costs and damages that may arise from the transmission. (Shortened from the model bond; the full model wording goes on the stamp paper.)"}
+      - type: signatures
+        items:
+          - {label: "Signature of the claimant (before a notary)", name_field: sign_name}
+          - {label: "Notary - seal and signature"}
+    value_paths: {sign_name: claimant.name}
+
+  # ------------------------------------------------------------------------------------------------
+  - key: IN/sebi_annexure_5
+    title: Affidavit-cum-no-objection from all legal heirs (SEBI Annexure-5)
+    institution_kind: depository
+    language: en
+    stamp_paper: true
+    notarised: true
+    source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+    source_note: "Re-typeset from Annexure-5 of the SEBI circular of 23 July 2026. To be executed on non-judicial stamp paper and notarised; all legal heirs sign."
+    heading:
+      - "Annexure-5"
+      - {text: "Affidavit-cum-No Objection Certificate from all legal heirs", size: 9.5}
+    blocks:
+      - type: fields
+        fields:
+          - {id: deceased_name, label: "We, the legal heirs of the late", path: deceased.name}
+          - {id: died_on, label: "who died on", path: deceased.date_of_death}
+          - {id: dp_client, label: "holding securities in DP ID / Client ID", path: dp.dp_client}
+          - {id: claimant_name, label: "confirm that the securities be transmitted to", path: claimant.name}
+      - {type: text, text: "We solemnly affirm that we are the only legal heirs of the deceased, confirm the identification and claim of legal ownership to the securities, and have no objection to their transmission to the claimant named above. (Shortened from the model affidavit; the full wording goes on the stamp paper.)"}
+      - type: table
+        id: heirs_short
+        min_rows: 3
+        columns:
+          - {key: name, label: "Name of legal heir", width: 0.4}
+          - {key: relation, label: "Relation", width: 0.22}
+          - {key: age, label: "Age", width: 0.1}
+          - {key: sign, label: "Signature", width: 0.22}
+      - type: signatures
+        items:
+          - {label: "Notary - seal and signature"}
+
+  # ------------------------------------------------------------------------------------------------
+  - key: IN/sebi_annexure_2
+    title: Transmission request form-cum-undertaking for Quick Transmission Processing (SEBI Annexure-2)
+    institution_kind: depository
+    language: en
+    source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+    source_note: "Re-typeset from Annexure-2 of SEBI circular HO/38/13/11(14)2026-MIRSD-POD/I/17111/2026 (23 July 2026); Part D and Annexures A and B are left out. Synthetic demo filling."
+    heading:
+      - "Annexure-2"
+      - {text: "Transmission Request Form-cum-Undertaking for Quick Transmission Processing (QTP) Where No Nominee is Registered (To be submitted on Plain Paper)", size: 9}
+    blocks:
+      - type: fields
+        fields:
+          - {id: date, label: "Date", path: date}
+          - {id: to, label: "To: <Company Name>/<Fund Name>/RTA Name/DP>", path: institution.name}
+      - {type: section, title: "PART A - CLAIMANT AND DECEASED HOLDER INFORMATION"}
+      - type: fields
+        fields:
+          - {id: dp_client, label: "DP ID - Client ID / Folio No.", path: dp.dp_client}
+          - {id: deceased_name, label: "Deceased Holder Name", path: deceased.name}
+          - {id: claimant_name, label: "Claimant Name", path: claimant.name}
+          - {id: claimant_pan, label: "Claimant PAN / PEKRN (Mention only number)", path: claimant.pan}
+      - {type: text, text: "Category of Claimant:"}
+      - type: checks
+        items:
+          - {id: cat_parent, label: "Parent", path: checks.parent}
+          - {id: cat_spouse, label: "Spouse", path: checks.spouse}
+          - {id: cat_child, label: "Child", path: checks.child}
+          - {id: cat_parent_in_law, label: "Parent-in-law"}
+      - {type: section, title: "PART B - TRANSMISSION REQUEST FORM"}
+      - {type: text, text: "I, the claimant named hereinabove, hereby inform you about the demise of the above-mentioned security/unit holder(s) and request you to transmit the securities/units held by the deceased security/unit holder(s) in my favor in my capacity as Legal Heir / Successor to the Estate of the deceased / Administrator of the Estate of the deceased."}
+      - {type: section, title: "PART C - UNDERTAKING"}
+      - {type: text, text: "1. The deceased holder held the following securities / MF unit holdings in his/her name as sole/single holder:"}
+      - type: table
+        id: securities
+        min_rows: 2
+        columns:
+          - {key: company, label: "Company / Fund Name with Scheme Name", width: 0.36}
+          - {key: folio, label: "Folio No. / DP-Client ID", width: 0.24}
+          - {key: qty, label: "No. of Securities / Units / Shares Held", width: 0.16, align: right}
+          - {key: cert, label: "Certificate Number (physical)", width: 0.16}
+      - {type: text, text: "2. Above referred deceased holder died without registering any nominee."}
+      - {type: text, text: "3. That I/We are the legal heir(s) of the deceased as per the details in the below table and that we are the only legal heirs/legatees of the deceased holder."}
+      - type: table
+        id: heirs_short
+        min_rows: 3
+        columns:
+          - {key: name, label: "Name of the Legal Heir(s)", width: 0.44}
+          - {key: age, label: "Age", width: 0.12, align: right}
+          - {key: relation, label: "Relationship with the deceased", width: 0.36}
+      - {type: section, title: "PART E - DECLARATION AND RESPONSIBILITY CLAUSE"}
+      - {type: text, text: "I/We confirm that the above documents have been submitted and that the information, facts, and particulars furnished by me/us in this undertaking and the accompanying documents are true, correct, and complete to the best of my/our knowledge and belief, and no material information / fact has been concealed or misrepresented therein."}
+      - type: fields
+        fields:
+          - {id: place, label: "Place", path: claimant.city}
+      - type: signatures
+        items:
+          - {label: "Claimant(s) Signature", name_field: sign_name}
+      - {type: note, text: "Note: Where any person required to sign this document is unable to sign, he/she may affix his/her left thumb impression in lieu of signature."}
+    value_paths: {sign_name: claimant.name}

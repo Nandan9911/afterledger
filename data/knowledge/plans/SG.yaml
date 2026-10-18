@@ -1,0 +1,143 @@
+# Procedure plans for Singapore.
+plans:
+  # ===============================================================================================
+  - key: SG/cpf_no_nomination
+    title: CPF savings when there is no nomination
+    jurisdiction: SG
+    institution_kind: government
+    holding_kinds: [cpf]
+    level: gold
+    verified_on: 2026-10-14
+    variables:
+      - name: cpf_nomination
+        type: tri
+        question: Did he make a CPF nomination?
+        derive: holding_nominee
+        cites: [sg_cpf_no_nomination]
+    documents:
+      - id: death_cert
+        name: Death certificate
+        cites: [sg_cpf_no_nomination]
+    clocks: []
+    steps:
+      - id: to_public_trustee
+        kind: handoff
+        actor: authority
+        text: Without a nomination, CPF pays the savings to the Public Trustee's Office, which pays them in cash to the family under the intestacy laws.
+        when: cpf_nomination = no
+        cites: [sg_cpf_no_nomination]
+      - id: ask_pto
+        kind: follow_up
+        actor: family
+        text: Ask the Public Trustee's Office what it needs from the family to pay out his CPF savings.
+        when: cpf_nomination = no
+        after: [to_public_trustee]
+        documents: [death_cert]
+        cites: [sg_cpf_no_nomination]
+    compiled_from: [sg_cpf_no_nomination]
+    notes: The nominated route is not covered; a family with a nomination gets it researched on demand.
+
+  # ===============================================================================================
+  - key: SG/bank_bereavement@sg_merlion_savings
+    title: Accounts at Merlion Savings Bank
+    jurisdiction: SG
+    institution_kind: bank
+    holding_kinds: [savings, current, credit_card]
+    level: dual_verified
+    verified_on: 2026-10-14
+    variables:
+      - name: total
+        type: money
+        unit: SGD
+        question: Roughly how much did he hold with Merlion Savings Bank in total?
+        derive: claim_amount
+        cites: [sg_merlion_limit]
+      - name: card_balance
+        type: tri
+        derive: debts_at_institution
+        cites: [sg_merlion_card]
+    documents:
+      - id: death_cert
+        name: Copy of the death certificate
+        cites: [sg_merlion_inform]
+      - id: grant
+        name: Grant of probate or letters of administration
+        cites: [sg_merlion_limit]
+    clocks: []
+    steps:
+      - id: inform
+        kind: notify
+        actor: family
+        text: Tell the bank of his passing with a copy of the death certificate.
+        documents: [death_cert]
+        cites: [sg_merlion_inform]
+      - id: next_of_kin_release
+        kind: submit
+        actor: family
+        text: Up to S$150,000 in total, ask the bank to release the money to the next of kin without a grant, which it may do at its discretion.
+        when: total <= 150000
+        documents: [death_cert]
+        after: [inform]
+        cites: [sg_merlion_limit]
+      - id: grant_needed
+        kind: handoff
+        actor: professional
+        text: Above S$150,000 the bank needs a grant of probate or letters of administration.
+        when: total > 150000
+        documents: [grant]
+        cites: [sg_merlion_limit]
+      - id: card_from_estate
+        kind: info
+        actor: institution
+        text: The outstanding credit card balance is recovered from the estate.
+        when: card_balance = yes
+        cites: [sg_merlion_card]
+    compiled_from: [sg_merlion_inform, sg_merlion_limit, sg_merlion_card]
+
+  # ===============================================================================================
+  - key: SG/employer_final_pay@sg_straits_marine
+    title: Final pay from Straits Marine Engineering
+    jurisdiction: SG
+    institution_kind: employer
+    holding_kinds: [salary]
+    level: dual_verified
+    verified_on: 2026-10-14
+    variables: []
+    documents:
+      - id: death_cert
+        name: Death certificate
+        cites: [sg_straits_contact]
+    clocks: []
+    steps:
+      - id: contact_hr
+        kind: submit
+        actor: family
+        text: Contact Human Resources with the death certificate; salary to the date of death and unused annual leave are paid to the next of kin.
+        documents: [death_cert]
+        cites: [sg_straits_contact, sg_straits_final_pay]
+    compiled_from: [sg_straits_final_pay, sg_straits_contact]
+
+  # ===============================================================================================
+  - key: SG/apostille
+    authority: sg_sal
+    title: An apostille on a Singapore document
+    jurisdiction: SG
+    institution_kind: government
+    holding_kinds: []
+    level: sourced
+    verified_on: 2026-10-14
+    variables: []
+    documents:
+      - id: document
+        name: The Singapore document to be apostilled
+        cites: [sg_apostille_sal]
+    clocks: []
+    steps:
+      - id: apply
+        kind: certify
+        actor: authority
+        text: Apply to the Singapore Academy of Law, Singapore's competent authority for apostilles.
+        documents: [document]
+        cites: [sg_apostille_sal]
+    compiled_from: [sg_apostille_sal]
+    notes: Tier 4 source (a law firm's article); how to apply and the fee are researched on demand.

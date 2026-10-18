@@ -1,0 +1,52 @@
+# Forms of fictional US institutions in the demo, written for the demo. Lone Star Life publishes its
+# claim forms in English and Spanish (assertion us_lonestar_spanish); the demo's form carries both.
+forms:
+  # ------------------------------------------------------------------------------------------------
+  - key: US/lonestar_claimant_statement
+    title: Claimant's statement / Declaración del reclamante (Lone Star Life)
+    institution_kind: insurer
+    language: en
+    source_note: "Lone Star Life Insurance Company is a fictional insurer created for the AfterLedger demo; this is its claim form as the demo defines it. Synthetic demo filling."
+    heading:
+      - "LONE STAR LIFE INSURANCE COMPANY"
+      - {text: "Claimant's statement for death benefits · Declaración del reclamante para beneficios por fallecimiento", size: 10}
+      - {text: "One statement for each beneficiary. Please print. · Un formulario por cada beneficiario. Escriba con letra de molde.", size: 8.2}
+    blocks:
+      - {type: section, title: "Part 1 - The insured · El asegurado"}
+      - type: fields
+        label_w: 230
+        fields:
+          - {id: policy_number, label: "Policy number · Número de póliza", path: policy.number}
+          - {id: insured_name, label: "Full name of the insured · Nombre completo", path: deceased.display}
+          - {id: insured_birth, label: "Date of birth (mm/dd/yyyy) · Fecha de nacimiento", path: deceased.birth.us}
+          - {id: insured_death, label: "Date of death (mm/dd/yyyy) · Fecha de fallecimiento", path: deceased.death.us}
+          - {id: insured_place, label: "Place of death · Lugar del fallecimiento", path: deceased.place}
+      - {type: text, text: "Cause of death · Causa del fallecimiento:"}
+      - type: checks
+        items:
+          - {id: natural, label: "Natural causes or illness · Causas naturales o enfermedad", path: checks.natural_death}
+          - {id: accident, label: "Accident · Accidente", path: checks.accidental_death}
+      - {type: section, title: "Part 2 - The beneficiary · El beneficiario"}
+      - type: fields
+        label_w: 230
+        fields:
+          - {id: claimant_name, label: "Full name · Nombre completo", path: claimant.display}
+          - {id: claimant_relationship, label: "Relationship to the insured · Parentesco", path: claimant.relationship_es}
+          - {id: claimant_address, label: "Address · Dirección", path: claimant.address_full}
+          - {id: claimant_phone, label: "Telephone · Teléfono", path: claimant.mobile, fill_by: family}
+          - {id: claimant_ssn, label: "Social Security number (you write this in) · Número de Seguro Social (escríbalo usted)", path: claimant.ssn, fill_by: family}
+      - {type: section, title: "Part 3 - How to pay · Forma de pago"}
+      - type: checks
+        items:
+          - {id: pay_check, label: "Check by mail · Cheque por correo"}
+          - {id: pay_deposit, label: "Direct deposit (attach a voided check) · Depósito directo (adjunte un cheque anulado)"}
+      - {type: section, title: "Part 4 - Signature · Firma"}
+      - {type: text, text: "I certify that the information on this statement is true and complete to the best of my knowledge. Any person who knowingly presents a false or fraudulent claim for payment of a loss may be guilty of a crime. · Certifico que la información de esta declaración es verdadera y completa según mi leal saber y entender."}
+      - type: signatures
+        items:
+          - {label: "Signature of the beneficiary · Firma del beneficiario", name_field: sign_name}
+      - type: fields
+        fields:
+          - {id: date, label: "Date · Fecha", path: dates.us}
+      - {type: note, text: "Send this statement with a certified copy of the death certificate. Lone Star Life aims to decide claims within 30 days of a completed statement."}
+    value_paths: {sign_name: claimant.display}

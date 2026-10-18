@@ -1,0 +1,15 @@
+# Reference rates used by compensation formulas. Each entry is in force from its date until the next.
+# Every entry cites the assertion that states it.
+rates:
+  - id: in_bank_rate
+    name: Reserve Bank of India Bank Rate
+    country: IN
+    unit: percent_per_year
+    history:
+      - from: 2025-12-05
+        pct: 5.50
+        cites: in_rbi_bank_rate_oct_2026
+        note: The circular of 7 October 2026 says the Bank Rate was 5.50 per cent before the change; it refers to the earlier circular of 5 December 2025. The earlier start date is taken from that reference and only matters for delays before 7 October 2026.
+      - from: 2026-10-07
+        pct: 5.75
+        cites: in_rbi_bank_rate_oct_2026

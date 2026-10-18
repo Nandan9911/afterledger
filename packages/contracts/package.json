@@ -1,0 +1,18 @@
+{
+  "name": "@afterledger/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The API's OpenAPI document and the TypeScript types generated from it.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./openapi.json": "./openapi.json"
+  },
+  "scripts": {
+    "generate": "openapi-typescript ./openapi.json -o ./src/schema.d.ts --default-non-nullable false && node ./scripts/index.mjs"
+  },
+  "devDependencies": {
+    "openapi-typescript": "7.13.0",
+    "typescript": "6.0.3"
+  }
+}

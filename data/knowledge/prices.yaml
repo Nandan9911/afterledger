@@ -1,0 +1,16 @@
+# Gemini prices used to estimate what each model call costs, in US dollars per million tokens. Thinking tokens are
+# billed as output. Estimates only: Google's invoice is the record, and grounding with Google Search, Document AI,
+# Translation and Model Armor are billed separately and not counted here.
+as_of: 2026-10-12
+sources:
+  - https://ai.google.dev/gemini-api/docs/pricing
+  - https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing
+# A model called on a multi-region or regional endpoint ("Non-global" on the Agent Platform price list: us, eu) costs
+# about a tenth more than on the global one ($0.825 / $4.125 against $0.75 / $3.75 for gemini-3.8-flash).
+non_global_markup: 1.10
+models:
+  gemini-3.8-flash: {input: 0.75, output: 3.75}            # global endpoint, through 31 December 2026
+  gemini-3.6-flash: {input: 0.75, output: 3.75}            # the same as 3.8 Flash; its peer when that is slow
+  gemini-3.5-flash-lite: {input: 0.30, output: 2.50}
+  gemini-3.1-pro-preview: {input: 2.00, output: 12.00, long_from: 200000, long_input: 4.00, long_output: 18.00}
+  gemini-3.8-live: {input: 0.75, output: 4.50, audio_input: 3.00, audio_output: 12.00}

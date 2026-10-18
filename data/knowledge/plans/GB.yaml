@@ -1,0 +1,337 @@
+# Procedure plans for England and Wales (GB).
+plans:
+  # ===============================================================================================
+  - key: GB/tell_us_once
+    title: Telling the government once (Tell Us Once)
+    jurisdiction: GB
+    institution_kind: government
+    holding_kinds: [pension, social_security]
+    level: gold
+    verified_on: 2026-10-14
+    variables:
+      - name: has_reference
+        type: tri
+        question: Did the registrar give you a Tell Us Once reference number?
+        cites: [gb_tuo_28_days]
+    documents:
+      - id: tuo_reference
+        name: The Tell Us Once unique reference number from the registrar
+        cites: [gb_tuo_28_days]
+    clocks:
+      - id: use_28
+        short: reference number expires
+        ends_on: tell_us_once_used
+        label: Use the service within 28 days of getting the reference number
+        owner: family
+        starts_on: reference_received
+        length: 28
+        unit: calendar_days
+        cites: [gb_tuo_28_days]
+    steps:
+      - id: use_service
+        kind: submit
+        actor: family
+        done_on: tell_us_once_used
+        text: Use Tell Us Once to report the death to most government organisations in one go, within 28 days of getting the reference.
+        when: has_reference = yes
+        documents: [tuo_reference]
+        clocks: [use_28]
+        cites: [gb_tuo_what, gb_tuo_28_days]
+      - id: ask_registrar
+        kind: handoff
+        actor: authority
+        text: Ask the registrar for a Tell Us Once reference number when the death is registered.
+        when: has_reference = no
+        cites: [gb_tuo_28_days]
+      - id: banks_separately
+        kind: info
+        actor: agent
+        text: Banks and other financial organisations are not told through Tell Us Once; contact them separately, or tell several at once through the free Death Notification Service.
+        cites: [gb_tuo_not_banks, gb_dns_free]
+    compiled_from: [gb_tuo_what, gb_tuo_28_days, gb_tuo_not_banks, gb_dns_free]
+
+  # ===============================================================================================
+  - key: GB/bank_bereavement@gb_aire_valley_bank
+    title: Accounts at Aire Valley Bank
+    jurisdiction: GB
+    institution_kind: bank
+    holding_kinds: [savings, current]
+    level: dual_verified
+    verified_on: 2026-10-14
+    variables:
+      - name: total
+        type: money
+        unit: GBP
+        question: Roughly how much did she hold with Aire Valley Bank in total?
+        derive: claim_amount
+        cites: [gb_airevalley_limit]
+      - name: has_will
+        type: tri
+        question: Did she leave a will?
+        derive: situation_will
+        cites: [gb_airevalley_documents]
+    documents:
+      - id: death_cert
+        name: Death certificate
+        cites: [gb_airevalley_documents]
+      - id: will
+        name: The will
+        when: has_will = yes
+        cites: [gb_airevalley_documents]
+      - id: executor_id
+        name: Identification for the executor or next of kin
+        cites: [gb_airevalley_documents]
+      - id: grant
+        name: Grant of probate
+        acquire_plan: GB/probate
+        cites: [gb_airevalley_limit, gb_probate_what]
+    clocks:
+      - id: release_10wd
+        short: releases the money
+        label: Aire Valley aims to release funds within 10 working days of having everything
+        owner: institution
+        starts_on: complete_set_confirmed
+        length: 10
+        unit: business_days
+        holidays: GB-ENG
+        notes: The bank's own stated aim; no compensation formula applies.
+        cites: [gb_airevalley_10_days]
+    steps:
+      - id: notify
+        kind: notify
+        actor: family
+        text: Tell Aire Valley Bank about the death through the Death Notification Service or at any branch.
+        cites: [gb_airevalley_dns, gb_dns_free]
+      - id: release_without_grant
+        kind: submit
+        actor: family
+        text: Send the death certificate, the will and the executor's identification; up to £50,000 the bank usually releases the money without probate.
+        when: total <= 50000
+        documents: [death_cert, will, executor_id]
+        must_not_be_asked: ["Grant of probate (usually not needed up to £50,000)"]
+        clocks: [release_10wd]
+        after: [notify]
+        cites: [gb_airevalley_documents, gb_airevalley_limit]
+      - id: release_with_grant
+        kind: submit
+        actor: family
+        text: Above £50,000 the bank will need a grant of probate as well as the death certificate, the will and the executor's identification.
+        when: total > 50000
+        documents: [death_cert, will, executor_id, grant]
+        clocks: [release_10wd]
+        after: [notify]
+        cites: [gb_airevalley_limit, gb_airevalley_documents]
+      - id: release
+        kind: wait
+        actor: institution
+        text: The bank aims to release the money within 10 working days of having everything it needs.
+        clocks: [release_10wd]
+        cites: [gb_airevalley_10_days]
+    compiled_from: [gb_airevalley_limit, gb_airevalley_dns, gb_airevalley_documents, gb_airevalley_10_days]
+
+  # ===============================================================================================
+  - key: GB/bank_bereavement@gb_pennine_bs
+    title: Savings at Pennine Building Society
+    jurisdiction: GB
+    institution_kind: bank
+    holding_kinds: [savings]
+    level: dual_verified
+    verified_on: 2026-10-14
+    variables:
+      - name: total
+        type: money
+        unit: GBP
+        question: Roughly how much did she hold with Pennine Building Society in total?
+        derive: claim_amount
+        cites: [gb_pennine_limit, gb_pennine_above]
+      - name: asked_for_grant
+        type: tri
+        derive: correspondence_requests:grant_of_probate
+        question: Has the building society asked you for a grant of probate?
+        cites: [gb_pennine_limit]
+    documents:
+      - id: death_cert
+        name: Death certificate
+        cites: [gb_pennine_documents]
+      - id: bereavement_form
+        name: Pennine's bereavement form, signed by the executors
+        form_key: GB/pennine_bereavement
+        signed_by: [executor]
+        cites: [gb_pennine_documents]
+      - id: grant
+        name: Grant of probate or letters of administration
+        acquire_plan: GB/probate
+        cites: [gb_pennine_above]
+    clocks: []
+    steps:
+      - id: release_without_grant
+        kind: submit
+        actor: family
+        text: Send the death certificate and the bereavement form signed by the executors; up to £30,000 in total the society usually releases the money without a grant.
+        when: total <= 30000
+        documents: [death_cert, bereavement_form]
+        must_not_be_asked: ["Grant of probate (usually not needed up to £30,000 in total)"]
+        cites: [gb_pennine_documents, gb_pennine_limit]
+      - id: release_with_grant
+        kind: submit
+        actor: family
+        text: Above £30,000 the society will ask for a grant of probate or letters of administration.
+        when: total > 30000
+        documents: [death_cert, bereavement_form, grant]
+        cites: [gb_pennine_above, gb_pennine_documents]
+      - id: object_to_grant
+        kind: follow_up
+        actor: family
+        text: The society asked for probate on a balance within its own published £30,000 limit. Write asking it to release the money as its policy says it usually does.
+        when: total <= 30000 and asked_for_grant = yes
+        after: [release_without_grant]
+        cites: [gb_pennine_limit]
+    compiled_from: [gb_pennine_limit, gb_pennine_above, gb_pennine_documents]
+
+  # ===============================================================================================
+  - key: GB/premium_bonds@gb_nsandi
+    title: Premium Bonds and other NS&I savings
+    jurisdiction: GB
+    institution_kind: government
+    holding_kinds: [premium_bonds]
+    level: dual_verified
+    verified_on: 2026-10-14
+    variables:
+      - name: nsi_total
+        type: money
+        unit: GBP
+        question: Roughly how much did she hold with NS&I in total?
+        derive: claim_amount
+        cites: [gb_nsi_grant]
+    documents:
+      - id: death_cert
+        name: Death certificate
+        cites: [gb_nsi_claim_online]
+      - id: grant
+        name: Grant of representation, if NS&I asks for it
+        acquire_plan: GB/probate
+        when: nsi_total >= 5000
+        cites: [gb_nsi_grant]
+    clocks:
+      - id: draw_12m
+        short: bonds leave the prize draws
+        kind: window
+        label: The bonds can stay in the prize draws for 12 months after the death
+        owner: family
+        starts_on: death
+        length: 12
+        unit: months
+        cites: [gb_nsi_12_months]
+    steps:
+      - id: claim
+        kind: submit
+        actor: family
+        text: Start the claim online; no NS&I account is needed.
+        documents: [death_cert]
+        cites: [gb_nsi_claim_online]
+      - id: grant_maybe
+        kind: info
+        actor: agent
+        text: With £5,000 or more in NS&I savings, NS&I may ask for a grant of representation, and it can ask for one at any amount.
+        when: nsi_total >= 5000
+        cites: [gb_nsi_grant]
+      - id: keep_in_draw
+        kind: info
+        actor: agent
+        text: The bonds can stay in the prize draws for up to 12 months after the death.
+        clocks: [draw_12m]
+        cites: [gb_nsi_12_months]
+    compiled_from: [gb_nsi_claim_online, gb_nsi_12_months, gb_nsi_grant]
+
+  # ===============================================================================================
+  - key: GB/workplace_pension@gb_leeds_mills_pension
+    title: The Leeds Mills workplace pension
+    jurisdiction: GB
+    institution_kind: pension
+    holding_kinds: [pension]
+    level: dual_verified
+    verified_on: 2026-10-14
+    variables:
+      - name: paid_after_death
+        type: tri
+        derive: credits_after_death:pension
+        question: Has the scheme paid any pension for the days after she died?
+        cites: [gb_leedsmills_return]
+    documents:
+      - id: death_cert
+        name: Death certificate
+        cites: [gb_leedsmills_tell]
+    clocks: []
+    steps:
+      - id: tell_scheme
+        kind: notify
+        actor: family
+        text: Tell the scheme about the death as soon as possible so that payments stop.
+        documents: [death_cert]
+        cites: [gb_leedsmills_tell]
+      - id: return_overpayment
+        kind: submit
+        actor: family
+        done_on: overpayment_returned
+        text: Return the pension paid for the period after the date of death.
+        when: paid_after_death = yes
+        after: [tell_scheme]
+        cites: [gb_leedsmills_return]
+      - id: dependant
+        kind: wait
+        actor: institution
+        text: A dependant's pension or lump sum may be payable; the scheme writes to the next of kin with the details.
+        after: [tell_scheme]
+        cites: [gb_leedsmills_dependant]
+    compiled_from: [gb_leedsmills_tell, gb_leedsmills_return, gb_leedsmills_dependant]
+
+  # ===============================================================================================
+  - key: GB/probate
+    authority: gb_probate_service
+    title: Probate (the legal right to deal with the estate)
+    jurisdiction: GB
+    institution_kind: court
+    holding_kinds: []
+    level: sourced
+    verified_on: 2026-10-14
+    variables:
+      - name: any_institution_needs_grant
+        type: tri
+        derive: plan_steps_active:release_with_grant
+        question: Has any bank or other organisation said it needs probate?
+        cites: [gb_probate_own_rules]
+      - name: only_joint_property
+        type: tri
+        question: Was her home owned as joint tenants with someone who is still alive?
+        cites: [gb_probate_joint]
+    documents:
+      - id: grant
+        name: Grant of probate
+        cites: [gb_probate_what]
+    clocks: []
+    steps:
+      - id: check_rules
+        kind: info
+        actor: agent
+        text: Every organisation has its own rules on when it needs probate, so the plan asks each one.
+        cites: [gb_probate_own_rules]
+      - id: joint_passes
+        kind: info
+        actor: agent
+        text: Property owned as joint tenants passes to the surviving owner without probate.
+        when: only_joint_property = yes
+        cites: [gb_probate_joint]
+      - id: apply
+        kind: handoff
+        actor: professional
+        text: The executor applies for probate, which gives the legal right to deal with her money and property.
+        when: any_institution_needs_grant = yes
+        documents: [grant]
+        cites: [gb_probate_what]
+      - id: not_needed
+        kind: handoff
+        actor: agent
+        text: No organisation needs probate so far; carry on with each one's own procedure.
+        when: any_institution_needs_grant = no
+        cites: [gb_probate_own_rules]
+    compiled_from: [gb_probate_what, gb_probate_own_rules, gb_probate_joint]

@@ -1,0 +1,958 @@
+# Japan, the UK, the US, Singapore, France and the EU, plus the demo's fictional institutions.
+assertions:
+  # ---- Japan -----------------------------------------------------------------------------------
+  - id: jp_renounce_3_months
+    text: An heir must accept or renounce an inheritance within three months of learning that it has opened for them.
+    quote: "申述は，民法により自己のために相続の開始があったことを知ったときから3か月以内にしなければならないと定められています。"
+    quote_translation: "The Civil Code requires the application to be made within three months of the time the heir learned that succession had opened for them."
+    source_url: https://www.courts.go.jp/saiban/syurui/syurui_kazi/kazi_06_13/index.html
+    jurisdiction: JP
+    topic: inheritance/renunciation/clock
+    level: dual_verified
+    ttl_days: 365
+  - id: jp_renounce_court
+    text: Renunciation is applied for at the family court for the deceased's last address.
+    quote: "被相続人の最後の住所地の家庭裁判所"
+    quote_translation: "The family court for the deceased's last address."
+    source_url: https://www.courts.go.jp/saiban/syurui/syurui_kazi/kazi_06_13/index.html
+    jurisdiction: JP
+    topic: inheritance/renunciation/where
+    level: dual_verified
+    ttl_days: 365
+  - id: jp_renounce_fee
+    text: The application costs ¥800 in revenue stamps for each person applying.
+    quote: "収入印紙800円分（申述人1人につき）"
+    quote_translation: "Revenue stamps worth ¥800 (per applicant)."
+    source_url: https://www.courts.go.jp/saiban/syurui/syurui_kazi/kazi_06_13/index.html
+    jurisdiction: JP
+    topic: inheritance/renunciation/fee
+    level: dual_verified
+    ttl_days: 90
+  - id: jp_renounce_extension
+    text: The family court can extend the three-month period on application.
+    quote: "相続の承認又は放棄の期間の伸長の申立てにより，家庭裁判所はその期間を伸ばすことができます。"
+    quote_translation: "On an application to extend the period for accepting or renouncing, the family court can extend it."
+    source_url: https://www.courts.go.jp/saiban/syurui/syurui_kazi/kazi_06_13/index.html
+    jurisdiction: JP
+    topic: inheritance/renunciation/extension
+    level: dual_verified
+    ttl_days: 365
+  - id: jp_heir_cert_free
+    text: The Legal Affairs Bureau issues a certified copy of the statutory heir information chart free of charge.
+    quote: "その一覧図に認証文を付した写しを無料で交付する"
+    quote_translation: "issues, free of charge, a copy of the chart with a certification statement"
+    source_url: https://houmukyoku.moj.go.jp/homu/page7_000013.html
+    jurisdiction: JP
+    topic: heir_certificate/issue
+    level: dual_verified
+    ttl_days: 180
+  - id: jp_heir_cert_replaces
+    text: The certified chart can be used in place of the bundle of family register certificates.
+    quote: "戸除籍謄本等の束の代わりに相続登記にご利用いただくことができる"
+    quote_translation: "can be used for inheritance registration instead of the bundle of family register certificates"
+    source_url: https://houmukyoku.moj.go.jp/homu/page7_000013.html
+    jurisdiction: JP
+    topic: heir_certificate/use
+    level: dual_verified
+    ttl_days: 180
+  - id: jp_heir_cert_apply
+    text: To get it, an heir submits the chart with the bundle of family register certificates to the registry office.
+    quote: "相続関係を一覧に表した図（法定相続情報一覧図）とともに、戸除籍謄本等の束を登記所に提出"
+    quote_translation: "submit the bundle of family register certificates to the registry office together with a chart of the inheritance relationships"
+    source_url: https://houmukyoku.moj.go.jp/homu/page7_000013.html
+    jurisdiction: JP
+    topic: heir_certificate/apply
+    level: dual_verified
+    ttl_days: 180
+  - id: jp_liaj_inquiry
+    text: Since 1 July 2021 the Life Insurance Association of Japan runs an inquiry service for finding a person's life policies.
+    quote: "2021 年7 月1 日から生命保険契約照会制度が始まりました"
+    quote_translation: "The life insurance contract inquiry system began on 1 July 2021."
+    source_url: https://www.zeiken.co.jp/zeikenpress/press/0007pp20211026/
+    jurisdiction: JP
+    topic: life_insurance/search
+    level: sourced
+    ttl_days: 180
+    notes: Tier 4 source (a tax firm's newsletter). A plan that relies on it starts by confirming with the Association.
+  - id: jp_liaj_fee
+    text: The inquiry costs ¥3,000 per request.
+    quote: "利用料は1 回の照会あたり3,000 円（税込）となります"
+    quote_translation: "The fee is ¥3,000 (tax included) per inquiry."
+    source_url: https://www.zeiken.co.jp/zeikenpress/press/0007pp20211026/
+    jurisdiction: JP
+    topic: life_insurance/search
+    level: sourced
+    ttl_days: 90
+  - id: jp_liaj_answer
+    text: The answer says only whether a policy exists with the deceased as policyholder or insured.
+    quote: "契約者または被保険者が照会対象者である生命保険契約の有無"
+    quote_translation: "whether there is a life insurance contract with the person as policyholder or insured"
+    source_url: https://www.zeiken.co.jp/zeikenpress/press/0007pp20211026/
+    jurisdiction: JP
+    topic: life_insurance/search
+    level: sourced
+    ttl_days: 180
+  - id: jp_national_law
+    text: Japan's conflict-of-laws rule makes succession follow the law of the deceased's nationality.
+    quote: "相続は、被相続人の本国法による"
+    quote_translation: "Succession is governed by the national law of the deceased."
+    source_url: https://www.kitahama.or.jp/wp-content/uploads/2019/11/International-Inheritance-Newsletter-Vol.-1.pdf
+    jurisdiction: JP
+    topic: conflict_of_laws/succession
+    level: sourced
+    ttl_days: 365
+    notes: Quotes Article 36 of the Act on General Rules for Application of Laws via a law firm's newsletter (tier 4).
+  - id: jp_naniwa_documents
+    text: Naniwa Bank needs its inheritance request form signed and sealed by every heir, the heir information chart or the full family registers, every heir's seal certificate, and the passbook and card.
+    quote: "相続のお手続きには、相続手続依頼書、法定相続情報一覧図の写しまたは被相続人の出生から死亡までの戸籍謄本、相続人全員の印鑑証明書、通帳とキャッシュカードが必要です。"
+    quote_translation: "For inheritance procedures you need the inheritance request form, a copy of the statutory heir information chart or the deceased's family registers from birth to death, seal certificates of all heirs, and the passbook and cash card."
+    source_url: https://www.naniwa-bank.example/souzoku
+    jurisdiction: JP
+    institution_id: jp_naniwa_bank
+    topic: deposit/documents
+    level: dual_verified
+    ttl_days: 180
+  - id: jp_naniwa_seal
+    text: Every heir signs Naniwa Bank's request form and stamps it with their registered seal.
+    quote: "相続手続依頼書には相続人全員が署名し、実印を押印してください。"
+    quote_translation: "All heirs must sign the inheritance request form and stamp it with their registered seal."
+    source_url: https://www.naniwa-bank.example/souzoku
+    jurisdiction: JP
+    institution_id: jp_naniwa_bank
+    topic: deposit/forms
+    level: dual_verified
+    ttl_days: 180
+  - id: jp_naniwa_balance_cert
+    text: Naniwa Bank issues a balance certificate at the request of any one heir.
+    quote: "残高証明書は相続人のお一人からのご請求で発行します。"
+    quote_translation: "We issue a balance certificate at the request of one heir."
+    source_url: https://www.naniwa-bank.example/souzoku
+    jurisdiction: JP
+    institution_id: jp_naniwa_bank
+    topic: deposit/balance_certificate
+    level: dual_verified
+    ttl_days: 180
+  - id: jp_naniwa_two_weeks
+    text: Naniwa Bank completes the procedure about two weeks after it has every document.
+    quote: "書類がそろってから約2週間でお手続きが完了します。"
+    quote_translation: "The procedure is completed about two weeks after all documents are in."
+    source_url: https://www.naniwa-bank.example/souzoku
+    jurisdiction: JP
+    institution_id: jp_naniwa_bank
+    topic: deposit/clock
+    level: dual_verified
+    ttl_days: 90
+  - id: jp_yodogawa_documents
+    text: Yodogawa Shinkin needs its inheritance notice, the heir information chart and every heir's seal certificate.
+    quote: "相続のお手続きには、相続届、法定相続情報一覧図の写し、相続人全員の印鑑証明書が必要です。"
+    quote_translation: "You need the inheritance notice, a copy of the statutory heir information chart and seal certificates of all heirs."
+    source_url: https://www.yodogawa-shinkin.example/souzoku
+    jurisdiction: JP
+    institution_id: jp_yodogawa_shinkin
+    topic: deposit/documents
+    level: dual_verified
+    ttl_days: 180
+  - id: jp_minato_documents
+    text: Minato Seimei needs the claim form, the death certificate and the beneficiary's identity document.
+    quote: "死亡保険金のご請求には、請求書、死亡診断書または死体検案書、受取人の本人確認書類が必要です。"
+    quote_translation: "To claim the death benefit you need the claim form, a death certificate, and the beneficiary's identity document."
+    source_url: https://www.minato-seimei.example/seikyu/shibou
+    jurisdiction: JP
+    institution_id: jp_minato_seimei
+    topic: life_insurance/documents
+    level: dual_verified
+    ttl_days: 180
+  - id: jp_minato_5_days
+    text: Minato Seimei pays within five business days of receiving the claim papers.
+    quote: "ご請求書類が到着した日の翌日から5営業日以内にお支払いします。"
+    quote_translation: "We pay within five business days from the day after the claim documents arrive."
+    source_url: https://www.minato-seimei.example/seikyu/shibou
+    jurisdiction: JP
+    institution_id: jp_minato_seimei
+    topic: life_insurance/clock
+    level: dual_verified
+    ttl_days: 90
+  - id: jp_naniwa_card_balance
+    text: Naniwa Card sends a balance certificate for the card loan when the family tells it of the death.
+    quote: "会員様がお亡くなりになった場合は、ご遺族からご連絡ください。カードローンの残高証明書をお送りします。"
+    quote_translation: "If a member dies, please contact us; we will send a card loan balance certificate."
+    source_url: https://www.naniwa-card.example/souzoku
+    jurisdiction: JP
+    institution_id: jp_naniwa_card
+    topic: loan/after_death
+    level: dual_verified
+    ttl_days: 180
+  - id: jp_toto_foreign_signature
+    text: Toto Bank accepts a signature certificate from a Japanese embassy or consulate instead of a seal certificate for heirs living abroad.
+    quote: "相続人が外国に住んでいる場合は、印鑑証明書の代わりに在外公館で発行されたサイン証明書をご提出ください。"
+    quote_translation: "If an heir lives abroad, submit a signature certificate issued by a Japanese diplomatic mission instead of a seal certificate."
+    source_url: https://www.toto-bank.example/souzoku
+    jurisdiction: JP
+    institution_id: jp_toto_bank
+    topic: deposit/documents
+    level: dual_verified
+    ttl_days: 180
+  # ---- United Kingdom --------------------------------------------------------------------------
+  - id: gb_tuo_what
+    text: Tell Us Once reports a death to most government organisations in one go.
+    quote: "Tell Us Once is a service that lets you report a death to most government organisations in one go."
+    source_url: https://www.gov.uk/after-a-death/organisations-you-need-to-contact-and-tell-us-once
+    jurisdiction: GB
+    topic: notification/government
+    level: gold
+    ttl_days: 180
+  - id: gb_tuo_28_days
+    text: The Tell Us Once reference must be used within 28 days of getting it.
+    quote: "You must use the service within 28 days of getting your unique reference number."
+    source_url: https://www.gov.uk/after-a-death/organisations-you-need-to-contact-and-tell-us-once
+    jurisdiction: GB
+    topic: notification/government/clock
+    level: gold
+    ttl_days: 180
+  - id: gb_tuo_not_banks
+    text: Banks are not told through Tell Us Once; the family contacts them.
+    quote: "To close or change the details of the person’s financial accounts, you’ll need to contact organisations like:"
+    source_url: https://www.gov.uk/after-a-death/organisations-you-need-to-contact-and-tell-us-once
+    jurisdiction: GB
+    topic: notification/banks
+    level: gold
+    ttl_days: 180
+  - id: gb_dns_free
+    text: The Death Notification Service is free and notifies its member organisations at the same time.
+    quote: "The Death Notification Service is a free service which allows you to notify a number of member organisations of a person's death, at the same time."
+    source_url: https://www.deathnotificationservice.co.uk/
+    jurisdiction: GB
+    topic: notification/banks
+    level: dual_verified
+    ttl_days: 180
+  - id: gb_nsi_claim_online
+    text: NS&I claims start online, without needing an account.
+    quote: "The first step is to make a claim, which can be done online, without needing to create an online account."
+    source_url: https://www.nsandi.com/help/manage-money-for-others/customers-who-have-died
+    jurisdiction: GB
+    institution_id: gb_nsandi
+    topic: premium_bonds/claim
+    level: dual_verified
+    ttl_days: 180
+  - id: gb_nsi_12_months
+    text: Premium Bonds can stay in the prize draws for 12 months after the death.
+    quote: "Premium Bonds can remain eligible for the draw for 12 months after the date of death in the existing NS&I holder's name."
+    source_url: https://www.nsandi.com/help/manage-money-for-others/customers-who-have-died
+    jurisdiction: GB
+    institution_id: gb_nsandi
+    topic: premium_bonds/after_death
+    level: dual_verified
+    ttl_days: 180
+  - id: gb_nsi_grant
+    text: NS&I may ask for a grant of representation when total NS&I savings are £5,000 or more, and reserves the right to for any amount.
+    quote: "may ask for this if the customer's total NS&I savings are £5,000 or over."
+    source_url: https://www.nsandi.com/help/manage-money-for-others/customers-who-have-died
+    jurisdiction: GB
+    institution_id: gb_nsandi
+    topic: premium_bonds/grant
+    level: dual_verified
+    ttl_days: 90
+  - id: gb_airevalley_limit
+    text: Aire Valley Bank usually releases up to £50,000 without a grant of probate.
+    quote: "If the total held with us is £50,000 or less, we can usually release the money without a grant of probate."
+    source_url: https://www.airevalleybank.example/bereavement
+    jurisdiction: GB
+    institution_id: gb_aire_valley_bank
+    topic: deposit/probate_limit
+    level: dual_verified
+    ttl_days: 90
+  - id: gb_airevalley_dns
+    text: Aire Valley Bank accepts notification through the Death Notification Service.
+    quote: "You can tell us about a death through the Death Notification Service or at any branch."
+    source_url: https://www.airevalleybank.example/bereavement
+    jurisdiction: GB
+    institution_id: gb_aire_valley_bank
+    topic: notification/banks
+    level: dual_verified
+    ttl_days: 180
+  - id: gb_airevalley_documents
+    text: Aire Valley Bank needs the death certificate, any will and the executor's identification.
+    quote: "We will need the death certificate, the will if there is one, and identification for the executor or next of kin."
+    source_url: https://www.airevalleybank.example/bereavement
+    jurisdiction: GB
+    institution_id: gb_aire_valley_bank
+    topic: deposit/documents
+    level: dual_verified
+    ttl_days: 180
+  - id: gb_airevalley_10_days
+    text: Aire Valley Bank aims to release funds within 10 working days of receiving everything.
+    quote: "We aim to release funds within 10 working days of receiving everything we need."
+    source_url: https://www.airevalleybank.example/bereavement
+    jurisdiction: GB
+    institution_id: gb_aire_valley_bank
+    topic: deposit/clock
+    level: dual_verified
+    ttl_days: 90
+  - id: gb_pennine_limit
+    text: Pennine Building Society usually releases up to £30,000 in total without a grant of representation.
+    quote: "We can usually release balances of up to £30,000 in total without a grant of representation."
+    source_url: https://www.penninebs.example/help/bereavement
+    jurisdiction: GB
+    institution_id: gb_pennine_bs
+    topic: deposit/probate_limit
+    level: dual_verified
+    ttl_days: 90
+  - id: gb_pennine_documents
+    text: Pennine Building Society needs the death certificate and its bereavement form signed by the executors.
+    quote: "Send us the death certificate and our bereavement form signed by the executors."
+    source_url: https://www.penninebs.example/help/bereavement
+    jurisdiction: GB
+    institution_id: gb_pennine_bs
+    topic: deposit/documents
+    level: dual_verified
+    ttl_days: 180
+  - id: gb_leedsmills_return
+    text: Pension paid by the Leeds Mills scheme for the period after the death has to be returned.
+    quote: "Any pension paid for the period after the date of death will need to be returned."
+    source_url: https://www.leedsmillspension.example/members/death
+    jurisdiction: GB
+    institution_id: gb_leeds_mills_pension
+    topic: pension/after_death
+    level: dual_verified
+    ttl_days: 180
+  - id: gb_leedsmills_dependant
+    text: A dependant's pension or lump sum may be payable from the Leeds Mills scheme.
+    quote: "A dependant's pension or lump sum may be payable; we will write to the next of kin with the details."
+    source_url: https://www.leedsmillspension.example/members/death
+    jurisdiction: GB
+    institution_id: gb_leeds_mills_pension
+    topic: pension/survivor
+    level: dual_verified
+    ttl_days: 180
+  # ---- United States ---------------------------------------------------------------------------
+  - id: us_ssa_month_of_death
+    text: Social Security is not paid for the month in which the beneficiary dies, so the payment for that month must be returned.
+    quote: "Social Security benefits are not paid for the month in which a beneficiary dies."
+    source_url: https://www.everycrsreport.com/files/20110705_93-792_8db12073917b83c79d5b3b3555f12afdf1a41343.html
+    jurisdiction: US
+    topic: social_security/month_of_death
+    level: gold
+    ttl_days: 365
+  - id: us_ssa_return
+    text: A payment received for the month of death has to be returned to the government.
+    quote: "Subsequently, they are informed that the check must be returned to the government."
+    source_url: https://www.everycrsreport.com/files/20110705_93-792_8db12073917b83c79d5b3b3555f12afdf1a41343.html
+    jurisdiction: US
+    topic: social_security/return
+    level: gold
+    ttl_days: 365
+  - id: us_ssa_255
+    text: A spouse who lived with the worker, or a spouse or child eligible for survivor benefits, may receive a $255 lump-sum death payment.
+    quote: "may receive a Social Security lump-sum death payment of $255"
+    source_url: https://www.everycrsreport.com/files/20110705_93-792_8db12073917b83c79d5b3b3555f12afdf1a41343.html
+    jurisdiction: US
+    topic: social_security/lump_sum
+    level: gold
+    ttl_days: 365
+  - id: us_ssa_255_who
+    text: The lump sum goes to the spouse who was living with the worker, or a spouse or child eligible for survivor benefits.
+    quote: "the spouse who was living with the worker, or a spouse or child eligible for survivor benefits"
+    source_url: https://www.everycrsreport.com/files/20110705_93-792_8db12073917b83c79d5b3b3555f12afdf1a41343.html
+    jurisdiction: US
+    topic: social_security/lump_sum
+    level: gold
+    ttl_days: 365
+  - id: us_naic_locator
+    text: The NAIC Life Insurance Policy Locator is a free tool where a request goes through a secure portal.
+    quote: "Consumers can submit a request through the secure, encrypted portal."
+    source_url: https://content.naic.org/article/naic-life-insurance-policy-locator-tool-helps-match-consumers-more-16-billion-lost-and-unclaimed
+    jurisdiction: US
+    topic: life_insurance/search
+    level: dual_verified
+    ttl_days: 180
+  - id: us_naic_free
+    text: The locator has been free since it launched in November 2016.
+    quote: "since the free tool launched in November 2016"
+    source_url: https://content.naic.org/article/naic-life-insurance-policy-locator-tool-helps-match-consumers-more-16-billion-lost-and-unclaimed
+    jurisdiction: US
+    topic: life_insurance/search
+    level: dual_verified
+    ttl_days: 180
+  - id: us_tx_sea_30_days
+    text: A Texas small estate affidavit can be used only after 30 days have passed since the death.
+    quote: "30 days have elapsed since the date of the decedent's death;"
+    source_url: https://tcss.legis.texas.gov/resources/ES/htm/ES.205.htm
+    jurisdiction: US-TX
+    topic: small_estate/conditions
+    level: dual_verified
+    ttl_days: 365
+  - id: us_tx_sea_no_petition
+    text: The affidavit route requires that no petition to appoint a personal representative is pending or granted.
+    quote: "no petition for the appointment of a personal representative is pending or has been granted;"
+    source_url: https://tcss.legis.texas.gov/resources/ES/htm/ES.205.htm
+    jurisdiction: US-TX
+    topic: small_estate/conditions
+    level: dual_verified
+    ttl_days: 365
+  - id: us_tx_sea_75000
+    text: The estate, not counting the homestead and exempt property, must be worth $75,000 or less.
+    quote: "excluding homestead and exempt property, does not exceed $75,000"
+    source_url: https://tcss.legis.texas.gov/resources/ES/htm/ES.205.htm
+    jurisdiction: US-TX
+    topic: small_estate/threshold
+    level: dual_verified
+    ttl_days: 90
+  - id: us_tx_sea_intestate
+    text: The small estate affidavit is for estates where the person died without a will.
+    quote: "The distributees of the estate of a decedent who dies intestate are entitled to the decedent's estate without waiting for the appointment of a personal"
+    source_url: https://tcss.legis.texas.gov/resources/ES/htm/ES.205.htm
+    jurisdiction: US-TX
+    topic: small_estate/conditions
+    level: dual_verified
+    ttl_days: 365
+  - id: us_missionriver_sea
+    text: Mission River Bank accepts a court-approved Texas small estate affidavit when no personal representative is appointed.
+    quote: "If no personal representative has been appointed, we accept a small estate affidavit approved by a Texas court."
+    source_url: https://www.missionriverbank.example/estate-services
+    jurisdiction: US-TX
+    institution_id: us_mission_river_bank
+    topic: deposit/route
+    level: dual_verified
+    ttl_days: 180
+  - id: us_missionriver_treasury
+    text: Mission River Bank may return federal benefit payments received after the death to the Treasury from the account.
+    quote: "Federal benefit payments received after the date of death may be returned to the Treasury from the account."
+    source_url: https://www.missionriverbank.example/estate-services
+    jurisdiction: US-TX
+    institution_id: us_mission_river_bank
+    topic: social_security/return
+    level: dual_verified
+    ttl_days: 180
+  - id: us_lonestar_claim
+    text: Lone Star Life pays beneficiaries on its claimant statement and a certified death certificate, and has Spanish forms.
+    quote: "Beneficiaries can file a claim with our claimant statement and a certified copy of the death certificate."
+    source_url: https://www.lonestarlife.example/claims
+    jurisdiction: US-TX
+    institution_id: us_lone_star_life
+    topic: life_insurance/documents
+    level: dual_verified
+    ttl_days: 180
+  - id: us_lonestar_30_days
+    text: Lone Star Life aims to decide claims within 30 days of a completed claimant statement.
+    quote: "We aim to decide claims within 30 days of receiving the completed claimant statement."
+    source_url: https://www.lonestarlife.example/claims
+    jurisdiction: US-TX
+    institution_id: us_lone_star_life
+    topic: life_insurance/clock
+    level: dual_verified
+    ttl_days: 90
+  - id: us_riverwalk_benefits
+    text: Riverwalk Logistics' HR handles the final paycheck, the 401(k) account and group life insurance after an employee dies.
+    quote: "Contact Human Resources about the final paycheck, the 401(k) plan account and the group life insurance that eligible employees receive."
+    source_url: https://www.riverwalklogistics.example/hr/benefits-after-a-death
+    jurisdiction: US-TX
+    institution_id: us_riverwalk_logistics
+    topic: employer/benefits
+    level: dual_verified
+    ttl_days: 180
+  # ---- Singapore ---------------------------------------------------------------------------------
+  - id: sg_cpf_no_nomination
+    text: Without a CPF nomination, CPF savings are paid to the Public Trustee's Office, which distributes them under the intestacy laws or an inheritance certificate for Muslims.
+    quote: "When you are no longer around, we will pay your CPF savings to the Public Trustee's Office for distribution in cash to your family member(s) in accordance with the relevant intestacy laws"
+    source_url: https://www.cpf.gov.sg/service/article/what-happens-to-my-cpf-savings-if-i-did-not-make-a-cpf-nomination
+    jurisdiction: SG
+    topic: cpf/no_nomination
+    level: gold
+    ttl_days: 180
+  - id: sg_apostille_sal
+    text: In Singapore, apostilles are issued by the Singapore Academy of Law.
+    quote: "the Singapore Academy of Law (\"SAL\") has been designated as Singapore's competent authority under the Apostille Convention."
+    source_url: https://www.allenandgledhill.com/sg/publication/articles/19129/apostille-act-2020-abolishes-legalisation-requirements-for-foreign-public-documents-from-16-september-2021
+    jurisdiction: SG
+    topic: apostille/issuer
+    level: sourced
+    ttl_days: 365
+    notes: Tier 4 source (law firm). Corroborate with the Academy's own page in live mode.
+  - id: sg_merlion_limit
+    text: Merlion Savings Bank may release up to S$150,000 to the next of kin without a grant, at its discretion.
+    quote: "Where the total balance is S$150,000 or less, we may release the funds to the next of kin without a Grant of Probate or Letters of Administration, at our discretion."
+    source_url: https://www.merlionsavings.example/bereavement
+    jurisdiction: SG
+    institution_id: sg_merlion_savings
+    topic: deposit/probate_limit
+    level: dual_verified
+    ttl_days: 90
+  - id: sg_merlion_card
+    text: Merlion Savings Bank recovers outstanding credit card balances from the estate.
+    quote: "Outstanding credit card balances are recovered from the estate."
+    source_url: https://www.merlionsavings.example/bereavement
+    jurisdiction: SG
+    institution_id: sg_merlion_savings
+    topic: card/after_death
+    level: dual_verified
+    ttl_days: 180
+  - id: sg_straits_final_pay
+    text: Straits Marine Engineering pays salary to the date of death and unused leave to the next of kin.
+    quote: "Salary up to the date of death and payment for unused annual leave are paid to the next of kin."
+    source_url: https://www.straitsmarine.example/hr/bereavement
+    jurisdiction: SG
+    institution_id: sg_straits_marine
+    topic: employer/final_pay
+    level: dual_verified
+    ttl_days: 180
+  # ---- France ------------------------------------------------------------------------------------
+  # ---- EU and Germany ----------------------------------------------------------------------------
+  - id: eu_650_art21_1
+    text: Under the EU Succession Regulation, succession as a whole follows the law of the State where the deceased was habitually resident at death.
+    quote: "Unless otherwise provided for in this Regulation, the law applicable to the succession as a whole shall be the law of the State in which the deceased had his habitual residence at the time of death."
+    source_url: https://www.legislation.gov.uk/eur/2012/650/article/21
+    jurisdiction: EU
+    topic: conflict_of_laws/succession
+    level: gold
+    ttl_days: 365
+  - id: eu_650_art21_2
+    text: As an exception, the law of another State applies if the deceased was manifestly more closely connected with it.
+    quote: "the deceased was manifestly more closely connected with a State other than the State whose law would be applicable under paragraph 1"
+    source_url: https://www.legislation.gov.uk/eur/2012/650/article/21
+    jurisdiction: EU
+    topic: conflict_of_laws/succession
+    level: gold
+    ttl_days: 365
+  - id: de_isarbank_erbschein
+    text: Isarbank München usually needs a certificate of inheritance (Erbschein) or a European Certificate of Succession before paying the heirs.
+    quote: "Für die Auszahlung an die Erben benötigen wir in der Regel einen Erbschein oder ein Europäisches Nachlasszeugnis."
+    quote_translation: "To pay out to the heirs we normally need a certificate of inheritance or a European Certificate of Succession."
+    source_url: https://www.isarbank.example/nachlass
+    jurisdiction: DE
+    institution_id: de_isarbank
+    topic: deposit/documents
+    level: dual_verified
+    ttl_days: 180
+  - id: de_isarbank_will
+    text: Isarbank München may accept an opened notarial will instead of the certificate of inheritance.
+    quote: "Ein eröffnetes notarielles Testament kann den Erbschein ersetzen."
+    quote_translation: "An opened notarial will can replace the certificate of inheritance."
+    source_url: https://www.isarbank.example/nachlass
+    jurisdiction: DE
+    institution_id: de_isarbank
+    topic: deposit/documents
+    level: dual_verified
+    ttl_days: 180
+  # ---- Germany: statutory pension after a death (SGB VI), added 15 Oct 2026 ----------------------
+  - id: de_pension_until_month_of_death
+    text: A German state pension is paid up to the end of the calendar month in which the pensioner died.
+    quote: "Renten werden bis zum Ende des Kalendermonats geleistet, in dem die Berechtigten gestorben sind."
+    quote_translation: "Pensions are paid up to the end of the calendar month in which the person entitled died."
+    source_url: https://www.gesetze-im-internet.de/sgb_6/__102.html
+    locator: "§ 102 Abs. 5 SGB VI"
+    jurisdiction: DE
+    topic: pension/after_death/until
+    level: gold
+    ttl_days: 730
+  - id: de_pension_paid_end_of_month
+    text: A German state pension falls due at the end of each month it is for, and is paid on the last bank working day of that month.
+    quote: "Laufende Geldleistungen mit Ausnahme des Übergangsgeldes werden am Ende des Monats fällig, zu dessen Beginn die Anspruchsvoraussetzungen erfüllt sind; sie werden am letzten Bankarbeitstag dieses Monats ausgezahlt."
+    quote_translation: "Current cash benefits other than transitional allowance fall due at the end of the month at whose start the conditions are met; they are paid on the last bank working day of that month."
+    source_url: https://www.gesetze-im-internet.de/sgb_6/__118.html
+    locator: "§ 118 Abs. 1 Satz 1 SGB VI"
+    jurisdiction: DE
+    topic: pension/payment/when
+    level: gold
+    ttl_days: 730
+  - id: de_pension_after_death_reserved
+    text: Pension paid into an account for the time after the pensioner's death counts as paid under reserve.
+    quote: "Geldleistungen, die für die Zeit nach dem Tod des Berechtigten auf ein Konto bei einem Geldinstitut, für das die Verordnung (EU) Nr. 260/2012 gilt, überwiesen wurden, gelten als unter Vorbehalt erbracht."
+    quote_translation: "Cash benefits transferred to an account at a bank covered by Regulation (EU) No 260/2012 for the period after the death of the person entitled are deemed to have been paid under reserve."
+    source_url: https://www.gesetze-im-internet.de/sgb_6/__118.html
+    locator: "§ 118 Abs. 3 Satz 1 SGB VI"
+    jurisdiction: DE
+    topic: pension/after_death/reclaim
+    level: gold
+    ttl_days: 730
+  - id: de_pension_bank_returns
+    text: The bank must send pension paid for the time after the death back when the pension insurance reclaims it as paid wrongly.
+    quote: "Das Geldinstitut hat sie der überweisenden Stelle oder dem Träger der Rentenversicherung zurückzuüberweisen, wenn diese sie als zu Unrecht erbracht zurückfordern."
+    quote_translation: "The bank must transfer them back to the paying office or the pension insurance institution if these reclaim them as wrongly paid."
+    source_url: https://www.gesetze-im-internet.de/sgb_6/__118.html
+    locator: "§ 118 Abs. 3 Satz 2 SGB VI"
+    jurisdiction: DE
+    topic: pension/after_death/reclaim
+    level: gold
+    ttl_days: 730
+  - id: de_pension_bank_no_setoff
+    text: The bank may not use pension paid after the death to settle what it is owed itself.
+    quote: "Das Geldinstitut darf den überwiesenen Betrag nicht zur Befriedigung eigener Forderungen verwenden."
+    quote_translation: "The bank may not use the amount transferred to satisfy its own claims."
+    source_url: https://www.gesetze-im-internet.de/sgb_6/__118.html
+    locator: "§ 118 Abs. 3 Satz 4 SGB VI"
+    jurisdiction: DE
+    topic: pension/after_death/reclaim
+    level: gold
+    ttl_days: 730
+  # ---- UK probate ------------------------------------------------------------------------------------
+  - id: gb_probate_what
+    text: Probate is the legal right to deal with a person's property, money and possessions after they die.
+    quote: "Probate is the legal right to deal with someone’s property, money and possessions (their ‘estate’) when they die."
+    source_url: https://www.gov.uk/applying-for-probate
+    jurisdiction: GB
+    topic: probate/what
+    level: gold
+    ttl_days: 365
+  - id: gb_probate_own_rules
+    text: Each financial organisation has its own rules on when it needs probate, so ask each one.
+    quote: "Every organisation has its own rules."
+    source_url: https://www.gov.uk/applying-for-probate
+    jurisdiction: GB
+    topic: probate/thresholds
+    level: gold
+    ttl_days: 365
+  - id: gb_probate_joint
+    text: Property owned as joint tenants passes automatically to the surviving owners without probate.
+    quote: "owned land or property as ‘joint tenants’ with others - this automatically passes to the surviving owners"
+    source_url: https://www.gov.uk/applying-for-probate
+    jurisdiction: GB
+    topic: probate/not_needed
+    level: gold
+    ttl_days: 365
+  # ---- Japan: Civil Code (e-Gov), added 14 Oct 2026 ------------------------------------------------
+  - id: jp_civil_887_children
+    text: The children of the deceased are heirs.
+    quote: 被相続人の子は、相続人となる。
+    quote_translation: The children of the decedent become heirs.
+    source_url: https://laws.e-gov.go.jp/api/1/articles;lawId=129AC0000000089;article=887
+    locator: 民法 第887条第1項
+    jurisdiction: JP
+    topic: heirship/statutory
+    level: gold
+    ttl_days: 730
+  - id: jp_civil_890_spouse
+    text: The spouse of the deceased is always an heir, alongside the children.
+    quote: 被相続人の配偶者は、常に相続人となる。
+    quote_translation: The spouse of the decedent is always an heir.
+    source_url: https://laws.e-gov.go.jp/api/1/articles;lawId=129AC0000000089;article=890
+    locator: 民法 第890条
+    jurisdiction: JP
+    topic: heirship/statutory
+    level: gold
+    ttl_days: 730
+  - id: jp_civil_896_debts
+    text: Heirs take on all of the deceased's rights and obligations, debts included, from the moment of death.
+    quote: 相続人は、相続開始の時から、被相続人の財産に属した一切の権利義務を承継する。
+    quote_translation: From the commencement of inheritance, heirs succeed to all rights and obligations that belonged to the decedent's property.
+    source_url: https://laws.e-gov.go.jp/api/1/articles;lawId=129AC0000000089;article=896
+    locator: 民法 第896条
+    jurisdiction: JP
+    topic: inheritance/debts
+    level: gold
+    ttl_days: 730
+  - id: jp_civil_915_3_months
+    text: An heir must accept, accept with limited liability, or renounce within three months of learning the inheritance opened for them; the family court can extend this.
+    quote: 相続人は、自己のために相続の開始があったことを知った時から三箇月以内に、相続について、単純若しくは限定の承認又は放棄をしなければならない。
+    quote_translation: An heir must, within three months from the time they learned that inheritance commenced for them, accept unconditionally or with qualification, or renounce.
+    source_url: https://laws.e-gov.go.jp/api/1/articles;lawId=129AC0000000089;article=915
+    locator: 民法 第915条第1項
+    jurisdiction: JP
+    topic: inheritance/renunciation/clock
+    level: gold
+    ttl_days: 730
+  - id: jp_civil_939_effect
+    text: An heir who renounces is treated as never having been an heir.
+    quote: 相続の放棄をした者は、その相続に関しては、初めから相続人とならなかったものとみなす。
+    quote_translation: A person who renounces is deemed never to have been an heir to that inheritance.
+    source_url: https://laws.e-gov.go.jp/api/1/articles;lawId=129AC0000000089;article=939
+    locator: 民法 第939条
+    jurisdiction: JP
+    topic: inheritance/renunciation/effect
+    level: gold
+    ttl_days: 730
+  # ---- Japan: Japan Pension Service (unpaid pension and the death report), added 15 Oct 2026 --------
+  - id: jp_pension_unpaid_family
+    text: Pension a pensioner had not yet received when they died, up to and including the month of death, is paid as unpaid pension (未支給年金) to the family member who shared their household.
+    quote: 亡くなった月分までの年金については、未支給年金としてその方と生計を同じくしていた遺族が受け取ることができます。
+    quote_translation: "Pension up to the month of death is received, as unpaid pension, by the bereaved family member who shared the deceased's livelihood."
+    source_url: https://www.nenkin.go.jp/service/jukyu/tetsuduki/kyotsu/jukyu/20140731-01.html
+    jurisdiction: JP
+    topic: pension/unpaid/who
+    level: gold
+    ttl_days: 365
+  - id: jp_pension_unpaid_order
+    text: The family members who may claim unpaid pension, in this order, are the spouse, children, parents, grandchildren, grandparents, brothers and sisters, then other relatives to the third degree, each of whom shared the deceased's household.
+    quote: （1）配偶者 （2）子 （3）父母 （4）孫 （5）祖父母 （6）兄弟姉妹 （7）その他（1）から（6）以外の3親等内の親族です。
+    quote_translation: "(1) spouse (2) children (3) parents (4) grandchildren (5) grandparents (6) brothers and sisters (7) other relatives within the third degree."
+    source_url: https://www.nenkin.go.jp/service/jukyu/tetsuduki/kyotsu/jukyu/20140731-01.html
+    jurisdiction: JP
+    topic: pension/unpaid/order
+    level: gold
+    ttl_days: 365
+  - id: jp_pension_unpaid_first
+    text: Only the first in that order may claim unpaid pension; when two or more stand equal, one of them claims for all.
+    quote: 先順位者がいる場合は、未支給年金を受け取ることはできません。また、同順位者が2名以上いる場合は、そのうち1名が代表して請求することとなります。
+    quote_translation: "If someone comes earlier in the order, you cannot receive the unpaid pension; if two or more stand at the same place, one of them claims as their representative."
+    source_url: https://www.nenkin.go.jp/service/jukyu/tetsuduki/kyotsu/jukyu/20140731-01.html
+    jurisdiction: JP
+    topic: pension/unpaid/order
+    level: gold
+    ttl_days: 365
+  - id: jp_pension_unpaid_form
+    text: Unpaid pension is claimed with the combined pensioner's death report and unpaid pension claim form.
+    quote: 未支給年金を受け取るためには、「年金受給権者死亡届（報告書）兼 未支給年金・未支払給付金請求書」の提出が必要です。
+    quote_translation: "To receive unpaid pension, the 'pension recipient death report (report) and claim for unpaid pension and unpaid benefits' must be submitted."
+    source_url: https://www.nenkin.go.jp/service/jukyu/tetsuduki/kyotsu/jukyu/20140731-01.html
+    jurisdiction: JP
+    topic: pension/unpaid/form
+    level: gold
+    ttl_days: 365
+  - id: jp_pension_certificate
+    text: The pensioner's death report goes in with their pension certificate and a paper showing the death, such as an extract of the family register or the closed resident record.
+    quote: 亡くなった方の年金証書と、死亡を明らかにすることができる書類（戸籍抄本または住民票の除票など）を添えて
+    quote_translation: "Attaching the deceased's pension certificate and a document that can show the death (such as an extract of the family register or the removed resident record)."
+    source_url: https://www.nenkin.go.jp/faq/jukyu/jukyushatodoke/kyotsu/shibo/20140421.html
+    jurisdiction: JP
+    topic: pension/unpaid/documents
+    level: gold
+    ttl_days: 365
+  - id: jp_pension_heir_chart
+    text: A certified copy of the heir information chart, with the deceased as the person inherited from, is one of the papers accepted to show the claimant's relationship to the deceased.
+    quote: 法定相続情報一覧図の写し（亡くなった方が被相続人であるもの）
+    quote_translation: "A copy of the statutory heir information chart (with the deceased as the decedent)."
+    source_url: https://www.nenkin.go.jp/service/jukyu/tetsuduki/kyotsu/jukyu/20140731-01.html
+    jurisdiction: JP
+    topic: pension/unpaid/documents
+    level: gold
+    ttl_days: 365
+  - id: jp_pension_papers_after_death
+    text: Family register and resident record certificates for the claim must have been issued after the date of death.
+    quote: 戸籍謄本・住民票は、亡くなった日より後に交付されたものが必要です。
+    quote_translation: "Family register and resident record certificates must have been issued after the date of death."
+    source_url: https://www.nenkin.go.jp/service/jukyu/tetsuduki/kyotsu/jukyu/20140731-01.html
+    jurisdiction: JP
+    topic: pension/unpaid/documents
+    level: gold
+    ttl_days: 365
+  - id: jp_pension_submit_post
+    text: The claim is sent to a pension office by post.
+    quote: 年金事務所に郵送により提出してください。
+    quote_translation: "Please submit it to a pension office by post."
+    source_url: https://www.nenkin.go.jp/service/jukyu/tetsuduki/kyotsu/jukyu/20140731-01.html
+    jurisdiction: JP
+    topic: pension/unpaid/where
+    level: gold
+    ttl_days: 365
+  - id: jp_pension_unpaid_tax
+    text: Unpaid pension counts as occasional income of whoever receives it, and may need a tax return.
+    quote: 亡くなった方の未支給年金は、その支給金を受け取った方の一時所得に該当し、確定申告が必要になる場合があります
+    quote_translation: "The deceased's unpaid pension is occasional income of the person who receives it, and a tax return may be needed."
+    source_url: https://www.nenkin.go.jp/service/jukyu/tetsuduki/kyotsu/jukyu/20140731-01.html
+    jurisdiction: JP
+    topic: pension/unpaid/tax
+    level: gold
+    ttl_days: 365
+  - id: jp_pension_report_my_number
+    text: No separate death report is needed, as a rule, when the Japan Pension Service holds the pensioner's My Number; the unpaid pension must still be claimed.
+    quote: 年金受給権者の死亡届は日本年金機構にマイナンバーが収録されている方につきましては、原則不要です。ただし、未支給年金の届出などは必要です。
+    quote_translation: "As a rule, a pensioner's death report is not needed when their My Number is held by the Japan Pension Service; however, the claim for unpaid pension and the like is still needed."
+    source_url: https://www.nenkin.go.jp/faq/jukyu/jukyushatodoke/kyotsu/shibo/20140421.html
+    jurisdiction: JP
+    topic: pension/death_report/when
+    level: gold
+    ttl_days: 365
+  - id: jp_pension_report_10_days
+    text: When a pensioner's death report is needed, it is due within 10 days of the death (14 days for the National Pension).
+    quote: 死亡届が必要な場合は、10日（国民年金は14日）以内に
+    quote_translation: "When a death report is needed, within 10 days (14 days for the National Pension)."
+    source_url: https://www.nenkin.go.jp/faq/jukyu/jukyushatodoke/kyotsu/shibo/20140421.html
+    jurisdiction: JP
+    topic: pension/death_report/clock
+    level: gold
+    ttl_days: 365
+  - id: jp_pension_return_overpaid
+    text: Pension received for the time after the death, because the death was reported late, has to be paid back.
+    quote: なお、届出が遅れ、亡くなった日の翌日以後に年金を受け取ったときは、その分を後日お返しいただくことになりますのでご注意ください。
+    quote_translation: "If the report is late and pension is received on or after the day after the death, that amount must be paid back later."
+    source_url: https://www.nenkin.go.jp/faq/jukyu/jukyushatodoke/kyotsu/shibo/20140421.html
+    jurisdiction: JP
+    topic: pension/death_report/overpaid
+    level: gold
+    ttl_days: 365
+  # ---- US: Texas small estate affidavit, SSA survivors, added 14 Oct 2026 ------------------------------
+  - id: us_tx_sea_witnesses
+    text: The small estate affidavit is sworn to by two disinterested witnesses.
+    quote: "(1) be sworn to by: (A) two disinterested witnesses;"
+    source_url: https://tcss.legis.texas.gov/resources/ES/htm/ES.205.htm
+    locator: Sec. 205.002(a)(1)
+    jurisdiction: US-TX
+    topic: small_estate/affidavit
+    level: gold
+    ttl_days: 365
+  - id: us_tx_sea_heirship_facts
+    text: The affidavit sets out the family history facts that show who the heirs are.
+    quote: the relevant family history facts concerning heirship
+    source_url: https://tcss.legis.texas.gov/resources/ES/htm/ES.205.htm
+    locator: Sec. 205.002(a)(3)(C)
+    jurisdiction: US-TX
+    topic: small_estate/affidavit
+    level: gold
+    ttl_days: 365
+  - id: us_tx_sea_judge
+    text: The judge may approve the affidavit if it meets the chapter's requirements.
+    quote: The judge may approve the affidavit if the judge determines that the affidavit conforms to the requirements of this chapter.
+    source_url: https://tcss.legis.texas.gov/resources/ES/htm/ES.205.htm
+    locator: Sec. 205.003
+    jurisdiction: US-TX
+    topic: small_estate/approval
+    level: gold
+    ttl_days: 365
+  - id: us_tx_sea_certified_copy
+    text: The heirs give a copy of the approved affidavit, certified by the court clerk, to whoever holds the money.
+    quote: The distributees of the estate shall provide a copy of the affidavit under this chapter, certified by the court clerk,
+    source_url: https://tcss.legis.texas.gov/resources/ES/htm/ES.205.htm
+    locator: Sec. 205.004
+    jurisdiction: US-TX
+    topic: small_estate/use
+    level: gold
+    ttl_days: 365
+  - id: us_tx_sea_release
+    text: A bank that pays on the approved affidavit is released from liability for that payment.
+    quote: A person making a payment, delivery, transfer, or issuance under an affidavit described by this chapter is released
+    source_url: https://tcss.legis.texas.gov/resources/ES/htm/ES.205.htm
+    locator: Sec. 205.007(a)
+    jurisdiction: US-TX
+    topic: small_estate/use
+    level: gold
+    ttl_days: 365
+  - id: us_ssa_funeral_home
+    text: A funeral home usually reports the death to Social Security.
+    quote: A funeral home will usually tell us when someone dies, so you may not need to report a death to us.
+    source_url: https://www.ssa.gov/benefits/survivors/
+    jurisdiction: US
+    topic: social_security/report
+    level: gold
+    ttl_days: 365
+  - id: us_ssa_survivors_who
+    text: Survivor benefits can go to the spouse, a divorced spouse, a child or a dependent parent of someone who worked and paid Social Security taxes.
+    quote: You may qualify if you’re the spouse, divorced spouse, child, or dependent parent of someone who worked and paid Social
+    source_url: https://www.ssa.gov/benefits/survivors/
+    jurisdiction: US
+    topic: social_security/survivors
+    level: gold
+    ttl_days: 365
+  - id: jp_civil_921_disposal
+    text: An heir who disposes of any of the estate (beyond acts that only preserve it) is treated as having accepted the inheritance, debts included.
+    quote: 次に掲げる場合には、相続人は、単純承認をしたものとみなす。 一 相続人が相続財産の全部又は一部を処分したとき。
+    quote_translation: In the following cases the heir is deemed to have accepted unconditionally - 1. when the heir has disposed of all or part of the inherited property.
+    source_url: https://laws.e-gov.go.jp/api/1/articles;lawId=129AC0000000089;article=921
+    locator: 民法 第921条第1号
+    jurisdiction: JP
+    topic: inheritance/renunciation/deemed_acceptance
+    level: gold
+    ttl_days: 730
+  - id: jp_naniwa_card_renounce
+    text: If the family renounces the inheritance, Naniwa Card asks for a copy of the family court's notice accepting the renunciation.
+    quote: 相続放棄をされる場合は、家庭裁判所の受理通知書の写しをお送りください。
+    quote_translation: If you renounce the inheritance, please send us a copy of the family court's notice of acceptance.
+    source_url: https://www.naniwa-card.example/souzoku
+    jurisdiction: JP
+    institution_id: jp_naniwa_card
+    topic: loan/after_death
+    level: dual_verified
+    ttl_days: 180
+  - id: jp_yodogawa_contact
+    text: Yodogawa Shinkin asks the family to contact the branch before starting.
+    quote: お手続きの前に、お取引店へご連絡ください。
+    quote_translation: Please contact your branch before starting the procedure.
+    source_url: https://www.yodogawa-shinkin.example/souzoku
+    jurisdiction: JP
+    institution_id: jp_yodogawa_shinkin
+    topic: deposit/submission
+    level: dual_verified
+    ttl_days: 180
+  - id: jp_liaj_heirs
+    text: When the reason is a death, the person asking is one of the deceased's statutory heirs.
+    quote: 死亡を利用事由とする場合の照会者は、照会対象者の法定相続人
+    quote_translation: Where the reason for use is death, the inquirer is a statutory heir of the person being searched for.
+    source_url: https://www.zeiken.co.jp/zeikenpress/press/0007pp20211026/
+    jurisdiction: JP
+    topic: life_insurance/search
+    level: sourced
+    ttl_days: 180
+    notes: Tier 4 source (a tax firm's newsletter).
+  - id: jp_liaj_2_weeks
+    text: The answer takes about two weeks from the application.
+    quote: 生命保険協会への申請から照会結果の回答までは約2 週間程度の時間を要します
+    quote_translation: It takes about two weeks from applying to the Association to receiving the result.
+    source_url: https://www.zeiken.co.jp/zeikenpress/press/0007pp20211026/
+    jurisdiction: JP
+    topic: life_insurance/search
+    level: sourced
+    ttl_days: 180
+    notes: Tier 4 source (a tax firm's newsletter).
+  # ---- fictional institutions: remaining lines of their pages, added 14 Oct 2026 --------------------
+  - id: gb_pennine_above
+    text: Above £30,000 Pennine Building Society asks for a grant of probate or letters of administration.
+    quote: Above that amount we will ask for a grant of probate or letters of administration.
+    source_url: https://www.penninebs.example/help/bereavement
+    jurisdiction: GB
+    institution_id: gb_pennine_bs
+    topic: deposit/probate_limit
+    level: dual_verified
+    ttl_days: 180
+  - id: gb_leedsmills_tell
+    text: The Leeds Mills scheme asks to be told of a pensioner's death as soon as possible so that payments stop.
+    quote: Please tell us as soon as possible when a pensioner dies, so that payments can stop.
+    source_url: https://www.leedsmillspension.example/members/death
+    jurisdiction: GB
+    institution_id: gb_leeds_mills_pension
+    topic: pension/after_death
+    level: dual_verified
+    ttl_days: 180
+  - id: us_missionriver_death_cert
+    text: Mission River Bank closes a deceased customer's account on a certified copy of the death certificate.
+    quote: To close the account of a customer who has died, bring a certified copy of the death certificate.
+    source_url: https://www.missionriverbank.example/estate-services
+    jurisdiction: US-TX
+    institution_id: us_mission_river_bank
+    topic: deposit/documents
+    level: dual_verified
+    ttl_days: 180
+  - id: us_lonestar_spanish
+    text: Lone Star Life has its claim forms in Spanish.
+    quote: Formularios disponibles en español.
+    quote_translation: Forms available in Spanish.
+    source_url: https://www.lonestarlife.example/claims
+    jurisdiction: US-TX
+    institution_id: us_lone_star_life
+    topic: life_insurance/forms
+    level: dual_verified
+    ttl_days: 180
+  - id: us_riverwalk_direct
+    text: Beneficiaries named on Riverwalk Logistics' 401(k) and group life forms are paid directly by the plan administrator and the insurer.
+    quote: Beneficiaries named on the 401(k) and group life forms are paid directly by the plan administrator and the insurer.
+    source_url: https://www.riverwalklogistics.example/hr/benefits-after-a-death
+    jurisdiction: US-TX
+    institution_id: us_riverwalk_logistics
+    topic: employer/benefits
+    level: dual_verified
+    ttl_days: 180
+  - id: sg_merlion_inform
+    text: Merlion Savings Bank is told of an account holder's death with a copy of the death certificate.
+    quote: Please inform us of the passing of an account holder with a copy of the death certificate.
+    source_url: https://www.merlionsavings.example/bereavement
+    jurisdiction: SG
+    institution_id: sg_merlion_savings
+    topic: deposit/documents
+    level: dual_verified
+    ttl_days: 180
+  - id: sg_straits_contact
+    text: Straits Marine Engineering's HR is contacted with the death certificate.
+    quote: Please contact Human Resources with the death certificate.
+    source_url: https://www.straitsmarine.example/hr/bereavement
+    jurisdiction: SG
+    institution_id: sg_straits_marine
+    topic: employer/final_pay
+    level: dual_verified
+    ttl_days: 180
+  - id: de_isarbank_documents
+    text: Isarbank München asks for the death certificate and the proof of inheritance.
+    quote: Bitte senden Sie uns die Sterbeurkunde und den Erbnachweis.
+    quote_translation: Please send us the death certificate and the proof of inheritance.
+    source_url: https://www.isarbank.example/nachlass
+    jurisdiction: DE
+    institution_id: de_isarbank
+    topic: deposit/documents
+    level: dual_verified
+    ttl_days: 180

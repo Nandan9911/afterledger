@@ -1,0 +1,229 @@
+# The Clarke family's papers (Leeds, England). Every bank, building society and pension scheme is
+# fictional; the death certificate uses a generic layout with a sample watermark. Dates are written
+# for the story day 14 October 2026 and shift with it.
+papers:
+  # --------------------------------------------------------------------------------------------
+  - id: death_cert
+    title: Death certificate
+    doc_type: death_certificate
+    country: GB
+    languages: [en]
+    scripts: [Latn]
+    origin: photo
+    uploaded_by: p_thomas
+    uploaded_on: 2026-09-17
+    template: certificate
+    style: {accent: "#6B2737", lang: en, size: 9}
+    pre_title: "Registration District: Leeds (sample specimen)"
+    titles:
+      - {text: "CERTIFIED COPY OF AN ENTRY OF DEATH", size: 13}
+    subtitle: "Pursuant to the Births and Deaths Registration Act 1953 · Specimen for the AfterLedger demo"
+    sections:
+      - kv:
+          - ["1. Date and place of death", "{d:2026-09-14|d_month_y}, St James's University Hospital, Leeds", date_place_of_death]
+          - ["2. Name and surname", "Margaret Anne CLARKE", deceased_name]
+          - ["3. Sex", "Female", sex]
+          - ["4. Maiden surname of woman who has married", "HOLLINS", maiden_name]
+          - ["5. Date and place of birth", "{d:1945-02-11|d_month_y}, Bradford", birth_date_place]
+          - ["6. Occupation and usual address", "Retired mill office clerk, widow of Peter James Clarke. 22 Hawthorn Grove, Leeds LS6 4QT", occupation_address]
+          - ["7. Name and surname of informant", "Thomas Edward CLARKE, son", informant]
+          - ["8. Cause of death", "Ia Pneumonia  Ib Chronic obstructive pulmonary disease", cause_of_death]
+          - ["9. Date of registration", "{d:2026-09-17|d_month_y}", registration_date]
+          - ["Entry number", "SYN 0917/214", registration_number]
+        label_w: 210
+    stamp: {text: "REGISTRAR · LEEDS · SPECIMEN", round: true}
+    signature: {label: "Registrar", name: "J. Oyelaran"}
+    note: "This is a sample document created for the AfterLedger demo. It is not a certificate and has no legal effect."
+    photo: {angle: -0.9, blur: 0.4, tint: "#F4F1EA"}
+    fields:
+      deceased_name: {value: Margaret Anne Clarke}
+      birth_date: {value: 1945-02-11}
+      date_of_death: {value: 2026-09-14}
+      place_of_death: {value: Leeds}
+      registration_date: {value: 2026-09-17}
+
+  # --------------------------------------------------------------------------------------------
+  - id: aire_statement
+    title: Aire Valley Bank statements
+    doc_type: bank_statement
+    institution_id: gb_aire_valley_bank
+    holding_id: h_aire_current
+    country: GB
+    languages: [en]
+    scripts: [Latn]
+    origin: upload
+    uploaded_by: p_thomas
+    uploaded_on: 2026-09-18
+    template: statement
+    style: {accent: "#1B4F72", lang: en, size: 8.6}
+    brand: {name: AIRE VALLEY BANK, line: "Headingley branch, 41 Otley Road, Leeds LS6 3AA · Fictional bank for the AfterLedger demo"}
+    heading: CURRENT ACCOUNT STATEMENT
+    kv:
+      - [Account name, MRS MARGARET A CLARKE, account_holder]
+      - [Sort code, 40-21-17, sort_code]
+      - [Account number, "61840273", account_number]
+      - [Address, "22 HAWTHORN GROVE, LEEDS LS6 4QT", address]
+      - [Account, CLASSIC CURRENT ACCOUNT, account_type]
+      - [Period, "{d:2025-10-01|d_mon_y} to {d:2026-09-30|d_mon_y}", period]
+    continued: "AIRE VALLEY BANK · Current account statement (continued) · 40-21-17 61840273"
+    columns:
+      - {key: date, label: Date, width: 0.13}
+      - {key: narration, label: Description, width: 0.41}
+      - {key: debit, label: Paid out, width: 0.15, align: right}
+      - {key: credit, label: Paid in, width: 0.15, align: right}
+      - {key: balance, label: Balance, width: 0.16, align: right}
+    ledger:
+      start: 2025-10-01
+      end: 2026-09-30
+      date_style: d_mon_y2
+      amount_style: en
+      group_by: month
+      bf_label: BALANCE BROUGHT FORWARD
+      opening: 1860.98
+      recurring:
+        - {narration: DWP STATE PENSION, credit: 739.60, every_days: 28, first: 2025-10-06, seq: 10, meta: {group: state_pension}}
+        - {narration: LEEDS MILLS PENSION LMP07714, credit: 412.60, day: 28, seq: 12, meta: {group: works_pension}}
+        - {narration: LEEDS CC COUNCIL TAX DD, debit: 148.00, day: 1, months: [10, 11, 12, 1, 4, 5, 6, 7, 8, 9], seq: 20, meta: {group: council_tax}}
+        - {narration: YORKSHIRE WATER DD, debit: 38.50, day: 15, seq: 22, meta: {group: water}}
+        - {narration: NORTHERN GAS AND POWER DD, debit: [96.00, 118.00, 131.00, 131.00, 118.00, 96.00, 74.00, 61.00, 52.00, 52.00, 61.00, 74.00], day: 19, seq: 24, meta: {group: energy}}
+        - {narration: TFR TO INSTANT SAVER 55180012, debit: 200.00, day: 3, seq: 30, meta: {group: instant_saver}}
+        - {narration: CO-OP FOOD HEADINGLEY, debit: [62.18, 58.40, 71.25, 49.90, 66.05, 54.12, 60.37, 57.80, 63.44, 51.29, 59.93, 48.60], day: 9, seq: 40}
+        - {narration: CO-OP FOOD HEADINGLEY, debit: [44.70, 51.32, 39.85, 47.10, 42.66, 55.08, 38.94, 46.21, 40.17, 49.83, 43.52, 37.40], day: 23, seq: 41}
+      lines:
+        - {date: 2025-10-14, narration: CASH WITHDRAWAL OTLEY RD, debit: 100.00}
+        - {date: 2025-11-21, narration: BOOTS LEEDS BRIGGATE, debit: 18.75}
+        - {date: 2025-12-12, narration: CASH WITHDRAWAL OTLEY RD, debit: 150.00}
+        - {date: 2026-01-20, narration: RSPB MEMBERSHIP, debit: 54.00}
+        - {date: 2026-02-11, narration: CASH WITHDRAWAL OTLEY RD, debit: 100.00}
+        - {date: 2026-03-02, narration: NS&I PRIZE, credit: 25.00, meta: {group: nsi_prize}}
+        - {date: 2026-03-26, narration: BOOTS LEEDS BRIGGATE, debit: 22.40}
+        - {date: 2026-04-16, narration: CASH WITHDRAWAL OTLEY RD, debit: 100.00}
+        - {date: 2026-05-14, narration: HEADINGLEY OPTICIANS, debit: 89.00}
+        - {date: 2026-06-17, narration: CASH WITHDRAWAL OTLEY RD, debit: 100.00}
+        - {date: 2026-07-02, narration: NS&I PRIZE, credit: 50.00, meta: {group: nsi_prize}}
+        - {date: 2026-07-22, narration: CASH WITHDRAWAL OTLEY RD, debit: solve}
+        - {date: 2026-08-13, narration: BOOTS LEEDS BRIGGATE, debit: 31.60}
+      anchors:
+        - {closing: 8940.12}
+    summary_fields: {closing_balance: closing}
+    closing_note: "Balance carried forward on {d:2026-09-30|d_mon_y}: {closing}"
+    fine_print: "Aire Valley Bank is a fictional bank created for the AfterLedger demo; this is a sample document."
+    fields:
+      account_holder: {value: MRS MARGARET A CLARKE}
+      account_number: {value: "61840273"}
+
+  # --------------------------------------------------------------------------------------------
+  - id: pennine_passbook
+    title: Pennine Building Society passbook
+    doc_type: passbook
+    institution_id: gb_pennine_bs
+    holding_id: h_pennine
+    country: GB
+    languages: [en]
+    scripts: [Latn]
+    origin: photo
+    uploaded_by: p_thomas
+    uploaded_on: 2026-09-18
+    template: passbook
+    style: {accent: "#4A235A", lang: en, size: 8}
+    brand: {name: PENNINE BUILDING SOCIETY}
+    heading: EASY ACCESS SAVER PASSBOOK
+    kv:
+      - [NAME, MRS M A CLARKE, account_holder]
+      - [ACCOUNT, 0412 7731, account_number]
+    columns:
+      - {key: date, label: DATE, width: 0.18}
+      - {key: narration, label: DETAILS, width: 0.32}
+      - {key: debit, label: WITHDRAWN, width: 0.16, align: right}
+      - {key: credit, label: PAID IN, width: 0.16, align: right}
+      - {key: balance, label: BALANCE, width: 0.18, align: right}
+    ledger:
+      start: 2024-01-01
+      end: 2026-09-30
+      date_style: d_mon_y2
+      amount_style: en
+      group_by: breaks
+      page_breaks: []
+      bf_label: B/F
+      opening: 10985.40
+      lines:
+        - {date: 2024-03-08, narration: CASH IN, credit: 300.00}
+        - {date: 2024-06-30, narration: INTEREST, credit: 141.12}
+        - {date: 2024-11-15, narration: CHEQUE IN, credit: 250.00}
+        - {date: 2025-02-20, narration: CASH OUT, debit: 200.00}
+        - {date: 2025-06-30, narration: INTEREST, credit: 236.47}
+        - {date: 2025-09-12, narration: CASH IN, credit: 400.00}
+        - {date: 2026-01-09, narration: CASH OUT, debit: 150.00}
+        - {date: 2026-04-02, narration: CASH IN, credit: 250.00}
+        - {date: 2026-06-30, narration: INTEREST, credit: 187.01}
+    photo: {angle: 1.9, blur: 0.9}
+    misreads:
+      reader_b: {rows: {4: {credit: "286.47"}, 7: {credit: "290.00"}, 9: {balance: "12,460.00"}}}
+    fields:
+      account_holder: {value: MRS M A CLARKE}
+      account_number: {value: 0412 7731}
+
+  # --------------------------------------------------------------------------------------------
+  - id: pension_letter
+    title: Leeds Mills Pension Scheme letter
+    doc_type: pension_letter
+    institution_id: gb_leeds_mills_pension
+    holding_id: h_leeds_mills
+    country: GB
+    languages: [en]
+    scripts: [Latn]
+    origin: upload
+    uploaded_by: p_thomas
+    uploaded_on: 2026-09-18
+    template: letter
+    style: {accent: "#1E5631", lang: en, size: 9}
+    brand: {name: LEEDS MILLS PENSION SCHEME, line: "Fictional workplace pension scheme for the AfterLedger demo · PO Box 7714, Leeds LS1 9ZZ"}
+    date: "{d:2026-03-20|d_month_y}"
+    ref: "Our reference: LMP/07714/C"
+    ref_field: reference
+    to: ["Mrs Margaret Anne Clarke", "22 Hawthorn Grove", "Leeds LS6 4QT"]
+    subject: Your pension from April 2026
+    body:
+      - "Dear Mrs Clarke,"
+      - "Each year we review the pensions we pay. From 1 April 2026 your pension will increase by 3.1%."
+    kv:
+      - [Your pension from 1 April 2026, "£4,951.20 a year (£412.60 a month)", amount]
+      - [Paid, "Monthly on the 28th, into your Aire Valley Bank account", payment_day]
+      - [Member, "Mrs Margaret Anne Clarke", member_name]
+      - [Reference, LMP/07714/C, reference_kv]
+    after:
+      - "If your circumstances change, or if you need to tell us about a death, please contact us quoting your reference."
+      - "Yours sincerely,"
+    signature: {label: Pensions Administration Team, name: "R. Haworth"}
+    fields:
+      member_name: {value: Mrs Margaret Anne Clarke}
+      reference: {value: LMP/07714/C}
+
+  # --------------------------------------------------------------------------------------------
+  - id: will
+    title: Will, copy
+    doc_type: will
+    country: GB
+    languages: [en]
+    scripts: [Latn]
+    origin: upload
+    uploaded_by: p_thomas
+    uploaded_on: 2026-09-18
+    template: letter
+    style: {accent: "#3B3B3B", lang: en, size: 9.5}
+    subject: "THIS IS THE LAST WILL of me MARGARET ANNE CLARKE of 22 Hawthorn Grove, Leeds LS6 4QT"
+    subject_field: testator
+    body:
+      - "1. I revoke all earlier wills and codicils."
+      - {text: "2. I appoint my son THOMAS EDWARD CLARKE of 9 Beech Rise, Harrogate HG2 7PL to be the executor of this will.", field: executor}
+      - "3. I give all my estate to my children THOMAS EDWARD CLARKE and HELEN MARY OWEN in equal shares absolutely, after paying my debts, funeral expenses and the expenses of administering my estate."
+      - "4. If either of my children dies before me, their share goes to their own children in equal shares."
+      - {text: "Signed by MARGARET ANNE CLARKE on {d:2019-05-03|d_month_y} in our presence and then by us in hers.", field: date_of_will}
+    after:
+      - "Witness 1: Susan K. Pickles, 18 Hawthorn Grove, Leeds, retired teacher"
+      - "Witness 2: David R. Ainsworth, 3 Cardigan Road, Leeds, pharmacist"
+      - "COPY · The original is held by the executor. Sample document created for the AfterLedger demo."
+    fields:
+      testator: {value: MARGARET ANNE CLARKE}
+      executor: {value: THOMAS EDWARD CLARKE}
+      date_of_will: {value: 2019-05-03}

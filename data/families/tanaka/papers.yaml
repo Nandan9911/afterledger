@@ -1,0 +1,178 @@
+# The Tanaka family's papers (Munich, with accounts in Germany and Japan). Isarbank and Toto Bank are
+# fictional; the death certificate uses a generic layout with a sample watermark. Dates are written
+# for the story day 14 October 2026 and shift with it.
+papers:
+  # --------------------------------------------------------------------------------------------
+  - id: death_cert
+    title: Sterbeurkunde
+    title_en: Death certificate (Germany)
+    doc_type: death_certificate
+    country: DE
+    languages: [de]
+    scripts: [Latn]
+    origin: upload
+    uploaded_by: p_anna
+    uploaded_on: 2026-09-30
+    template: certificate
+    style: {accent: "#2F3E46", lang: de, size: 9}
+    pre_title: "Standesamt München (Muster für die AfterLedger-Demo)"
+    titles:
+      - {text: "STERBEURKUNDE", size: 14}
+    subtitle: "Synthetisches Testdokument · keine Urkunde"
+    sections:
+      - kv:
+          - ["Familienname", "TANAKA", family_name]
+          - ["Vornamen", "Hiroshi", given_names]
+          - ["Name", "Hiroshi TANAKA", deceased_name]
+          - ["Geburtsdatum", "{d:1949-11-03|dmy_dot}", birth_date]
+          - ["Geburtsort", "Kyoto (Japan)", birth_place]
+          - ["Staatsangehörigkeit", "japanisch", nationality]
+          - ["Letzter Wohnsitz", "Leopoldstraße 112, 80804 München", address]
+          - ["Sterbedatum", "{d:2026-09-24|dmy_dot}", date_of_death]
+          - ["Sterbeort", "München", place_of_death]
+          - ["Familienstand", "verwitwet", marital_status]
+          - ["Registernummer", "S 2026/18093", registration_number]
+          - ["Ausstellungsdatum", "{d:2026-09-29|dmy_dot}", registration_date]
+        label_w: 160
+        lang: de
+    stamp: {text: "STANDESAMT · MUSTER", round: true}
+    signature: {label: "Standesbeamtin", name: "K. Huber"}
+    note: "This is a sample document created for the AfterLedger demo. It has no legal effect."
+    fields:
+      deceased_name: {value: Hiroshi TANAKA}
+      birth_date: {value: 1949-11-03}
+      date_of_death: {value: 2026-09-24}
+      place_of_death: {value: München}
+      address: {value: "Leopoldstraße 112, 80804 München"}
+      nationality: {value: japanisch}
+
+  # --------------------------------------------------------------------------------------------
+  - id: rowing_club
+    title: Mitgliedsbescheinigung, Ruderclub Isar
+    title_en: Membership certificate, Isar Rowing Club (Germany)
+    doc_type: club_membership
+    country: DE
+    languages: [de]
+    scripts: [Latn]
+    origin: upload
+    uploaded_by: p_anna
+    uploaded_on: 2026-10-03
+    template: certificate
+    style: {accent: "#1F4E79", lang: de, size: 9}
+    pre_title: Ruderclub Isar e.V. (Muster für die AfterLedger-Demo)
+    titles:
+      - {size: 14, text: MITGLIEDSBESCHEINIGUNG}
+    subtitle: Synthetisches Testdokument · fiktiver Verein
+    sections:
+      - kv:
+          - [Mitglied, Hiroshi TANAKA, member_name]
+          - [Mitgliedsnummer, RCI-0417, membership_number]
+          - [Mitglied seit, "{d:2004-04-12|dmy_dot}", member_since]
+          - [Jahresbeitrag, "180,00 EUR", annual_fee]
+          - [Bezahlt bis, "{d:2026-12-31|dmy_dot}", paid_until]
+          - [Zahlungsweise, SEPA-Lastschrift vom Girokonto bei der Isarbank, payment_method]
+        label_w: 160
+        lang: de
+    signature: {label: Kassenwart, name: M. Brandl}
+    note: >-
+      This is a sample document created for the AfterLedger demo. The club is fictional. No layout is
+      stored for this kind of paper, so the demo shows one being worked out before the paper is read.
+  - id: isar_statement
+    title: Isarbank Kontoauszug
+    title_en: Isarbank statement
+    doc_type: bank_statement
+    institution_id: de_isarbank
+    holding_id: h_isar
+    country: DE
+    languages: [de]
+    scripts: [Latn]
+    origin: upload
+    uploaded_by: p_anna
+    uploaded_on: 2026-09-30
+    template: statement
+    style: {accent: "#00539B", lang: de, size: 8.6}
+    brand: {name: ISARBANK MÜNCHEN, line: "Filiale Schwabing · Fiktive Bank für die AfterLedger-Demo"}
+    heading: KONTOAUSZUG - GIROKONTO
+    kv:
+      - [Kontoinhaber, Hiroshi Tanaka, account_holder]
+      - [IBAN, "DE00 7009 9999 0004 4120 77", account_number]
+      - [Kontoart, Girokonto, account_type]
+      - [Zeitraum, "{d:2026-07-01|dmy_dot} - {d:2026-09-30|dmy_dot}", period]
+    continued: "ISARBANK MÜNCHEN · Kontoauszug (Fortsetzung)"
+    columns:
+      - {key: date, label: Datum, width: 0.13}
+      - {key: narration, label: Buchungstext, width: 0.43}
+      - {key: debit, label: Soll, width: 0.14, align: right}
+      - {key: credit, label: Haben, width: 0.14, align: right}
+      - {key: balance, label: Saldo, width: 0.16, align: right}
+    ledger:
+      start: 2026-07-01
+      end: 2026-09-30
+      date_style: dmy_dot
+      amount_style: de
+      group_by: month
+      bf_label: ALTER SALDO
+      opening: 49799.85
+      recurring:
+        - {narration: DRV BUND ALTERSRENTE, credit: 1684.20, day: 30, months: [7, 8], seq: 10, meta: {group: drv_pension}}
+        - {narration: MIETE LEOPOLDSTR 112, debit: 1240.00, day: 1, months: [7, 8, 9], seq: 20, meta: {group: rent}}
+        - {narration: SWM STADTWERKE MUENCHEN, debit: 96.00, day: 15, months: [7, 8, 9], seq: 22, meta: {group: utilities}}
+        - {narration: EDEKA SCHWABING, debit: [212.40, 198.75, 87.30], day: 9, months: [7, 8, 9], seq: 30}
+      lines:
+        - {date: 2026-07-20, narration: BARGELD GAA LEOPOLDSTR, debit: 200.00}
+        - {date: 2026-08-18, narration: APOTHEKE AM ELISABETHPLATZ, debit: 46.20}
+        - {date: 2026-09-03, narration: BARGELD GAA LEOPOLDSTR, debit: solve}
+      anchors:
+        - {closing: 48215.60}
+    summary_fields: {closing_balance: closing}
+    closing_note: "Neuer Saldo am {d:2026-09-30|dmy_dot}: {closing}"
+    fine_print: "Isarbank München ist eine fiktive Bank für die AfterLedger-Demo. Synthetisches Testdokument."
+    fields:
+      account_holder: {value: Hiroshi Tanaka}
+      account_number: {value: DE00 7009 9999 0004 4120 77}
+      account_type: {value: Girokonto}
+
+  # --------------------------------------------------------------------------------------------
+  - id: toto_passbook
+    title: 東都銀行 普通預金通帳
+    title_en: Toto Bank passbook (Tokyo)
+    doc_type: passbook
+    institution_id: jp_toto_bank
+    holding_id: h_toto
+    country: JP
+    languages: [ja]
+    scripts: [Jpan]
+    origin: photo
+    uploaded_by: p_anna
+    uploaded_on: 2026-10-02
+    template: passbook
+    style: {accent: "#5B2C6F", lang: ja, size: 8}
+    brand: {name: 東都銀行}
+    heading: 普通預金
+    kv:
+      - [お名前, タナカ ヒロシ, account_holder]
+      - [口座, "3065218", account_number]
+    columns:
+      - {key: date, label: 年月日, width: 0.17}
+      - {key: narration, label: 摘要, width: 0.31}
+      - {key: debit, label: お支払金額, width: 0.17, align: right}
+      - {key: credit, label: お預り金額, width: 0.16, align: right}
+      - {key: balance, label: 差引残高, width: 0.19, align: right}
+    ledger:
+      start: 2025-10-01
+      end: 2026-09-20
+      date_style: jp_era_numeric
+      amount_style: jp
+      group_by: breaks
+      page_breaks: []
+      bf_label: 繰越
+      opening: 3462118
+      lines:
+        - {date: 2026-02-21, narration: 利息, credit: 173}
+        - {date: 2026-05-12, narration: 振込 タナカ ケンタ, credit: 30000}
+        - {date: 2026-06-03, narration: 東京都水道局, debit: 12500}
+        - {date: 2026-08-22, narration: 利息, credit: 209}
+    photo: {angle: 1.2, blur: 0.6}
+    fields:
+      account_holder: {value: タナカ ヒロシ}
+      account_number: {value: "3065218"}

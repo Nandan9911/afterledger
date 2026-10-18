@@ -1,0 +1,20 @@
+# Keep build contexts small: dependencies and outputs are rebuilt inside the image.
+**/node_modules
+**/.next
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/*.tsbuildinfo
+.data
+.git
+.env
+.env.*
+!.env.example
+apps/web/playwright-report
+apps/web/test-results
+infra/terraform/.terraform
+infra/terraform/*.tfstate*
+docs

@@ -1,0 +1,2 @@
+AfterLedger is served by Firebase Hosting, which passes every request to the afterledger-web service on Cloud Run
+(see firebase.json at the repository root). This folder only exists because Firebase Hosting needs one.

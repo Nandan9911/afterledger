@@ -1,0 +1,1057 @@
+assertions:
+- id: in_rbi_threshold
+  text: The threshold limit for the simplified procedure is ₹15 lakh, or a higher limit a bank fixes.
+  quote: ‘Threshold limit’ means ₹15 lakh or such higher limit as may be fixed by the bank.
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 283(3)
+  jurisdiction: IN
+  topic: deposit/threshold
+  level: gold
+  ttl_days: 90
+- id: in_rbi_284
+  text: Paying the nominee or survivor is a valid discharge of the bank's liability, subject to conditions.
+  quote: the payment of the outstanding balance upon the death of the depositor(s) to the nominee(s) / survivor(s) shall be considered a valid discharge of a bank’s liability
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 284
+  jurisdiction: IN
+  topic: deposit/nominee/route
+  level: gold
+  ttl_days: 365
+- id: in_rbi_286_no_legal_docs
+  text: When paying a nominee or survivor, the bank may not ask for a succession certificate, probate, an indemnity or a surety, whatever the amount.
+  quote: the bank shall not insist on production of legal documents such as Succession Certificate, Letter of Administration, Probate of Will, etc., or seek any bond of indemnity / surety from the nominee(s) / survivor(s) / third-party, irrespective of the amount standing to the credit of the deceased account holder(s).
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 286
+  jurisdiction: IN
+  topic: deposit/nominee/must_not_ask
+  level: gold
+  ttl_days: 365
+- id: in_rbi_286_claim_form
+  text: A nominee's claim needs the Annex V claim form signed by the nominee.
+  quote: (1) Claim form, as given in Annex V, duly signed by the nominee(s) / survivor(s);
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 286(1)
+  jurisdiction: IN
+  topic: deposit/nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_rbi_286_ovd
+  text: A nominee's claim needs the death certificate and the nominee's officially valid identity document.
+  quote: (3) Officially Valid Document of the nominee / survivor towards verifying her / his identity and address.
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 286(2)-(3)
+  jurisdiction: IN
+  topic: deposit/nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_rbi_287_simplified
+  text: Without a nominee, a bank must use a simplified procedure when the total payable is below the threshold, there is no will, no contesting claim and no court order.
+  quote: a bank shall follow a simplified procedure for settlement of claims in respect of deposit accounts where the aggregate amount payable, including accrued interest, as on the date of the application is less than the threshold limit
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 287
+  jurisdiction: IN
+  topic: deposit/no_nominee/route
+  level: gold
+  ttl_days: 365
+- id: in_rbi_287_no_will
+  text: The simplified procedure applies only if the depositor left no will.
+  quote: (2) there is no Will left behind by the deceased depositor(s),
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 287(2)
+  jurisdiction: IN
+  topic: deposit/no_nominee/route
+  level: gold
+  ttl_days: 365
+- id: in_rbi_287_no_contest
+  text: The simplified procedure applies only if there is no contesting claim.
+  quote: (3) there is no contesting claim, and
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 287(3)
+  jurisdiction: IN
+  topic: deposit/no_nominee/route
+  level: gold
+  ttl_days: 365
+- id: in_rbi_288_claim_form
+  text: Up to the threshold, the claimants sign the Annex VI claim form, except heirs who sign a no-objection letter.
+  quote: (1) Claim form, as given in Annex VI, duly filled in and signed by the claimant(s) other than those who have signed the letter of disclaimer/ no objection;
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 288(1)
+  jurisdiction: IN
+  topic: deposit/no_nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_rbi_288_indemnity
+  text: Up to the threshold, the claimants sign a bond of indemnity in the Annex VII format.
+  quote: (4) Bond of indemnity, as given in Annex VII, signed by the claimant(s);
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 288(4)
+  jurisdiction: IN
+  topic: deposit/no_nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_rbi_288_disclaimer
+  text: Heirs who are not claiming sign a letter of disclaimer or no objection in the Annex VIII format.
+  quote: (5) Letter of disclaimer / no objection, as given in Annex VIII, from non-claimant legal heir(s), if applicable; and
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 288(5)
+  jurisdiction: IN
+  topic: deposit/no_nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_rbi_288_heirship
+  text: Up to the threshold, the heirs are shown either by a legal heir certificate or by an Annex IX declaration from an independent person known to the family.
+  quote: (7) Declaration, as given in Annex IX, regarding the legal heir(s) of the deceased depositor(s) by an independent person who is well known to the family of the deceased, is not a party to the claim and is acceptable to the bank.
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 288(6)-(7)
+  jurisdiction: IN
+  topic: deposit/no_nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_rbi_288_death_cert
+  text: Every deposit claim needs the death certificate.
+  quote: (2) Death certificate of the deceased depositor(s);
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 288(2)
+  jurisdiction: IN
+  topic: deposit/no_nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_rbi_289_no_surety
+  text: Up to the threshold, the bank may not ask for a surety from anyone else.
+  quote: No bond of surety from a third-party shall be obtained in case of claims up to the threshold limit.
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 289
+  jurisdiction: IN
+  topic: deposit/no_nominee/must_not_ask
+  level: gold
+  ttl_days: 365
+- id: in_rbi_290_above
+  text: Above the threshold, the bank settles on a succession certificate, or on a legal heir certificate or sworn affidavit, and may ask for a surety.
+  quote: 'In cases where claim amount is above the threshold limit, a bank shall settle the claim based on:'
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 290
+  jurisdiction: IN
+  topic: deposit/above_threshold/route
+  level: gold
+  ttl_days: 365
+- id: in_rbi_291_will
+  text: With a will, the bank settles on probate or letters of administration, though it may use its discretion when there is no dispute.
+  quote: However, the bank is free to exercise discretion and act as per ‘Will’ of the deceased without requiring production of the probate of such Will
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: paras 291-292
+  jurisdiction: IN
+  topic: deposit/will/route
+  level: gold
+  ttl_days: 365
+- id: in_rbi_319_15_days
+  text: A bank must settle a deposit claim within 15 calendar days of receiving every required document.
+  quote: A bank shall settle a claim in respect of deposit accounts of a deceased customer within a period not exceeding 15 calendar days from the date of receipt of all the required documents associated with the claim.
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 319
+  jurisdiction: IN
+  topic: deposit/clock
+  level: gold
+  ttl_days: 365
+- id: in_rbi_317_acknowledge
+  text: A claim can be lodged at any branch, and the bank confirms in writing once it has every document.
+  quote: On subsequent submission of all the required documents, the bank shall issue a confirmation to the claimant that all required documents have been received for processing of the claim.
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 317
+  jurisdiction: IN
+  topic: deposit/submission
+  level: gold
+  ttl_days: 180
+- id: in_rbi_321_compensation
+  text: If the bank is late, it pays interest for the delay at not less than the Bank Rate plus 4% a year, with the Bank Rate taken on the day it had every document.
+  quote: compensation shall be paid by the bank in the form of interest, at a rate not less than the prevailing Bank Rate + 4 per cent per annum, on the settlement amount due for the period of delay. The reference date for reckoning the amount due and the prevailing Bank Rate shall be the date of receipt of all required documents from the claimant.
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 321
+  jurisdiction: IN
+  topic: deposit/compensation
+  level: gold
+  ttl_days: 365
+- id: in_rbi_321_reasons
+  text: A bank that misses the deadline must tell the claimant the reasons for the delay.
+  quote: If any deposit related claim is not settled within the timeframe stipulated at paragraph 319 above, then a bank shall communicate the reasons for such delay to the claimant(s).
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 321
+  jurisdiction: IN
+  topic: deposit/compensation
+  level: gold
+  ttl_days: 365
+- id: in_rbi_296_fd_premature
+  text: A term deposit can be closed early on the depositor's death without any penal charge.
+  quote: premature termination of term deposits would be allowed without any penal charge, even if the deposit is within the lock-in-period.
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 296
+  jurisdiction: IN
+  topic: deposit/term_deposit
+  level: gold
+  ttl_days: 365
+- id: in_rbi_299_locker_nominee
+  text: A locker nominee is given access to the locker and may remove its contents.
+  quote: the bank shall give access to the locker to such nominee(s) with liberty to remove the contents of the locker.
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 299
+  jurisdiction: IN
+  topic: locker/nominee/route
+  level: gold
+  ttl_days: 365
+- id: in_rbi_303_locker_docs
+  text: A locker nominee's claim needs the Annex V form, the death certificate and the nominee's identity document.
+  quote: (2) Death certificate of the safe deposit locker hirer(s); and
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 303
+  jurisdiction: IN
+  topic: locker/nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_rbi_306_locker_no_legal
+  text: With a nominee, the bank may not ask for a succession certificate, probate or indemnity for a locker unless the nomination is in doubt.
+  quote: Production of legal documents, viz., Succession Certificate, Letter of Administration, Probate of Will, etc., or Bond of indemnity from the nominee(s)/ survivor(s) shall not be required unless there is any discrepancy in nomination.
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 306
+  jurisdiction: IN
+  topic: locker/nominee/must_not_ask
+  level: gold
+  ttl_days: 365
+- id: in_rbi_309_locker_simplified
+  text: Without a nominee, a locker is released to the heirs under a simplified procedure without legal documents such as a succession certificate.
+  quote: a bank shall obtain the following documents to settle the claim without obtaining any legal documents such as Succession Certificate, Letter of Administration, court order, etc.
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 309
+  jurisdiction: IN
+  topic: locker/no_nominee/route
+  level: gold
+  ttl_days: 365
+- id: in_rbi_320_locker_15_days
+  text: For a locker, the bank must process the claim and fix the inventory date within 15 calendar days of receiving every document.
+  quote: within 15 calendar days of receipt of all the required documents, process the claim and communicate with the claimant(s) for fixing the date for making inventory of the locker
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 320
+  jurisdiction: IN
+  topic: locker/clock
+  level: gold
+  ttl_days: 365
+- id: in_rbi_322_locker_compensation
+  text: A bank that misses the locker deadline pays ₹5,000 for each day of delay.
+  quote: the bank shall be required to pay compensation to the claimant(s) at the rate of ₹5,000 for each day of delay
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 322
+  jurisdiction: IN
+  topic: locker/compensation
+  level: gold
+  ttl_days: 90
+- id: in_rbi_324_foreign_death
+  text: A bank accepts a proof of death issued abroad when it is certified in the issuing country by one of five modes, including an apostille.
+  quote: 'a bank shall accept the original certified copy of the document issued for ‘proof of death’, certified in the country of its issuance in any one of the following modes:'
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 324
+  jurisdiction: IN
+  topic: foreign_death_certificate
+  level: gold
+  ttl_days: 365
+- id: in_rbi_324_apostille
+  text: An apostille is one of the accepted modes for a death certificate issued abroad.
+  quote: (5) Apostilled.
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 324(5)
+  jurisdiction: IN
+  topic: foreign_death_certificate
+  level: gold
+  ttl_days: 365
+- id: in_sebi_threshold_demat
+  text: For dematerialised securities, simplified documentation applies to claims up to ₹30 lakh, and Quick Transmission Processing to claims up to ₹30 thousand.
+  quote: Securities in dematerialised mode | 30 | 30
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure para 3.1
+  jurisdiction: IN
+  topic: securities/threshold
+  level: gold
+  ttl_days: 90
+- id: in_sebi_threshold_physical
+  text: For securities held as paper certificates, simplified documentation applies up to ₹10 lakh, and Quick Transmission Processing up to ₹10 thousand.
+  quote: Securities in physical mode | 10 | 10
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure para 3.1
+  jurisdiction: IN
+  topic: securities/threshold
+  level: gold
+  ttl_days: 90
+- id: in_sebi_common_docs
+  text: Without a nomination, the claimant submits the transmission request form, the client master list of their own demat account, a verifiable death certificate and the statement of account.
+  quote: (b) Latest CML of the demat account of the claimant(s);
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure para 4.2.1
+  jurisdiction: IN
+  topic: securities/no_nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_sebi_request_form
+  text: The claimant uses the transmission request form in Annexure-3 for claims outside Quick Transmission Processing.
+  quote: Transmission request form by the claimant(s) (format specified at Annexure-2 for QTP claims and Annexure-3 for other claims);
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure para 4.2.1(a)
+  jurisdiction: IN
+  topic: securities/no_nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_sebi_simplified_indemnity
+  text: Under simplified documentation, the claimant also gives a notarised indemnity bond in the Annexure-4 format.
+  quote: Notarized indemnity bond indemnifying the processing entity (format specified at Annexure-4); and
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure para 4.2.2.2(a)
+  jurisdiction: IN
+  topic: securities/no_nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_sebi_simplified_affidavit
+  text: Under simplified documentation, all legal heirs give a notarised affidavit-cum-no-objection in the Annexure-5 format.
+  quote: Notarised affidavit-cum-NOC from all legal heirs confirming identification and claim of legal ownership to the securities and no objection (format specified at Annexure-5);
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure para 4.2.2.2(b)
+  jurisdiction: IN
+  topic: securities/no_nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_sebi_stamp_paper
+  text: The indemnity and the affidavit are executed on non-judicial stamp paper of the value the claimant's state requires.
+  quote: The indemnity and affidavit-cum-NOC shall be executed on non-judicial stamp paper of appropriate value as specified under the Stamp Act of the state where the claimant resides.
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure para 4.2.2.2, note 2
+  jurisdiction: IN
+  topic: securities/no_nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_sebi_21_days
+  text: The processing entity must complete the transmission within 21 calendar days of receiving every required document.
+  quote: The entity shall process the transmission case within a period not exceeding 21 calendar days or any such period as may be specified by the Board, from the date of receipt of all the required documents associated with the claim.
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure para 6.1.11.1
+  jurisdiction: IN
+  topic: securities/clock
+  level: gold
+  ttl_days: 365
+- id: in_sebi_foreign_death
+  text: For a death abroad, the processing entity accepts a death certificate certified in the issuing country, including by apostille, with an English translation if needed.
+  quote: In cases involving death of an investor outside India, ‘proof of death’ document is issued by an authority outside the country.
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure para 6.1.10
+  jurisdiction: IN
+  topic: foreign_death_certificate
+  level: gold
+  ttl_days: 365
+- id: in_irdai_15_days
+  text: An insurer must settle a death claim that needs no investigation within 15 days of the claim being intimated.
+  quote: Death claim, except in cases warranting investigation | Within 15 days from the date of intimation of claim.
+  source_url: https://irdai.gov.in/document-detail?documentId=6064498
+  locator: Life insurance, para 2(1)
+  jurisdiction: IN
+  topic: life_insurance/clock
+  level: gold
+  ttl_days: 365
+- id: in_irdai_45_days
+  text: A death claim that warrants investigation must be settled within 45 days of intimation.
+  quote: Death claim warranting investigation | Within 45 days from the date of intimation of claim.
+  source_url: https://irdai.gov.in/document-detail?documentId=6064498
+  locator: Life insurance, para 2(1)
+  jurisdiction: IN
+  topic: life_insurance/clock
+  level: gold
+  ttl_days: 365
+- id: in_irdai_interest
+  text: If an insurer misses the deadline, it pays interest at the bank rate plus 2% from the date the claim was intimated.
+  quote: the claimant is entitled for interest at bank rate plus 2 percent from the date of receipt of intimation till the date of payment.
+  source_url: https://irdai.gov.in/document-detail?documentId=6064498
+  locator: Life insurance, para 2(2)
+  jurisdiction: IN
+  topic: life_insurance/compensation
+  level: gold
+  ttl_days: 365
+- id: in_irdai_no_rejection_delay
+  text: An insurer may not reject or close a claim because documents or the intimation came late.
+  quote: No claim shall be rejected or closed for want of documents or for delayed intimation of claim.
+  source_url: https://irdai.gov.in/document-detail?documentId=6064498
+  locator: Life insurance, para 1(ii)
+  jurisdiction: IN
+  topic: life_insurance/must_not
+  level: gold
+  ttl_days: 365
+- id: in_pmjjby_age
+  text: PMJJBY can be joined between 18 and 50, and cover continues to age 55 for those who joined before 50.
+  quote: 'Eligibility: Age 18–50 years to enroll; coverage continues up to age 55 for those who join before 50.'
+  source_url: https://static.pib.gov.in/WriteReadData/specificdocs/documents/2025/may/doc202558551501.pdf
+  jurisdiction: IN
+  topic: pmjjby/eligibility
+  level: dual_verified
+  ttl_days: 180
+- id: in_pmjjby_premium
+  text: The PMJJBY premium is ₹436 a year, debited automatically from the member's bank or post office account.
+  quote: 'Affordable Premium: Just ₹436 per annum, auto-debited from the subscriber''s bank or post office account.'
+  source_url: https://static.pib.gov.in/WriteReadData/specificdocs/documents/2025/may/doc202558551501.pdf
+  jurisdiction: IN
+  topic: pmjjby/premium
+  level: dual_verified
+  ttl_days: 90
+- id: in_pmjjby_cover
+  text: PMJJBY pays ₹2 lakh on the member's death from any cause.
+  quote: 'Coverage: ₹2 lakh life insurance in case of the subscriber''s death (from any cause).'
+  source_url: https://static.pib.gov.in/WriteReadData/specificdocs/documents/2025/may/doc202558551501.pdf
+  jurisdiction: IN
+  topic: pmjjby/cover
+  level: dual_verified
+  ttl_days: 90
+- id: in_pmjjby_claim_30_days
+  text: The nominee should make the PMJJBY claim at the bank, preferably within 30 days of the death; later claims are still made the same way.
+  quote: preferably within 30 days from the date of the death
+  source_url: https://www.kotak.bank.in/content/dam/Kotak/form/Revised-claims-procedure-PMJJBY.pdf
+  jurisdiction: IN
+  topic: pmjjby/claim
+  level: sourced
+  ttl_days: 180
+- id: in_pmjjby_bank_7_days
+  text: The bank must forward a completed PMJJBY claim to the insurer within seven days.
+  quote: Maximum time limit for bank / post office to forward duly completed claim form to the insurer is seven days
+  source_url: https://www.kotak.bank.in/content/dam/Kotak/form/Revised-claims-procedure-PMJJBY.pdf
+  jurisdiction: IN
+  topic: pmjjby/clock
+  level: sourced
+  ttl_days: 180
+- id: in_pmjjby_insurer_7_days
+  text: The insurer must approve a PMJJBY claim and pay within seven days after that.
+  quote: maximum time limit for the insurer to approve claim and disburse money thereafter is seven days
+  source_url: https://www.kotak.bank.in/content/dam/Kotak/form/Revised-claims-procedure-PMJJBY.pdf
+  jurisdiction: IN
+  topic: pmjjby/clock
+  level: sourced
+  ttl_days: 180
+- id: in_pmsby_accident_only
+  text: PMSBY pays only for accidental death or disability.
+  quote: Accidental death cum disability cover of Rs. Two Lakh (Rs. One Lakh in case of partial disability)
+  source_url: https://static.pib.gov.in/WriteReadData/specificdocs/documents/2023/may/doc202359196601.pdf
+  jurisdiction: IN
+  topic: pmsby/cover
+  level: dual_verified
+  ttl_days: 180
+- id: in_pmsby_premium
+  text: The PMSBY premium is ₹20 a year.
+  quote: against a premium of just ₹ 20 per annum
+  source_url: https://static.pib.gov.in/WriteReadData/specificdocs/documents/2023/may/doc202359196601.pdf
+  jurisdiction: IN
+  topic: pmsby/premium
+  level: dual_verified
+  ttl_days: 90
+- id: in_rbi_msf_oct_2026
+  text: From 7 October 2026 the marginal standing facility rate, to which the Bank Rate is aligned, is 5.75%; it was 5.50% before.
+  quote: stand adjusted to 5.25 per cent and 5.75 per cent respectively
+  source_url: https://www.caalley.com/rbi26/NOTI282BE83CF8F7E464D97B1AA95699F9D721A.pdf
+  jurisdiction: IN
+  topic: rates/bank_rate
+  level: sourced
+  ttl_days: 60
+  notes: The Bank Rate has been aligned with the marginal standing facility rate since 2012; the rate before 7 October 2026 follows from the 25 basis point change.
+- id: in_sahyadri_threshold
+  text: Sahyadri Bank uses ₹15 lakh as its threshold for the simplified procedure.
+  quote: Our threshold limit for the simplified procedure is ₹15 lakh.
+  source_url: https://www.sahyadri-bank.example/bereavement
+  jurisdiction: IN
+  institution_id: in_sahyadri_bank
+  topic: deposit/threshold
+  level: dual_verified
+  ttl_days: 90
+- id: in_sahyadri_locker_rent
+  text: Sahyadri Bank charges locker rent once a year, in April.
+  quote: Locker rent for the year is charged on the first working day of April.
+  source_url: https://www.sahyadri-bank.example/bereavement
+  jurisdiction: IN
+  institution_id: in_sahyadri_bank
+  topic: locker/rent
+  level: dual_verified
+  ttl_days: 180
+- id: in_sahyadri_pmjjby_branch
+  text: PMJJBY and PMSBY claims are made at the Sahyadri Bank branch where the account is held.
+  quote: Pradhan Mantri Jeevan Jyoti Bima Yojana and Pradhan Mantri Suraksha Bima Yojana claims are lodged at the branch where the account is held.
+  source_url: https://www.sahyadri-bank.example/bereavement
+  jurisdiction: IN
+  institution_id: in_sahyadri_bank
+  topic: pmjjby/claim
+  level: dual_verified
+  ttl_days: 180
+- id: in_sahyadri_loans
+  text: Sahyadri Bank tells the family the amount due on a deceased borrower's loan on request; the loan is settled from the estate.
+  quote: Outstanding loans of a deceased borrower are settled from the estate; the bank will tell the family the amount due on request.
+  source_url: https://www.sahyadri-bank.example/bereavement
+  jurisdiction: IN
+  institution_id: in_sahyadri_bank
+  topic: loan/after_death
+  level: dual_verified
+  ttl_days: 180
+- id: in_narmada_threshold
+  text: Narmada Bank uses ₹15 lakh as its threshold for the simplified procedure.
+  quote: Our threshold limit for the simplified procedure is ₹15 lakh.
+  source_url: https://www.narmada-bank.example/deceased-claims
+  jurisdiction: IN
+  institution_id: in_narmada_bank
+  topic: deposit/threshold
+  level: dual_verified
+  ttl_days: 90
+- id: in_bsl_documents
+  text: Bharat Suraksha Life asks for the claim form, the death certificate, the policy, the nominee's identity proof and a cancelled cheque.
+  quote: To make a death claim, the nominee submits the claim form, a copy of the death certificate, the policy document, the nominee's identity proof and a cancelled cheque.
+  source_url: https://www.bharat-suraksha-life.example/claims/death-claim
+  jurisdiction: IN
+  institution_id: in_bharat_suraksha_life
+  topic: life_insurance/documents
+  level: dual_verified
+  ttl_days: 180
+- id: in_periyar_foreign
+  text: For a death outside India, Periyar Bank needs the death certificate certified in the issuing country in a mode the Reserve Bank accepts.
+  quote: Where the death occurred outside India, the death certificate must be certified in the country where it was issued in one of the modes the Reserve Bank accepts.
+  source_url: https://www.periyar-bank.example/nri/deceased-accounts
+  jurisdiction: IN
+  institution_id: in_periyar_bank
+  topic: foreign_death_certificate
+  level: dual_verified
+  ttl_days: 180
+- id: in_periyar_chits_heirs
+  text: If a chit subscriber dies before bidding, the nominee or heirs may continue the chit or receive the subscriptions paid, less the foreman's commission.
+  quote: If a subscriber dies before bidding, the nominee or legal heirs may continue the chit or receive the subscriptions paid after deduction of the foreman's commission.
+  source_url: https://www.periyar-chits.example/members/bereavement
+  jurisdiction: IN
+  institution_id: in_periyar_chits
+  topic: chit_fund/after_death
+  level: sourced
+  ttl_days: 180
+- id: in_gomti_transmission
+  text: Gomti Paper Mills transmits paper shares to the legal heirs under the SEBI framework, through its registrar.
+  quote: Shares held in physical form by a deceased shareholder are transmitted to the legal heirs under the SEBI framework for transmission of securities.
+  source_url: https://www.gomti-paper-mills.example/investors/transmission
+  jurisdiction: IN
+  institution_id: in_gomti_paper_mills
+  topic: securities/physical
+  level: sourced
+  ttl_days: 180
+- id: in_rbi_ucb_threshold
+  text: For urban co-operative banks the threshold limit is ₹5 lakh, or a higher limit the bank fixes.
+  quote: ‘Threshold limit’ means ₹5 lakh or such higher limit as may be fixed by a UCB.
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/292UCB.PDF
+  locator: UCB Directions, threshold definition
+  jurisdiction: IN
+  topic: deposit/threshold
+  level: gold
+  ttl_days: 90
+- id: in_rbi_305_inventory
+  text: For a locker, the bank fixes a date in writing to list the contents in front of the claimants and two independent witnesses.
+  quote: fix a date and time for making an inventory of the contents of the safe deposit locker
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: paras 305 and 313
+  jurisdiction: IN
+  topic: locker/inventory
+  level: gold
+  ttl_days: 180
+- id: in_rbi_312_locker_dispute
+  text: For a locker, a dispute among the heirs or beneficiaries needs probate, a succession certificate, letters of administration or a court order.
+  quote: Cases involving dispute amongst the legal heir(s) and / or beneficiaries named in the Will, as applicable, shall be settled based on Probate of Will or Succession Certificate or Letter of Administration or court order / decree
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 312
+  jurisdiction: IN
+  topic: locker/dispute
+  level: gold
+  ttl_days: 365
+- id: in_rbi_293_dispute
+  text: For deposits, contesting claims or a dispute among the heirs are settled on probate, letters of administration, a succession certificate or a court order.
+  quote: In case of contesting claims or dispute amongst the legal heir(s) and / or the beneficiaries named in the Will of the deceased depositor, a bank shall settle claims on the basis of Probate of Will or Letter of Administration or Succession Certificate or Court order / decree
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 293
+  jurisdiction: IN
+  topic: deposit/dispute
+  level: gold
+  ttl_days: 365
+- id: in_sebi_nominee_docs
+  text: With a nomination, the nominee submits the Annexure-3 request form, their client master list, the death certificate and the statement of account.
+  quote: (a) Transmission request form by the nominee(s) (format specified at Annexure-3);
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure para 4.1.2
+  jurisdiction: IN
+  topic: securities/nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_sebi_qtp
+  text: For low-value claims under Quick Transmission Processing, an immediate relative submits the Annexure-2 form-cum-undertaking on plain paper with proof of relationship.
+  quote: The claimant(s) shall submit the transmission request form-cum- undertaking as per format specified at Annexure-2 on a plain paper along with a document establishing relationship between the claimant(s) and the deceased security holder(s).
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure para 4.2.2.1
+  jurisdiction: IN
+  topic: securities/qtp
+  level: gold
+  ttl_days: 180
+- id: in_sebi_above_threshold
+  text: Above the simplified threshold, the claimant adds an affidavit-cum-no-objection from all heirs and a will with probate, a legal heirship certificate, or a succession certificate or court document.
+  quote: 'For claims above the threshold for simplified documentation, the claimant shall submit the following additional documents in addition to the common documents requirement:'
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure para 4.2.2.3
+  jurisdiction: IN
+  topic: securities/above_threshold
+  level: gold
+  ttl_days: 180
+- id: in_sebi_physical_original
+  text: For shares held on paper, the claimant needs the original share certificates.
+  quote: For all cases of transmission involving securities held in physical mode, the claimant should have the original security certificate(s)
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure para 6.1.11.4
+  jurisdiction: IN
+  topic: securities/physical
+  level: gold
+  ttl_days: 180
+- id: in_sebi_translation
+  text: A death certificate in a language other than English needs a self-certified English translation.
+  quote: In case the original death certificate is issued in a language other than English, the claimant shall also submit a self-certified copy of translation of death certificate into English along with certified copy of the original death certificate.
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure para 6.1.10.2
+  jurisdiction: IN
+  topic: foreign_death_certificate/translation
+  level: gold
+  ttl_days: 365
+# ---- added 14 Oct 2026 (session 7): rates, annex stamping, wills, lockers, foreign death, SEBI detail, heirship
+- id: in_rbi_bank_rate_oct_2026
+  text: From 7 October 2026 the Bank Rate is 5.75%; until then it was 5.50%.
+  quote: the Bank Rate is revised upwards by 25 basis points from 5.50 per cent to 5.75 per cent with immediate effect.
+  source_url: https://www.caalley.com/rbi26/NT28307C186A1A5F84D47870911D72F069023.pdf
+  locator: RBI/2026-27/283, para 2
+  jurisdiction: IN
+  topic: rates/bank_rate
+  level: gold
+  ttl_days: 60
+- id: in_rbi_288_ovd
+  text: A claim without a nominee needs each claimant's officially valid identity document.
+  quote: (3) Officially Valid Document of the claimant(s) towards verifying her / his identity and address;
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 288(3)
+  jurisdiction: IN
+  topic: deposit/no_nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_rbi_292_will_discretion
+  text: Where a will is not disputed, the bank may act on it without probate, and then also asks for the indemnity and the no-objection letters.
+  quote: the bank is free to exercise discretion and act as per ‘Will’ of the deceased without requiring production of the probate of such Will
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 292
+  jurisdiction: IN
+  topic: deposit/will/route
+  level: gold
+  ttl_days: 365
+- id: in_rbi_295_credit_after
+  text: After an account is settled, money that arrives for the deceased is sent back to the sender marked 'Account holder deceased', and the family is told.
+  quote: the bank shall return the same to the remitter with the remark 'Account holder deceased' and intimate the nominee(s) / survivor(s) / legal heir(s).
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 295
+  jurisdiction: IN
+  topic: deposit/after_settlement
+  level: gold
+  ttl_days: 365
+- id: in_rbi_annex_vii_stamped
+  text: The Annex VII bond of indemnity is stamped as the state's Stamp Act requires.
+  quote: BOND OF INDEMNITY/ SURETY* (To be duly stamped as per the Stamp Act applicable to the State)
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: Annex VII
+  jurisdiction: IN
+  topic: deposit/forms
+  level: gold
+  ttl_days: 365
+- id: in_rbi_annex_vii_surety_note
+  text: The surety part of Annex VII applies only to claims above the threshold.
+  quote: "* Surety is applicable only in case of claims above the threshold limit."
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: Annex VII, footnote
+  jurisdiction: IN
+  topic: deposit/forms
+  level: gold
+  ttl_days: 365
+- id: in_rbi_annex_viii_stamped
+  text: The Annex VIII letter of disclaimer or no objection is stamped as the state's Stamp Act requires.
+  quote: Annex VIII - Letter of disclaimer / No objection (To be duly stamped as per the Stamp Act applicable to the State)
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: Annex VIII
+  jurisdiction: IN
+  topic: deposit/forms
+  level: gold
+  ttl_days: 365
+- id: in_rbi_annex_ix_stamped
+  text: The Annex IX declaration or affidavit is stamped as the state's Stamp Act requires.
+  quote: Annex IX - Declaration / Affidavit (To be duly stamped as per the Stamp Act applicable to the State)
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: Annex IX
+  jurisdiction: IN
+  topic: deposit/forms
+  level: gold
+  ttl_days: 365
+- id: in_rbi_309_locker_docs
+  text: Without a nominee, a locker claim needs the Annex VI claim form signed by the claiming heirs, the death certificate and their identity documents.
+  quote: (1) Claim form, as given in Annex VI, duly filled and signed by the claimant legal heir(s);
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 309(1)
+  jurisdiction: IN
+  topic: locker/no_nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_rbi_309_locker_affidavit
+  text: For a locker without a nominee, the heirs are shown by a legal heir certificate or an Annex IX affidavit sworn before a notary, judge or magistrate by an independent person.
+  quote: Affidavit, as given in Annex IX, sworn before a Notary Public / Judge / Judicial Magistrate regarding the legal heir(s) of the deceased locker hirer(s)
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 309(5)
+  jurisdiction: IN
+  topic: locker/no_nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_rbi_309_locker_disclaimer
+  text: For a locker without a nominee, heirs who are not claiming sign the Annex VIII no-objection letter.
+  quote: (4) Letter of disclaimer / no objection, as given in Annex VIII, from non-claimant legal heir(s), if applicable; and (5) Legal Heir Certificate issued by a competent authority or Affidavit
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 309(4)
+  jurisdiction: IN
+  topic: locker/no_nominee/documents
+  level: gold
+  ttl_days: 180
+- id: in_rbi_310_locker_will
+  text: With a will, a locker is released on probate or letters of administration, though the bank may act on an undisputed will.
+  quote: A bank shall settle claims involving ‘Will’ left behind by a deceased safe deposit locker hirer on the basis of Probate of Will / Letter of Administration
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 310
+  jurisdiction: IN
+  topic: locker/will/route
+  level: gold
+  ttl_days: 365
+- id: in_rbi_313_locker_valuation
+  text: Without a nominee, an independent valuer values the locker contents, the value is recorded in an Annex XII bond of indemnity, and the contents can be removed once it is signed.
+  quote: Valuation of the contents of the safe deposit locker shall be carried out by an independent valuer and recorded in the Bond of Indemnity as given in Annex XII.
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 313
+  jurisdiction: IN
+  topic: locker/inventory
+  level: gold
+  ttl_days: 365
+- id: in_rbi_324_overseas_branch
+  text: A death certificate issued abroad can be certified by an authorised official of an overseas branch of an Indian scheduled commercial bank.
+  quote: (1) Authorised officials of overseas branches of Scheduled Commercial Banks registered in India; or
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 324(1)
+  jurisdiction: IN
+  topic: foreign_death_certificate
+  level: gold
+  ttl_days: 365
+- id: in_rbi_324_notary
+  text: A death certificate issued abroad can be certified by a court magistrate, judge or notary public in the issuing country.
+  quote: (3) A court magistrate or judge or notary public; or
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 324(3)
+  jurisdiction: IN
+  topic: foreign_death_certificate
+  level: gold
+  ttl_days: 365
+- id: in_rbi_324_consular
+  text: A death certificate issued abroad can be consularised by the Indian embassy or consulate in the issuing country.
+  quote: (4) Consularised by Indian Embassy / Consulate General in the country of issuance; or
+  source_url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/170MD.PDF
+  locator: para 324(4)
+  jurisdiction: IN
+  topic: foreign_death_certificate
+  level: gold
+  ttl_days: 365
+- id: in_sebi_dispute
+  text: The SEBI framework does not apply where there is a dispute or competing claims; those are resolved in court.
+  quote: the framework shall not apply where there is any dispute or contesting/competing claims.
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure, para 1.3
+  jurisdiction: IN
+  topic: securities/dispute
+  level: gold
+  ttl_days: 365
+- id: in_sebi_qtp_relatives
+  text: Quick Transmission Processing is only for immediate relatives - parents, spouse, children and parents-in-law.
+  quote: Transmission of securities under QTP shall be permitted only in favour of immediate relatives of the deceased security holder(s) viz. parents, spouse, children and parents-in-law.
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure, para 4.2.2.1
+  jurisdiction: IN
+  topic: securities/qtp
+  level: gold
+  ttl_days: 365
+- id: in_sebi_applies_amc
+  text: The SEBI framework covers listed securities and mutual fund units issued by asset management companies.
+  quote: The framework shall apply to transmission of listed securities and units issued by Asset Management Companies
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure, para 1.1
+  jurisdiction: IN
+  topic: securities/scope
+  level: gold
+  ttl_days: 365
+- id: in_sebi_value_nav
+  text: Mutual fund units are valued at the last available NAV when deciding which category a claim falls in.
+  quote: For units issued by AMCs, last available Net Asset Value (NAV) shall be considered.
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure, para 3.2
+  jurisdiction: IN
+  topic: securities/valuation
+  level: gold
+  ttl_days: 365
+- id: in_sebi_value_close
+  text: Shares are valued at the previous closing price on a recognised stock exchange when deciding which category a claim falls in.
+  quote: The value of securities shall be quantified by the claimant on the basis of the previous closing price of such securities at any one of the recognized stock exchanges.
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure, para 3.2
+  jurisdiction: IN
+  topic: securities/valuation
+  level: gold
+  ttl_days: 365
+- id: in_sebi_acknowledge
+  text: The processing entity acknowledges the claim when the papers are handed in and lists anything missing at that time.
+  quote: The entity shall acknowledge the receipt of claim once the documents are submitted by the claimant.
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure, para 6.1.3
+  jurisdiction: IN
+  topic: securities/submission
+  level: gold
+  ttl_days: 365
+- id: in_sebi_confirm_all
+  text: Once every paper is in, the processing entity confirms in writing that it has all the required documents.
+  quote: On subsequent submission of all the required documents, the entity shall issue a confirmation to the claimant that all required documents have been received for processing of the claim.
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure, para 6.1.4
+  jurisdiction: IN
+  topic: securities/submission
+  level: gold
+  ttl_days: 365
+- id: in_sebi_reasons
+  text: If a transmission is late or rejected, the processing entity must give the reasons in writing.
+  quote: the entity shall communicate to the claimant, the reasons, in writing, for such delay/rejection.
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure, para 6.1.11.2
+  jurisdiction: IN
+  topic: securities/delay
+  level: gold
+  ttl_days: 365
+- id: in_sebi_joint_holder
+  text: A surviving joint holder needs to give only the death certificate.
+  quote: the regulated entity shall not seek any documentation including related to KYC, indemnities or undertakings from the surviving joint holder, except copy of the Death Certificate of the deceased.
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure, para 7
+  jurisdiction: IN
+  topic: securities/joint
+  level: gold
+  ttl_days: 365
+- id: in_sebi_family_settlement
+  text: Instead of the heirs' affidavit, the claimant may give a family settlement deed signed by all the heirs and attested by a notary, gazetted officer or court.
+  quote: Copy of family settlement deed executed by all legal heirs, duly attested by a Notary Public, Gazetted Officer, or accepted and approved by a Magistrate, Judge or Civil Court.
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure, para 4.2.2.2(b)
+  jurisdiction: IN
+  topic: securities/no_nominee/documents
+  level: gold
+  ttl_days: 365
+- id: in_sebi_physical_to_demat
+  text: Paper shares are converted and credited to the claimant's demat account, so the claimant needs one.
+  quote: the processing entity shall initiate the demat conversion request in the depository system for direct credit of securities in the demat account of the security holder/claimant.
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure, para 6.1.6
+  jurisdiction: IN
+  topic: securities/physical
+  level: gold
+  ttl_days: 365
+- id: in_sebi_court_docs
+  text: A claimant who has a court document such as a succession certificate or probate does not need the indemnity or the heirs' affidavit.
+  quote: In case the claimant submits any court issued documents viz., Succession Certificate or Probate of Will or Letter of Administration or Court Decree, the requirement of submission of following documents shall not be applicable
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure, para 4.2.2.2, note 1
+  jurisdiction: IN
+  topic: securities/no_nominee/documents
+  level: gold
+  ttl_days: 365
+- id: in_sebi_nominee_trustee
+  text: A nominee receives the securities as a trustee for the legal heirs.
+  quote: the nominees(s) shall receive the assets of deceased sole holder / joint holders as trustee on behalf of legal heir(s) of deceased holder(s).
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure, para 4.1.1
+  jurisdiction: IN
+  topic: securities/nominee
+  level: gold
+  ttl_days: 365
+- id: in_sebi_verifiable_death_cert
+  text: A verifiable death certificate can be the original, a notarised copy, or a certificate with a QR code.
+  quote: death certificate with Quick Response (QR) code
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure, para 2.1(d)
+  jurisdiction: IN
+  topic: securities/documents
+  level: gold
+  ttl_days: 365
+- id: in_hsa_s8_class1
+  text: Under the Hindu Succession Act, the property of a Hindu man who dies without a will goes first to the Class I heirs listed in the Schedule.
+  quote: (a) firstly, upon the heirs, being the relatives specified in class I of the Schedule;
+  source_url: https://www.advocatekhoj.com/library/bareacts/hindusuccession/8.php
+  locator: section 8(a)
+  jurisdiction: IN
+  topic: heirship/hindu
+  level: sourced
+  ttl_days: 730
+  notes: Bare act text on a legal publisher's site (tier 4); India Code did not allow automated reading.
+- id: in_hsa_class1_list
+  text: The Class I heirs begin with the son, daughter, widow and mother.
+  quote: Son; daughter; widow; mother; son of a pre-deceased son;
+  source_url: https://www.advocatekhoj.com/library/bareacts/hindusuccession/schedule.php
+  locator: Schedule, Class I
+  jurisdiction: IN
+  topic: heirship/hindu
+  level: sourced
+  ttl_days: 730
+- id: in_hsa_s9_together
+  text: Class I heirs inherit together and exclude every other heir.
+  quote: Among the heirs specified in the Schedule, those in class I shall take simultaneously and to the exclusion of all other
+  source_url: https://www.advocatekhoj.com/library/bareacts/hindusuccession/9.php
+  locator: section 9
+  jurisdiction: IN
+  topic: heirship/hindu
+  level: sourced
+  ttl_days: 730
+- id: in_sebi_threshold_basis_physical
+  text: For paper shares the thresholds apply per company, and mutual fund units held in statement-of-account form use the same limits, counted per fund house.
+  quote: Per listed entity/Mutual Fund (MF)/Specialized Investment Fund (SIF) units in Statement of Account (SOA) form per AMC
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: circular para 3.2, footnote 2
+  jurisdiction: IN
+  topic: securities/threshold
+  level: gold
+  ttl_days: 365
+- id: in_sebi_threshold_basis_demat
+  text: For demat holdings the thresholds apply per beneficial owner.
+  quote: Per beneficial owner for securities
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: circular para 3.2, footnote 4
+  jurisdiction: IN
+  topic: securities/threshold
+  level: gold
+  ttl_days: 365
+- id: in_sebi_physical_enhance
+  text: A listed company may raise the ₹10 lakh limit for paper shares at its discretion.
+  quote: Listed entity may, at its discretion, enhance the value of securities from the threshold limit of rupees ten lakhs, in case of securities held in physical mode.
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: circular para 3.2, footnote 3
+  jurisdiction: IN
+  topic: securities/threshold
+  level: gold
+  ttl_days: 365
+- id: in_sebi_lhc_authority
+  text: A legal heirship certificate counts when it is issued by a revenue authority not below the rank of a Tehsildar.
+  quote: relevant authority for the purpose of legal heirship certificate or equivalent certificate shall mean a revenue authority not below the rank of a Tehsildar or equivalent authority.
+  source_url: https://www.sebi.gov.in/sebi_data/attachdocs/jul-2026/1784869499027.pdf
+  locator: Annexure, para 2.1(c)
+  jurisdiction: IN
+  topic: heirship/certificate
+  level: gold
+  ttl_days: 365
+- id: in_periyar_chits_documents
+  text: Periyar Chits is told of a death at the branch with the death certificate and the subscriber's passbook.
+  quote: Please inform the branch with a copy of the death certificate and the subscriber's passbook.
+  source_url: https://www.periyar-chits.example/members/bereavement
+  jurisdiction: IN
+  institution_id: in_periyar_chits
+  topic: chit_fund/documents
+  level: dual_verified
+  ttl_days: 180
+- id: in_periyar_chits_after_bid
+  text: If the subscriber had already received the prize amount, Periyar Chits recovers the remaining subscriptions from the estate and sends a statement on request.
+  quote: If the subscriber had already received the prize amount, the remaining subscriptions are recovered from the estate
+  source_url: https://www.periyar-chits.example/members/bereavement
+  jurisdiction: IN
+  institution_id: in_periyar_chits
+  topic: chit_fund/after_death
+  level: dual_verified
+  ttl_days: 180
+- id: in_gomti_registrar
+  text: Gomti Paper Mills handles transmission through its registrar, with the original share certificates and the transmission request form.
+  quote: Please contact our registrar with the original share certificates and the transmission request form.
+  source_url: https://www.gomti-paper-mills.example/investors/transmission
+  jurisdiction: IN
+  institution_id: in_gomti_paper_mills
+  topic: securities/physical
+  level: dual_verified
+  ttl_days: 180
+- id: in_gomti_dividends
+  text: Gomti Paper Mills pays dividends by NACH into the bank account registered with its registrar.
+  quote: Dividends are paid by NACH into the bank account registered with our registrar.
+  source_url: https://www.gomti-paper-mills.example/investors/transmission
+  jurisdiction: IN
+  institution_id: in_gomti_paper_mills
+  topic: securities/dividends
+  level: dual_verified
+  ttl_days: 180
+- id: in_bsl_intimation
+  text: Bharat Suraksha Life accepts claim intimation online, at a branch or through the advisor.
+  quote: Claims can be intimated online, at any branch or through your advisor.
+  source_url: https://www.bharat-suraksha-life.example/claims/death-claim
+  jurisdiction: IN
+  institution_id: in_bharat_suraksha_life
+  topic: life_insurance/submission
+  level: dual_verified
+  ttl_days: 180
+- id: in_narmada_confirm
+  text: Narmada Bank confirms in writing when it has received every required document.
+  quote: When all required documents are received we confirm this in writing.
+  source_url: https://www.narmada-bank.example/deceased-claims
+  jurisdiction: IN
+  institution_id: in_narmada_bank
+  topic: deposit/submission
+  level: dual_verified
+  ttl_days: 180
+- id: in_rbi_ios_in_force
+  text: The Reserve Bank – Integrated Ombudsman Scheme, 2026 has been in force since 1 July 2026.
+  quote: "It shall come into force with effect from July 1, 2026."
+  source_url: https://rbidocs.rbi.org.in/rdocs/content/pdfs/SCHEME16012026_A.pdf
+  locator: "clause 1(2)"
+  jurisdiction: IN
+  topic: complaints/ombudsman/scheme
+  level: gold
+  ttl_days: 180
+- id: in_rbi_ios_first_complain
+  text: A complaint to the RBI Ombudsman can only be made after a complaint to the bank itself, in writing or another way the family can prove.
+  quote: "the Complainant had first made a complaint in writing or through any other mode to the Regulated Entity concerned, where proof of having made a complaint can be produced by the Complainant, before making a complaint under the Scheme"
+  source_url: https://rbidocs.rbi.org.in/rdocs/content/pdfs/SCHEME16012026_A.pdf
+  locator: "clause 10(1)(e)"
+  jurisdiction: IN
+  topic: complaints/ombudsman/when
+  level: gold
+  ttl_days: 180
+- id: in_rbi_ios_30_days
+  text: The bank has 30 days to reply (longer only where RBI, NPCI or card network rules give it more); with no reply by then, or a reply that does not settle it, the complaint can go to the RBI Ombudsman.
+  quote: "the Complainant has not received any reply within 30 days or within the time specified by the Reserve Bank, National Payments Corporation of India, or under Card Network guidelines, if any, whichever is higher after the Regulated Entity received the complaint; or the Complainant is not satisfied with the reply / resolution provided by the Regulated Entity"
+  source_url: https://rbidocs.rbi.org.in/rdocs/content/pdfs/SCHEME16012026_A.pdf
+  locator: "clause 10(1)(f)"
+  jurisdiction: IN
+  topic: complaints/ombudsman/when
+  level: gold
+  ttl_days: 180
+- id: in_rbi_ios_90_days
+  text: The complaint must reach the RBI Ombudsman within 90 days of the bank's time to reply running out, or of its last letter, whichever is later.
+  quote: "the complaint is made to the RBI Ombudsman within 90 days from the date on which the timeline specified in sub-clause (1)(f) expires or the date of the last communication from the concerned Regulated Entity, whichever is later"
+  source_url: https://rbidocs.rbi.org.in/rdocs/content/pdfs/SCHEME16012026_A.pdf
+  locator: "clause 10(1)(g)"
+  jurisdiction: IN
+  topic: complaints/ombudsman/clock
+  level: gold
+  ttl_days: 180
+- id: in_rbi_ios_online
+  text: A complaint to the RBI Ombudsman can be lodged online at cms.rbi.org.in.
+  quote: "The complaint may be lodged online through the portal https://cms.rbi.org.in."
+  source_url: https://rbidocs.rbi.org.in/rdocs/content/pdfs/SCHEME16012026_A.pdf
+  locator: "clause 11(1)"
+  jurisdiction: IN
+  topic: complaints/ombudsman/how
+  level: gold
+  ttl_days: 180
+- id: in_rbi_ios_post
+  text: By e-mail or post, a complaint goes to the RBI's Centralised Receipt and Processing Centre in Chandigarh.
+  quote: "Centralised Receipt and Processing Centre, 4th Floor, Reserve Bank of India, Sector -17, Central Vista, Chandigarh - 160017"
+  source_url: https://rbidocs.rbi.org.in/rdocs/content/pdfs/SCHEME16012026_A.pdf
+  locator: "clause 11(2), footnote 4"
+  jurisdiction: IN
+  topic: complaints/ombudsman/how
+  level: gold
+  ttl_days: 180

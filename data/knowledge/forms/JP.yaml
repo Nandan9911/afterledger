@@ -1,0 +1,202 @@
+# Japanese forms in the demo. The banks and the insurer are fictional and their forms are written for
+# the demo in the usual style of Japanese inheritance paperwork (furigana lines and registered-seal
+# boxes). The heir information chart follows the items the Legal Affairs Bureau's samples show, set out
+# as a list for the family to check against the official sample before submitting.
+forms:
+  # ------------------------------------------------------------------------------------------------
+  - key: JP/naniwa_irai
+    title: 相続手続依頼書（浪速銀行）
+    institution_kind: bank
+    language: ja
+    source_note: "浪速銀行はAfterLedgerデモ用の架空の銀行です。この依頼書はデモ用に作成したものです。 Synthetic demo filling."
+    heading:
+      - {text: "浪速銀行　相続手続依頼書", size: 14, lang: ja}
+      - {text: "（相続人全員がご署名のうえ、実印を押印してください）", size: 8.6, lang: ja}
+    blocks:
+      - type: fields
+        label_w: 150
+        fields:
+          - {id: date, label: "記入日", path: dates.jp, label_lang: ja, value_lang: ja}
+          - {id: branch, label: "お取引店", path: institution.branch, label_lang: ja, value_lang: ja}
+      - {type: section, title: "1．亡くなられた方（被相続人）", lang: ja}
+      - type: fields
+        label_w: 150
+        fields:
+          - {id: deceased_reading, label: "フリガナ", path: deceased.reading, label_lang: ja, value_lang: ja}
+          - {id: deceased_name, label: "お名前", path: deceased.native, label_lang: ja, value_lang: ja}
+          - {id: deceased_birth, label: "生年月日", path: deceased.birth.jp, label_lang: ja, value_lang: ja}
+          - {id: deceased_death, label: "ご逝去日", path: deceased.death.jp, label_lang: ja, value_lang: ja}
+          - {id: deceased_address, label: "最後のご住所", path: deceased.address_any, label_lang: ja, value_lang: ja}
+      - {type: section, title: "2．お手続きの対象となるお取引", lang: ja}
+      - type: table
+        id: accounts
+        min_rows: 2
+        no_label: "No."
+        columns:
+          - {key: branch, label: "支店", width: 0.24}
+          - {key: kind_ja, label: "種類", width: 0.22}
+          - {key: number, label: "口座番号", width: 0.24}
+          - {key: amount, label: "残高（参考）", width: 0.22, align: right}
+      - {type: section, title: "3．相続人（全員をご記入ください）", lang: ja}
+      - type: table
+        id: heirs
+        path: heirs_detail
+        min_rows: 3
+        no_label: "No."
+        columns:
+          - {key: native, label: "お名前", width: 0.2}
+          - {key: reading, label: "フリガナ", width: 0.24}
+          - {key: relationship_ja, label: "続柄", width: 0.1}
+          - {key: address, label: "ご住所", width: 0.4}
+      - {type: section, title: "4．代表相続人（お手続きの窓口となる方）", lang: ja}
+      - type: fields
+        label_w: 150
+        fields:
+          - {id: rep_reading, label: "フリガナ", path: claimant.reading, label_lang: ja, value_lang: ja}
+          - {id: rep_name, label: "お名前", path: claimant.native, label_lang: ja, value_lang: ja}
+          - {id: rep_relationship, label: "続柄", path: claimant.relationship_ja, label_lang: ja, value_lang: ja}
+          - {id: rep_address, label: "ご住所", path: claimant.address_full, label_lang: ja, value_lang: ja}
+          - {id: rep_phone, label: "お電話番号", path: claimant.mobile, fill_by: family, label_lang: ja}
+      - {type: section, title: "5．ご依頼内容", lang: ja}
+      - type: checks
+        items:
+          - {id: pay_out, label: "払戻し（代表相続人の口座へのお振込み）", lang: ja}
+          - {id: transfer_name, label: "名義変更", lang: ja}
+          - {id: balance_cert, label: "残高証明書の発行", lang: ja}
+      - {type: text, text: "私たち相続人全員は、上記の相続手続きを代表相続人に依頼します。この手続きにより後日問題が生じた場合は、相続人全員が責任をもって解決し、貴行に一切ご迷惑をおかけしません。", lang: ja}
+      - type: signatures
+        id: heir_signatures
+        from: heirs_detail
+        name_key: native
+        label: "相続人ご署名（実印）"
+        seal: true
+        seal_label: "実印"
+        lang: ja
+      - {type: note, text: "相続人全員の印鑑登録証明書（発行後6か月以内）と、法定相続情報一覧図の写しまたは戸籍謄本一式を添えてお出しください。", lang: ja}
+      - {type: office, text: "銀行使用欄"}
+
+  # ------------------------------------------------------------------------------------------------
+  - key: JP/yodogawa_todoke
+    title: 相続届（淀川信用金庫）
+    institution_kind: bank
+    language: ja
+    source_note: "淀川信用金庫はAfterLedgerデモ用の架空の信用金庫です。この届出書はデモ用に作成したものです。 Synthetic demo filling."
+    heading:
+      - {text: "淀川信用金庫　相続届", size: 14, lang: ja}
+    blocks:
+      - type: fields
+        label_w: 150
+        fields:
+          - {id: date, label: "届出日", path: dates.jp, label_lang: ja, value_lang: ja}
+          - {id: deceased_reading, label: "被相続人　フリガナ", path: deceased.reading, label_lang: ja, value_lang: ja}
+          - {id: deceased_name, label: "被相続人　お名前", path: deceased.native, label_lang: ja, value_lang: ja}
+          - {id: deceased_death, label: "ご逝去日", path: deceased.death.jp, label_lang: ja, value_lang: ja}
+      - {type: section, title: "お取引の内容", lang: ja}
+      - type: table
+        id: accounts
+        min_rows: 2
+        no_label: "No."
+        columns:
+          - {key: kind_ja, label: "種類", width: 0.3}
+          - {key: number, label: "口座番号", width: 0.32}
+          - {key: amount, label: "残高（参考）", width: 0.3, align: right}
+      - {type: section, title: "相続人", lang: ja}
+      - type: table
+        id: heirs
+        path: heirs_detail
+        min_rows: 3
+        no_label: "No."
+        columns:
+          - {key: native, label: "お名前", width: 0.22}
+          - {key: reading, label: "フリガナ", width: 0.26}
+          - {key: relationship_ja, label: "続柄", width: 0.12}
+          - {key: address, label: "ご住所", width: 0.34}
+      - {type: text, text: "上記のとおり相続が開始しましたので、お届けします。", lang: ja}
+      - type: signatures
+        id: heir_signatures
+        from: heirs_detail
+        name_key: native
+        label: "相続人ご署名（実印）"
+        seal: true
+        seal_label: "実印"
+        lang: ja
+      - {type: note, text: "お手続きの前に、お取引店へお電話でご連絡ください。", lang: ja}
+
+  # ------------------------------------------------------------------------------------------------
+  - key: JP/minato_seikyu
+    title: 死亡保険金請求書（みなと生命）
+    institution_kind: insurer
+    language: ja
+    source_note: "みなと生命はAfterLedgerデモ用の架空の保険会社です。この請求書はデモ用に作成したものです。 Synthetic demo filling."
+    heading:
+      - {text: "みなと生命　死亡保険金請求書", size: 14, lang: ja}
+    blocks:
+      - type: fields
+        label_w: 160
+        fields:
+          - {id: date, label: "請求日", path: dates.jp, label_lang: ja, value_lang: ja}
+          - {id: policy_number, label: "証券番号", path: policy.number, label_lang: ja}
+      - {type: section, title: "被保険者", lang: ja}
+      - type: fields
+        label_w: 160
+        fields:
+          - {id: insured_reading, label: "フリガナ", path: deceased.reading, label_lang: ja, value_lang: ja}
+          - {id: insured_name, label: "お名前", path: deceased.native, label_lang: ja, value_lang: ja}
+          - {id: insured_death, label: "ご逝去日", path: deceased.death.jp, label_lang: ja, value_lang: ja}
+      - {type: text, text: "ご逝去の原因：", lang: ja}
+      - type: checks
+        items:
+          - {id: natural, label: "病気", path: checks.natural_death, lang: ja}
+          - {id: accident, label: "災害・事故", path: checks.accidental_death, lang: ja}
+      - {type: section, title: "受取人（請求者）", lang: ja}
+      - type: fields
+        label_w: 160
+        fields:
+          - {id: claimant_reading, label: "フリガナ", path: claimant.reading, label_lang: ja, value_lang: ja}
+          - {id: claimant_name, label: "お名前", path: claimant.native, label_lang: ja, value_lang: ja}
+          - {id: claimant_relationship, label: "被保険者との続柄", path: claimant.relationship_ja, label_lang: ja, value_lang: ja}
+          - {id: claimant_address, label: "ご住所", path: claimant.address_full, label_lang: ja, value_lang: ja}
+          - {id: claimant_bank, label: "お振込先（金融機関・口座番号）", path: claimant.bank, fill_by: family, label_lang: ja}
+      - {type: text, text: "上記のとおり死亡保険金を請求します。", lang: ja}
+      - type: signatures
+        items:
+          - {label: "受取人ご署名・ご捺印", name_field: sign_name, seal: true, seal_label: "印", lang: ja}
+      - {type: note, text: "死亡診断書（写し）と受取人の本人確認書類を添えてお送りください。書類が届いてから5営業日以内にお支払いします。", lang: ja}
+    value_paths: {sign_name: claimant.native}
+
+  # ------------------------------------------------------------------------------------------------
+  - key: JP/heir_chart
+    title: 法定相続情報一覧図（下書き）
+    institution_kind: government
+    language: ja
+    source_note: "法務局の記載例にある項目を一覧の形で並べた下書きです。提出前に法務局の記載例と照らし合わせてください。 Synthetic demo filling."
+    heading:
+      - {text: "被相続人　法定相続情報（下書き）", size: 14, lang: ja}
+    blocks:
+      - {type: section, title: "被相続人", lang: ja}
+      - type: fields
+        label_w: 140
+        fields:
+          - {id: deceased_name, label: "氏名", path: deceased.native, label_lang: ja, value_lang: ja}
+          - {id: deceased_address, label: "最後の住所", path: deceased.address_any, label_lang: ja, value_lang: ja}
+          - {id: deceased_honseki, label: "最後の本籍", path: deceased.honseki, fill_by: family, label_lang: ja}
+          - {id: deceased_birth, label: "出生", path: deceased.birth.jp, label_lang: ja, value_lang: ja}
+          - {id: deceased_death, label: "死亡", path: deceased.death.jp, label_lang: ja, value_lang: ja}
+      - {type: section, title: "相続人", lang: ja}
+      - type: table
+        id: heirs
+        path: heirs_detail
+        min_rows: 3
+        no_label: "No."
+        columns:
+          - {key: native, label: "氏名", width: 0.24}
+          - {key: relationship_ja, label: "続柄", width: 0.12}
+          - {key: address, label: "住所", width: 0.56}
+      - {type: section, title: "作成者", lang: ja}
+      - type: fields
+        label_w: 140
+        fields:
+          - {id: maker_address, label: "住所", path: claimant.address_full, label_lang: ja, value_lang: ja}
+          - {id: maker_name, label: "氏名", path: claimant.native, label_lang: ja, value_lang: ja}
+          - {id: made_on, label: "作成日", path: dates.jp, label_lang: ja, value_lang: ja}
+      - {type: note, text: "以下余白。戸籍謄本の束と一緒に法務局へ提出すると、認証文付きの写しが無料で交付されます。", lang: ja}

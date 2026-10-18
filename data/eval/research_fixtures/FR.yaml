@@ -1,0 +1,350 @@
+_note: 'Scripted responses for the offline research run on France. They stand in for what Gemini returns in a live
+  run: the questions planned, the pages each researcher reads, the quotes copied from them (plus one deliberately
+  misquoted line the citation checker must drop), the adjudication, and the compiled plan. Every quote except the
+  trap is word for word on the page snapshot. The first round misses what to do when the death was more than ten
+  years ago; Researcher A says so, and the second round (rounds: 2) finds it on the same page. Each assertion, query
+  and trap names the question it answers, so a researcher given some of the questions finds only theirs.'
+need_key: FR/life_policy
+plan_key: FR/life_insurance_search
+questions:
+- id: q1
+  question: How can a family in France find out whether a person who died held life insurance naming them?
+  variable: route
+  language: fr
+  queries:
+  - assurance-vie savoir si on est bénéficiaire assuré décédé
+  - Agira recherche contrat assurance-vie décès
+- id: q2
+  question: Does the request cost anything, and which papers must go with it?
+  variable: documents
+  language: fr
+  queries:
+  - demande Agira gratuite acte de décès
+- id: q3
+  question: How long does an insurer have to tell a beneficiary?
+  variable: clock
+  language: fr
+  queries:
+  - assureur délai informer bénéficiaire assurance-vie
+first_answer:
+  lang: fr
+  text: Interrogez l'Agira. Elle informe toutes les compagnies d'assurance du décès, pour une personne décédée depuis
+    moins de 10 ans. C'est gratuit ; joignez une copie de l'acte de décès.
+  translation: Ask AGIRA. It tells every insurer about the death, for anyone who died less than 10 years ago. It
+    is free; attach a copy of the death certificate.
+  cites:
+  - fr_agira_ask
+  - fr_agira_informs_insurers
+  - fr_agira_10_years
+  - fr_agira_free
+  - fr_agira_death_cert
+researcher_a:
+  queries:
+  - query: assurance-vie savoir si on est bénéficiaire assuré décédé
+    lang: fr
+    question: q1
+  - query: Agira recherche contrat assurance-vie décès
+    lang: fr
+    question: q3
+  - query: life insurance beneficiary deceased France AGIRA
+    lang: en
+    question: q2
+  fetch:
+  - https://www.justice.fr/fiche/assurance-vie-savoir-on-beneficiaire-assure-decede
+  - https://forum-entraide.example/assurance-vie-deces
+  assertions:
+  - fr_agira_ask
+  - fr_agira_10_years
+  - fr_agira_free
+  - fr_agira_death_cert
+  - fr_agira_informs_insurers
+  - fr_insurer_1_month
+  gaps:
+  - text: 'Not found yet: what a family should do when the person died more than 10 years ago.'
+    question: q1
+  traps:
+  - id: fr_trap_agira_delay
+    question: q3
+    text: AGIRA answers within 15 days.
+    quote: L'Agira vous répond dans un délai de 15 jours.
+    quote_translation: AGIRA answers you within 15 days.
+    source_url: https://www.justice.fr/fiche/assurance-vie-savoir-on-beneficiaire-assure-decede
+    jurisdiction: FR
+    topic: life_insurance/search/clock
+researcher_b:
+  queries:
+  - query: comment savoir si mon père avait une assurance vie
+    lang: fr
+    question: q1
+  - query: assurance-vie délai assureur informer le bénéficiaire
+    lang: fr
+    question: q3
+  - query: demande Agira gratuite par internet ou courrier
+    lang: fr
+    question: q2
+  fetch:
+  - https://www.justice.fr/fiche/assurance-vie-savoir-on-beneficiaire-assure-decede
+  - https://forum-entraide.example/assurance-vie-deces
+  - https://questions-famille.example/heritage/assurance-vie
+  assertions:
+  - fr_agira_ask
+  - fr_agira_free
+  - fr_agira_online
+  - fr_agira_death_cert
+  - fr_insurer_1_month
+  variants:
+    # Researcher B words this point more broadly than the quote allows; the adjudicator settles it.
+    fr_insurer_1_month:
+      text: The insurer has one month to tell the family about a life insurance contract.
+  set_aside:
+  - https://forum-entraide.example/assurance-vie-deces
+  - https://questions-famille.example/heritage/assurance-vie
+adjudication:
+  summary: 'Three points agreed. One settled: the one-month limit applies only to a named beneficiary. Four more
+    come from the same government page, found by one researcher and not contradicted by the other.'
+  decisions:
+  - id: fr_agira_ask
+    verdict: accept
+    reason: Both researchers found it on the government page.
+  - id: fr_agira_10_years
+    verdict: accept
+    reason: Found on the government page by one researcher; not contradicted.
+  - id: fr_agira_over_10
+    verdict: accept
+    reason: Found on the government page by one researcher; not contradicted.
+  - id: fr_agira_free
+    verdict: accept
+    reason: Both researchers found it on the government page.
+  - id: fr_agira_online
+    verdict: accept
+    reason: Found on the government page by one researcher; not contradicted.
+  - id: fr_agira_death_cert
+    verdict: accept
+    reason: Both researchers found it on the government page.
+  - id: fr_agira_informs_insurers
+    verdict: accept
+    reason: Found on the government page by one researcher; not contradicted.
+  - id: fr_insurer_1_month
+    verdict: accept
+    reason: The one-month limit applies only to a named beneficiary.
+    settled_text: If you are a beneficiary, the insurer has one month to tell you about the contract.
+rounds:
+  2:
+    questions:
+    - id: q1
+      question: What should a family do when the person died more than 10 years ago?
+      variable: route
+      language: fr
+      queries:
+      - décès plus de 10 ans assurance-vie Ciclade
+    researcher_a:
+      queries:
+      - query: décès plus de 10 ans assurance-vie Ciclade
+        lang: fr
+      fetch:
+      - https://www.justice.fr/fiche/assurance-vie-savoir-on-beneficiaire-assure-decede
+      assertions:
+      - fr_agira_over_10
+    researcher_b:
+      queries:
+      - query: assurance-vie personne décédée depuis plus de 10 ans Caisse des dépôts
+        lang: fr
+      fetch:
+      - https://www.justice.fr/fiche/assurance-vie-savoir-on-beneficiaire-assure-decede
+      assertions:
+      - fr_agira_over_10
+assertions:
+- id: fr_agira_ask
+  question: q1
+  text: To find out whether someone who died had life insurance, ask AGIRA.
+  quote: Il faut interroger l'Agira.
+  quote_translation: You have to ask AGIRA.
+  source_url: https://www.justice.fr/fiche/assurance-vie-savoir-on-beneficiaire-assure-decede
+  jurisdiction: FR
+  topic: life_insurance/search
+  level: dual_verified
+  ttl_days: 180
+- id: fr_agira_10_years
+  question: q1
+  text: AGIRA searches for life insurance of people who died less than 10 years ago.
+  quote: L'Agira est compétente pour rechercher les contrats d'assurance-vie d'une personne décédée depuis moins
+    de 10 ans.
+  quote_translation: AGIRA can search for the life insurance contracts of a person who died less than 10 years ago.
+  source_url: https://www.justice.fr/fiche/assurance-vie-savoir-on-beneficiaire-assure-decede
+  jurisdiction: FR
+  topic: life_insurance/search
+  level: dual_verified
+  ttl_days: 180
+- id: fr_agira_over_10
+  question: r2q1
+  text: For a death more than 10 years ago, ask the Caisse des dépôts through its Ciclade service.
+  quote: Si la personne est décédée depuis plus de 10 ans, il faut s'adresser à la Caisse des dépôts et consignations
+    (CDC) en utilisant son service en ligne Ciclade.
+  quote_translation: If the person died more than 10 years ago, contact the Caisse des dépôts et consignations through
+    its online Ciclade service.
+  source_url: https://www.justice.fr/fiche/assurance-vie-savoir-on-beneficiaire-assure-decede
+  jurisdiction: FR
+  topic: life_insurance/search
+  level: dual_verified
+  ttl_days: 180
+- id: fr_agira_free
+  question: q2
+  text: The AGIRA request is free.
+  quote: Une demande auprès de l'Agira est gratuite.
+  quote_translation: A request to AGIRA is free.
+  source_url: https://www.justice.fr/fiche/assurance-vie-savoir-on-beneficiaire-assure-decede
+  jurisdiction: FR
+  topic: life_insurance/search/fee
+  level: dual_verified
+  ttl_days: 90
+- id: fr_agira_online
+  question: q2
+  text: The request can be made online, or by post for those who cannot use the internet.
+  quote: Vous pouvez effectuer la démarche sur internet (ou par courrier postal si vous ne pouvez pas utiliser internet)
+  quote_translation: You can do this online (or by post if you cannot use the internet).
+  source_url: https://www.justice.fr/fiche/assurance-vie-savoir-on-beneficiaire-assure-decede
+  jurisdiction: FR
+  topic: life_insurance/search/channel
+  level: dual_verified
+  ttl_days: 180
+- id: fr_agira_death_cert
+  question: q2
+  text: The request must include a copy of the death certificate.
+  quote: vous devez joindre une copie de l'acte de décès de la personne qui aurait souscrit le contrat.
+  quote_translation: you must attach a copy of the death certificate of the person who may have taken out the contract.
+  source_url: https://www.justice.fr/fiche/assurance-vie-savoir-on-beneficiaire-assure-decede
+  jurisdiction: FR
+  topic: life_insurance/search/documents
+  level: dual_verified
+  ttl_days: 180
+- id: fr_agira_informs_insurers
+  question: q1
+  text: AGIRA tells every insurer about the death.
+  quote: l'Agira va informer l'ensemble des compagnies d'assurance du décès de l'assuré.
+  quote_translation: AGIRA will inform all insurance companies of the insured person's death.
+  source_url: https://www.justice.fr/fiche/assurance-vie-savoir-on-beneficiaire-assure-decede
+  jurisdiction: FR
+  topic: life_insurance/search
+  level: dual_verified
+  ttl_days: 180
+- id: fr_insurer_1_month
+  question: q3
+  text: If you are a beneficiary, the insurer has one month to tell you about the contract.
+  quote: l'assureur a 1 mois pour vous informer de l'existence d'un contrat à votre profit.
+  quote_translation: the insurer has 1 month to inform you of a contract in your favour.
+  source_url: https://www.justice.fr/fiche/assurance-vie-savoir-on-beneficiaire-assure-decede
+  jurisdiction: FR
+  topic: life_insurance/search/clock
+  level: dual_verified
+  ttl_days: 180
+compiled_plan:
+  key: FR/life_insurance_search
+  title: Finding out whether you are the beneficiary of a life insurance policy (France)
+  jurisdiction: FR
+  institution_kind: other
+  holding_kinds:
+  - life_policy
+  language: fr
+  level: gold
+  verified_on: 2026-10-14
+  variables:
+  - name: years_since_death
+    type: number
+    derive: years_since_death
+    cites:
+    - fr_agira_10_years
+    - fr_agira_over_10
+  - name: can_use_internet
+    type: tri
+    question: Can you make the request online?
+    cites:
+    - fr_agira_online
+  documents:
+  - id: death_cert_copy
+    name: Copy of the death certificate (acte de décès)
+    cites:
+    - fr_agira_death_cert
+  - id: agira_request
+    name: Request to AGIRA
+    cites:
+    - fr_agira_ask
+    - fr_agira_free
+  clocks:
+  - id: insurer_1_month
+    label: An insurer that finds a contract for you has one month to tell you
+    owner: institution
+    starts_on: insurer_informed
+    length: 1
+    unit: months
+    cites:
+    - fr_insurer_1_month
+  steps:
+  - id: ask_agira
+    kind: submit
+    actor: family
+    text: Ask AGIRA, free of charge, online (or by post if you cannot use the internet), with a copy of the death
+      certificate.
+    when: years_since_death < 10
+    documents:
+    - agira_request
+    - death_cert_copy
+    cites:
+    - fr_agira_ask
+    - fr_agira_10_years
+    - fr_agira_free
+    - fr_agira_online
+    - fr_agira_death_cert
+  - id: ask_ciclade
+    kind: submit
+    actor: family
+    text: For a death more than 10 years ago, use the Caisse des dépôts' online service Ciclade.
+    when: years_since_death >= 10
+    cites:
+    - fr_agira_over_10
+  - id: insurers_told
+    kind: wait
+    actor: institution
+    text: AGIRA tells every insurer about the death; an insurer holding a contract in your favour has one month
+      to tell you.
+    when: years_since_death < 10
+    clocks:
+    - insurer_1_month
+    after:
+    - ask_agira
+    cites:
+    - fr_agira_informs_insurers
+    - fr_insurer_1_month
+  compiled_from:
+  - fr_agira_ask
+  - fr_agira_10_years
+  - fr_agira_over_10
+  - fr_agira_free
+  - fr_agira_online
+  - fr_agira_death_cert
+  - fr_agira_informs_insurers
+  - fr_insurer_1_month
+letter:
+  lang: fr
+  to: AGIRA
+  subject: Demande de recherche de contrats d'assurance sur la vie
+  subject_en: Request to search for life insurance contracts
+  body: 'Madame, Monsieur,
+
+
+    Je vous prie de bien vouloir rechercher si mon père, [NOM ET PRÉNOM], né le [DATE DE NAISSANCE] et décédé le
+    [DATE DU DÉCÈS] à Lyon, avait souscrit un contrat d''assurance sur la vie. Vous trouverez ci-joint une copie
+    de son acte de décès.
+
+
+    Je vous prie d''agréer, Madame, Monsieur, l''expression de mes salutations distinguées.'
+  translation: 'Dear Sir or Madam,
+
+
+    Please search whether my father, [FULL NAME], born on [DATE OF BIRTH] and who died on [DATE OF DEATH] in Lyon,
+    had taken out a life insurance contract. Please find enclosed a copy of his death certificate.
+
+
+    Yours faithfully,'
+  cites:
+  - fr_agira_ask
+  - fr_agira_death_cert

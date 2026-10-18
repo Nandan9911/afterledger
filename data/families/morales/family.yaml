@@ -1,0 +1,321 @@
+# The Morales family (San Antonio, Texas). Fictional people; the federal and Texas rules applied are
+# real, and the institutions' own rules are stored with their sources in data/knowledge.
+key: morales
+story_day: 2026-10-14
+title: José Luis Morales
+family_label: The Moraleses
+where: San Antonio, United States
+spoken: Spanish and English
+shows: The Social Security payment that has to go back; employer benefits to ask about; the Texas small-estate route
+languages: [es, en]
+countries: [US]
+timezone: America/Chicago            # the story's clock: activity times are this family's local times
+viewer: p_daniel
+order: 4
+
+deceased:
+  id: p_jose
+  display_name: José Luis Morales
+  names:
+    - {text: José Luis Morales, script: Latn, seen_on: family}
+    - {text: JOSE LUIS MORALES, script: Latn, seen_on: death_cert}
+    - {text: JOSE L MORALES, script: Latn, seen_on: mission_statement}
+  birth_date: 1955-03-04
+  death_date: 2026-09-09
+  death_place: San Antonio
+  death_country: US
+  death_cause: illness
+  nationalities: [US]
+  residences: [{country: US, city: San Antonio}]
+  occupation: Part-time dispatcher at Riverwalk Logistics; receiving Social Security retirement benefits
+  initials: JM
+
+people:
+  - id: p_maria
+    display_name: María Elena Morales
+    names:
+      - {text: María Elena Morales, script: Latn}
+      - {text: MARIA ELENA MORALES, script: Latn, seen_on: death_cert}
+    relationship: wife
+    roles: [claimant, heir, beneficiary]
+    languages: [es]
+    channel: voice
+    country: US
+    city: San Antonio
+    address: 1418 Calle Ocotillo, San Antonio, TX 78228
+    age: 69
+    initials: MM
+    color: "#F3D9C4"
+  - id: p_daniel
+    display_name: Daniel Morales
+    names:
+      - {text: Daniel Morales, script: Latn}
+      - {text: DANIEL MORALES, script: Latn, seen_on: lonestar_policy}
+    relationship: son
+    roles: [heir, helper]
+    languages: [en, es]
+    channel: voice
+    country: US
+    city: San Antonio
+    age: 41
+    initials: DM
+    color: "#CFE3F5"
+  - id: p_lucia
+    display_name: Lucía Morales
+    names:
+      - {text: Lucía Morales, script: Latn}
+      - {text: LUCIA MORALES, script: Latn, seen_on: lonestar_policy}
+    relationship: daughter
+    roles: [heir]
+    languages: [en, es]
+    channel: text
+    country: US
+    city: Houston
+    age: 37
+    initials: LM
+    color: "#E6DCF2"
+
+holdings:
+  - {id: h_checking, institution_id: us_mission_river_bank, kind: current, label: Everyday Checking, account_mask: "3318", value: "8247.08", found_from: [mission_statement, mission_activity], claim: c_mission}
+  - {id: h_lonestar, institution_id: us_lone_star_life, kind: life_policy, label: Whole life policy, account_mask: "0412", value: "50000.00", nominee: "yes", found_from: [lead:lonestar, lonestar_policy], claim: c_lonestar}
+  - {id: h_ssa, institution_id: us_ssa, kind: social_security, direction: entitlement, label: Social Security, found_from: [lead:ssa], claim: c_ssa}
+  - {id: h_riverwalk, institution_id: us_riverwalk_logistics, kind: employer_benefit, direction: entitlement, label: "401(k), group life and final pay", found_from: [lead:employer], claim: c_riverwalk}
+
+claims:
+  - id: c_ssa
+    institution_id: us_ssa
+    holdings: [h_ssa]
+    plan: US/social_security
+    facts: {funeral_home_reported: "yes", spouse_lived_with: "yes", benefit_for_month_of_death: "no"}
+    expected_route: [lump_sum, survivors]
+    # On 14 October the September benefit arrives, so returning it joins the route as the story stands.
+    expected_route_today: [return_payment, lump_sum, survivors]
+  - id: c_lonestar
+    institution_id: us_lone_star_life
+    holdings: [h_lonestar]
+    plan: US/life_policy_claim@us_lone_star_life
+    facts: {beneficiary_named: "yes", prefers_spanish: "yes"}
+    expected_route: [claim]
+  - id: c_riverwalk
+    institution_id: us_riverwalk_logistics
+    holdings: [h_riverwalk]
+    plan: US/employer_benefits@us_riverwalk_logistics
+    facts: {beneficiaries_named: unknown}
+    expected_route: [contact_hr]
+  - id: c_mission
+    institution_id: us_mission_river_bank
+    holdings: [h_checking]
+    plan: US/deposit@us_mission_river_bank
+    facts: {personal_representative: "no", petition_pending: "no"}
+    expected_route: [with_affidavit]
+
+answers:
+  has_will: "no"
+  funeral_home_reported: "yes"
+  personal_representative: "no"
+  petition_pending: "no"
+  claimant: p_maria
+
+leads:
+  - key: ssa
+    category: social_security
+    kind: entitlement
+    group: ssa
+    institution_id: us_ssa
+    title: His Social Security
+    sentence: Social Security paid him on the second Wednesday of each month. The payment for the month he died has to go back, and María Elena may be owed the $255 lump sum and survivor benefits.
+    investigator_note: "Credits of $1,612.00 from XXSOC SEC TREAS 310 on 10 June, 8 July, 12 August and 9 September: each the second Wednesday."
+    how_to_confirm: Social Security already knows if the funeral home reported the death.
+    next_step_note: Payments are made in the month after the one they are for.
+    signals: {cadence: monthly, product_match: "yes"}
+    cites: [us_ssa_month_of_death, us_ssa_255]
+    label: sure
+    status: confirmed
+    holding: h_ssa
+  - key: lonestar
+    category: life_cover
+    kind: asset
+    holding_kind: life_policy
+    group: lonestar_premium
+    institution_id: us_lone_star_life
+    title: Life insurance with Lone Star Life
+    sentence: $86.40 went to Lone Star Life on the 1st of every month, the premium on a life policy. Whoever is named on it can claim.
+    investigator_note: "LONE STAR LIFE PREM LSL55 debits of $86.40 every month; the policy number starts LSL-WL-55."
+    how_to_confirm: Look for the policy at home, or ask Lone Star Life with the death certificate.
+    next_step_note: Lone Star Life has its claim forms in Spanish too.
+    signals: {cadence: monthly, product_match: "yes"}
+    cites: [us_lonestar_claim, us_lonestar_spanish]
+    label: sure
+    status: confirmed
+    holding: h_lonestar
+  - key: employer
+    category: employer
+    kind: entitlement
+    holding_kind: employer_benefit
+    group: payroll
+    institution_id: us_riverwalk_logistics
+    title: What his employer may still pay
+    sentence: Riverwalk Logistics paid him every two weeks. Its HR handles the final paycheck, the 401(k) and any group life insurance.
+    investigator_note: "Payroll credits of $1,184.62 every 14 days from RIVERWALK LOGISTICS PAYROLL; the last, $1,846.15 on 30 September, is marked FINAL PAY."
+    how_to_confirm: Ask HR whether he had a 401(k) balance or group life cover, and who the beneficiaries are.
+    next_step_note: Named beneficiaries are paid directly by the plan administrator and the insurer.
+    signals: {cadence: monthly, product_match: partial}
+    cites: [us_riverwalk_benefits, us_riverwalk_direct]
+    label: likely
+    status: confirmed
+    holding: h_riverwalk
+decoys: [energy, water, phone, zelle_lucia]
+
+groups:
+  ssa: {counterparty: Social Security Administration, kind: government, interpretation: "His Social Security retirement benefit.", alternatives: []}
+  payroll: {counterparty: Riverwalk Logistics, kind: employer, interpretation: "His pay from his part-time job.", alternatives: []}
+  lonestar_premium: {counterparty: Lone Star Life, kind: insurer, interpretation: "The premium on a life insurance policy.", alternatives: []}
+  energy: {counterparty: CPS Energy, kind: utility, interpretation: "The electricity and gas bill.", alternatives: []}
+  water: {counterparty: SAWS, kind: utility, interpretation: "The water bill.", alternatives: []}
+  phone: {counterparty: AT&T, kind: utility, interpretation: "His mobile phone.", alternatives: []}
+  zelle_lucia: {counterparty: Lucía Morales, kind: family, interpretation: "Money sent to his daughter Lucía every month.", alternatives: []}
+
+coverage:
+  bank_accounts: {status: found, detail: Mission River Bank}
+  social_security: {status: found, detail: "Payment to return; $255 and survivor benefits"}
+  life_cover: {status: found, detail: Lone Star Life}
+  employer: {status: found, detail: "401(k), group life and final pay to ask about"}
+
+jurisdiction:
+  succession_law: US-TX
+  contested: false
+  summary: Texas, for every holding. He lived and died in San Antonio, and federal rules apply to Social Security.
+  findings: []
+  legs:
+    - {country: US, succession_law: US-TX, papers_from: [US], certification: [], cites: [], note: ""}
+  cites: []
+
+intake:
+  started_on: 2026-09-15
+  by: p_maria
+  turns:
+    - role: assistant
+      lang: es
+      text: Lo siento mucho por su pérdida. Para empezar, ¿quién falleció y cuándo?
+      translation: I'm so sorry for your loss. To start, who died, and when?
+    - role: family
+      person: p_maria
+      lang: es
+      channel: voice
+      seconds: 12
+      text: Mi esposo, José Luis Morales. Falleció el 9 de septiembre en la casa, aquí en San Antonio. Fue el corazón.
+      translation: My husband, José Luis Morales. He died on 9 September at home, here in San Antonio. It was his heart.
+    - role: assistant
+      lang: es
+      text: Gracias, señora. ¿Dejó testamento? ¿Y quiénes son sus hijos?
+      translation: Thank you. Did he leave a will? And who are his children?
+      why: Without a will, Texas law decides who inherits, and a small estate may not need a court-appointed executor.
+      cites: [us_tx_sea_intestate]
+    - role: family
+      person: p_maria
+      lang: es
+      channel: voice
+      seconds: 15
+      text: No, no dejó testamento. Tenemos dos hijos, Daniel, que vive aquí cerca, y Lucía, en Houston.
+      translation: No, he didn't leave a will. We have two children, Daniel, who lives close by, and Lucía, in Houston.
+    - role: assistant
+      lang: es
+      text: ¿Tiene papeles del banco, del seguro o de su trabajo?
+      translation: Do you have papers from the bank, the insurance or his work?
+    - role: family
+      person: p_maria
+      lang: es
+      channel: voice
+      seconds: 11
+      text: Daniel tiene los estados de cuenta del Mission River Bank. José Luis trabajaba medio tiempo en Riverwalk Logistics.
+      translation: Daniel has the Mission River Bank statements. José Luis worked part-time at Riverwalk Logistics.
+  situation:
+    1:
+      deceased_name: José Luis Morales
+      died_on: 2026-09-09
+      died_in: San Antonio
+      death_country: US
+      death_cause: illness
+      country_codes: [US]
+      family:
+        - {name: María Elena Morales, relationship: wife, city: San Antonio, country: US, languages: [es], roles: [claimant, heir]}
+      will: unknown
+      mode: family
+      unknowns: [will, children, papers at hand]
+    2:
+      family:
+        - {name: Daniel Morales, relationship: son, city: San Antonio, country: US, languages: [en, es], roles: [heir, helper]}
+        - {name: Lucía Morales, relationship: daughter, city: Houston, country: US, languages: [en, es], roles: [heir]}
+      will: "no"
+      unknowns: [papers at hand]
+    3:
+      holdings_mentioned: [an account at Mission River Bank, his job at Riverwalk Logistics]
+      papers_at_hand: [Mission River Bank statements]
+      urgent: [Do not spend any Social Security payment that arrives after his death; the payment for the month he died goes back.]
+      unknowns: []
+
+qa:
+  - match: ["devolver el dinero del seguro social", "seguro social que llego", "tengo que devolver"]
+    question: ¿Tengo que devolver el dinero del Seguro Social que llegó este mes?
+    question_en: Do I have to give back the Social Security money that arrived this month?
+    lang: es
+    answer: "Sí. El Seguro Social no paga el mes en que fallece la persona. El pago que llegó en octubre corresponde a septiembre, así que hay que devolverlo. No lo gaste. Usted también puede pedir el pago único de $255 y los beneficios de sobreviviente. Ya están en su plan."
+    answer_en: "Yes. Social Security is not paid for the month in which the beneficiary dies. The payment that arrived in October is for September, so it must be returned. Do not spend it. You can also ask for the $255 lump-sum death payment and survivor benefits; they are already in your plan."
+    sources: [us_ssa_month_of_death, us_ssa_return, us_ssa_255]
+    grounded_on: ["The October payment of $1,612.00 arrived on 14 October, after his death on 9 September."]
+    follow_ups: ["¿Cómo devuelvo el pago?"]
+  - match: ["401(k)", "401k", "de su trabajo"]
+    question: Mom, pregúntale lo del 401(k) de su trabajo.
+    question_en: Mom, ask about the 401(k) from his work.
+    lang: es
+    answer: "Claro. Su último sueldo llegó el 30 de septiembre. Preparé tres preguntas para su empleador: el plan 401(k), el seguro de vida del grupo y el pago final. ¿Quiere oírlas?"
+    answer_en: "Of course. His final paycheck arrived on 30 September. I prepared three questions for his employer: the 401(k) plan, the group life insurance and the final pay. Would you like to hear them?"
+    sources: [us_riverwalk_benefits, us_riverwalk_direct]
+    grounded_on: ["RIVERWALK LOGISTICS FINAL PAY, $1,846.15 on 30 September."]
+    follow_ups: ["Sí, quiero oírlas."]
+
+timeline:
+  - {on: 2026-09-15, do: intake}
+  - {on: 2026-09-15, do: confirm_summary, by: p_maria}
+  - {on: 2026-09-15, do: invite, person: p_daniel, by: p_maria}
+  - {on: 2026-09-16, do: upload, paper: death_cert, by: p_daniel}
+  - {on: 2026-09-18, do: upload, paper: mission_statement, by: p_daniel}
+  - {on: 2026-09-19, do: confirm_people, by: p_daniel}
+  - {on: 2026-09-19, do: mark_leads, by: p_daniel}
+  - {on: 2026-09-22, do: upload, paper: lonestar_policy, by: p_daniel}
+  - {on: 2026-09-22, do: approve_plan, claim: c_ssa, by: p_maria}
+  - {on: 2026-09-24, do: claim_event, claim: c_ssa, event: lump_sum_applied, note: "María Elena applied for the $255 lump sum by phone."}
+  - {on: 2026-09-24, do: claim_event, claim: c_ssa, event: survivors_applied, note: "She asked about survivor benefits on the same call."}
+  - {on: 2026-09-25, do: approve_plan, claim: c_lonestar, by: p_maria}
+  - {on: 2026-10-02, do: approve_plan, claim: c_riverwalk, by: p_daniel}
+  - {on: 2026-10-09, do: approve_plan, claim: c_mission, by: p_daniel}
+  - {on: 2026-10-12, do: prepare_pack, claim: c_lonestar}
+  - {on: 2026-10-14, do: upload, paper: mission_activity, by: p_daniel}
+  - {on: 2026-10-14, do: ask, by: p_maria, lang: es, channel: voice, text: "¿Tengo que devolver el dinero del Seguro Social que llegó este mes?"}
+  - {on: 2026-10-14, do: ask, by: p_daniel, lang: es, channel: voice, text: "Mom, pregúntale lo del 401(k) de su trabajo."}
+  - {on: 2026-10-14, do: today}
+
+expected_today:
+  tasks: [step:c_ssa:return_payment, sign:c_lonestar, step:c_riverwalk:contact_hr]
+  totals: {known: "58247.08", paid: "0", in_progress: "58247.08", owed: "0", unknown_leads: 2}
+
+today_greeting_local:
+  María: "Buenos días, María Elena. Hay tres cosas que necesitan a la familia."
+  Daniel: "Buenos días, Daniel. Hay tres cosas que necesitan a la familia."
+  Lucía: "Buenos días, Lucía. Hay tres cosas que necesitan a la familia."
+today_tasks:
+  - kind: submit
+    institution_id: us_ssa
+    title: Send back the October Social Security payment
+    body: "$1,612.00 arrived today. It is the payment for September, the month José Luis died, so it has to go back. Ask Mission River Bank to return it, and don't spend it."
+    local: {lang: es, title: "Devolver el pago del Seguro Social de octubre", body: "Hoy llegaron $1,612.00. Es el pago de septiembre, el mes en que falleció José Luis, así que hay que devolverlo. Pida a Mission River Bank que lo devuelva y no lo gaste."}
+  - kind: sign
+    institution_id: us_lone_star_life
+    title: Sign the Lone Star Life claim
+    body: "María Elena signs the claimant's statement, in Spanish and English. Send it with a certified copy of the death certificate."
+    local: {lang: es, title: "Firmar el reclamo de Lone Star Life", body: "María Elena firma la declaración del reclamante, en español y en inglés. Envíela con una copia certificada del acta de defunción."}
+  - kind: submit
+    institution_id: us_riverwalk_logistics
+    title: Ask Riverwalk Logistics about his 401(k), group life and final pay
+    body: "Three questions for HR: whether he had a 401(k) balance, whether he had group life cover, and whether the final pay of $1,846.15 on 30 September was everything."
+    local: {lang: es, title: "Preguntar a Riverwalk Logistics por su 401(k), el seguro de vida del grupo y el pago final", body: "Tres preguntas para Recursos Humanos: si tenía saldo en un 401(k), si tenía seguro de vida del grupo y si el pago final de $1,846.15 del 30 de septiembre fue todo."}

@@ -1,0 +1,219 @@
+@import 'tailwindcss';
+
+/* AfterLedger's paper-and-ledger design system. Certainty is drawn with line style, never colour alone:
+   solid = sure, dashed (pencil) = please check, dotted (blank) = we don't know yet. Red only for debts and
+   real deadlines. */
+@theme {
+  --color-paper: #f4f7f3;
+  --color-sheet: #ffffff;
+  --color-rule: #d3e0d6;
+  --color-rule-strong: #a9c3b1;
+  --color-ink: #14202b;
+  --color-ink-soft: #43525e;
+  --color-ink-faint: #5f6e78;
+  --color-ledger: #1d6b55;
+  --color-ledger-deep: #14513f;
+  --color-ledger-tint: #e2efe8;
+  --color-debit: #a8321f;
+  --color-debit-tint: #f7e4df;
+  --color-pencil: #7a5300;
+  --color-pencil-tint: #fbefd3;
+  --color-blank: #4f6286;
+  --color-blank-tint: #e7ebf3;
+  --color-hl: #ffe066;
+  --color-chip: #f1f4f2;
+  --color-foot: #fafbf9;
+  --color-night: #14202b;
+  --color-night-soft: #c9d3ce;
+  --color-night-faint: #aebbb5;
+
+  --font-sans:
+    'Atkinson Hyperlegible Next Variable', 'Noto Sans Devanagari Variable', 'Noto Sans Malayalam Variable', 'Noto Sans Arabic Variable',
+    'Noto Sans JP Variable', system-ui, sans-serif;
+  --font-serif:
+    'Literata Variable', Georgia, 'Noto Sans Devanagari Variable', 'Noto Sans Malayalam Variable', 'Noto Sans Arabic Variable',
+    'Noto Sans JP Variable', serif;
+
+  --radius-card: 14px;
+  --shadow-sheet: 0 30px 60px -32px rgb(20 32 43 / 0.35);
+  --shadow-pop: 0 24px 40px -28px rgb(20 32 43 / 0.4);
+
+  --animate-swipe: swipe 900ms cubic-bezier(0.3, 0.7, 0.2, 1) 700ms forwards;
+  --animate-reveal: reveal 520ms ease-out 1650ms forwards;
+  --animate-pulse-soft: pulse-soft 1.6s ease-in-out infinite;
+
+  @keyframes swipe {
+    to {
+      background-size: 100% 100%;
+    }
+  }
+  @keyframes reveal {
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes pulse-soft {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
+    }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 17px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    /* a word longer than the line (a Malayalam or German compound in a big heading on a phone) breaks rather than
+       pushing the page sideways */
+    overflow-wrap: break-word;
+  }
+  a {
+    color: var(--color-ledger);
+  }
+  a:hover {
+    color: var(--color-ledger-deep);
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-ledger);
+    outline-offset: 2px;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  /* Japanese and the Indic scripts read better a little taller and without negative tracking */
+  :lang(ja) .font-serif,
+  :lang(hi) .font-serif,
+  :lang(ml) .font-serif {
+    letter-spacing: 0 !important;
+  }
+  :lang(ja) body,
+  :lang(hi) body,
+  :lang(ml) body {
+    line-height: 1.7;
+  }
+}
+
+/* A highlighter swipe across the line a finding came from */
+@utility swipe {
+  background-image: linear-gradient(transparent 12%, var(--color-hl) 12%, var(--color-hl) 88%, transparent 88%);
+  background-repeat: no-repeat;
+  background-size: 0% 100%;
+  animation: var(--animate-swipe);
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    background-size: 100% 100%;
+  }
+}
+
+@utility marked {
+  background-image: linear-gradient(transparent 12%, var(--color-hl) 12%, var(--color-hl) 88%, transparent 88%);
+}
+
+@utility reveal {
+  opacity: 0;
+  transform: translateY(8px);
+  animation: var(--animate-reveal);
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The ledger's double rule between narration and amounts */
+@utility double-rule {
+  border-inline-start: 3px double var(--color-rule-strong);
+}
+
+/* A rubber stamp for real lateness */
+@utility stamp {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-debit);
+  border: 2px solid var(--color-debit);
+  border-radius: 6px;
+  padding: 1px 8px;
+  transform: rotate(-2deg);
+}
+
+/* A small text button or link ("Why?", a breadcrumb) gets a finger-sized tap area on a touch screen, about 44px
+   tall, without changing how it looks or the room it takes: an invisible layer reaches past the text. */
+@utility tap {
+  position: relative;
+  @media (pointer: coarse) {
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -11px -8px;
+    }
+  }
+}
+
+@utility striped {
+  background: repeating-linear-gradient(135deg, #a9c3b1 0 6px, #c6d8cc 6px 12px);
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility sr-only-focusable {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  &:focus {
+    position: static;
+    width: auto;
+    height: auto;
+    clip: auto;
+  }
+}
+
+/* A highlighter sweeping across a paper that is being read */
+@utility scan {
+  background-color: var(--color-rule);
+  background-image: linear-gradient(90deg, transparent, rgb(255 224 102 / 0.9), transparent);
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: scan 1800ms linear infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    background-position: 50% 0;
+  }
+}
+
+@keyframes scan {
+  from {
+    background-position: -40% 0;
+  }
+  to {
+    background-position: 140% 0;
+  }
+}
+
+/* On a right-to-left page, a paragraph that happens to be in English (a name, a quote, a sentence not yet
+   translated) takes its direction from its own first letter, so its punctuation lands where it belongs. */
+[dir='rtl'] :is(p, li, h1, h2, h3, h4, dd, dt, td, th, figcaption, blockquote) {
+  unicode-bidi: plaintext;
+}

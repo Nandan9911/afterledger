@@ -1,0 +1,209 @@
+# The Morales family's papers (San Antonio, Texas). The bank, the insurer and the employer are
+# fictional; the death certificate uses a generic layout with a sample watermark. Dates are written
+# for the story day 14 October 2026 and shift with it.
+papers:
+  # --------------------------------------------------------------------------------------------
+  - id: death_cert
+    title: Death certificate (certified copy)
+    doc_type: death_certificate
+    country: US
+    languages: [en]
+    scripts: [Latn]
+    origin: photo
+    uploaded_by: p_daniel
+    uploaded_on: 2026-09-16
+    template: certificate
+    style: {accent: "#2C3E50", lang: en, size: 9}
+    pre_title: "State of Texas · Certified copy of a death record (sample specimen)"
+    titles:
+      - {text: "CERTIFICATE OF DEATH", size: 13}
+    subtitle: "Specimen for the AfterLedger demo · Not a vital record"
+    sections:
+      - kv:
+          - ["1. Decedent's legal name", "JOSE LUIS MORALES", deceased_name]
+          - ["2. Sex", "Male", sex]
+          - ["3. Date of birth", "{d:1955-03-04|mdy_slash}", birth_date]
+          - ["4. Date of death", "{d:2026-09-09|mdy_slash}", date_of_death]
+          - ["5. Place of death", "Decedent's home, San Antonio, Bexar County, Texas", place_of_death]
+          - ["6. Usual residence", "1418 Calle Ocotillo, San Antonio, TX 78228", address]
+          - ["7. Marital status", "Married", marital_status]
+          - ["8. Surviving spouse", "MARIA ELENA MORALES", spouse_name]
+          - ["9. Informant", "MARIA ELENA MORALES, wife", informant]
+          - ["10. Cause of death", "Acute myocardial infarction", cause_of_death]
+          - ["11. Manner of death", "Natural", manner_of_death]
+          - ["State file number", "SYN-142-2026-088317", registration_number]
+          - ["Date filed", "{d:2026-09-14|mdy_slash}", registration_date]
+        label_w: 190
+    stamp: {text: "REGISTRAR · SPECIMEN", round: true}
+    signature: {label: "Local registrar", name: "A. Villarreal"}
+    note: "This is a sample document created for the AfterLedger demo. It is not a vital record and has no legal effect."
+    photo: {angle: 1.1, blur: 0.4, tint: "#F2F4F6"}
+    fields:
+      deceased_name: {value: JOSE LUIS MORALES}
+      birth_date: {value: 1955-03-04}
+      date_of_death: {value: 2026-09-09}
+      place_of_death: {value: San Antonio}
+      spouse_name: {value: MARIA ELENA MORALES}
+      registration_date: {value: 2026-09-14}
+
+  # --------------------------------------------------------------------------------------------
+  - id: mission_statement
+    title: Mission River Bank statement, June to August
+    doc_type: bank_statement
+    institution_id: us_mission_river_bank
+    holding_id: h_checking
+    country: US
+    languages: [en]
+    scripts: [Latn]
+    origin: upload
+    uploaded_by: p_daniel
+    uploaded_on: 2026-09-18
+    template: statement
+    style: {accent: "#7B3F00", lang: en, size: 8.6}
+    brand: {name: MISSION RIVER BANK, line: "Westside branch, San Antonio, TX · Member FDIC (fictional bank for the AfterLedger demo)"}
+    heading: EVERYDAY CHECKING STATEMENT
+    kv:
+      - [Account holder, JOSE L MORALES, account_holder]
+      - [Account number, "XXXXXX3318", account_number]
+      - [Address, "1418 CALLE OCOTILLO, SAN ANTONIO TX 78228", address]
+      - [Account type, EVERYDAY CHECKING, account_type]
+      - [Statement period, "{d:2026-06-01|mdy_slash} - {d:2026-08-31|mdy_slash}", period]
+    continued: "MISSION RIVER BANK · Everyday Checking (continued) · XXXXXX3318"
+    columns:
+      - {key: date, label: Date, width: 0.12}
+      - {key: narration, label: Description, width: 0.42}
+      - {key: debit, label: Withdrawals, width: 0.15, align: right}
+      - {key: credit, label: Deposits, width: 0.15, align: right}
+      - {key: balance, label: Balance, width: 0.16, align: right}
+    ledger:
+      start: 2026-06-01
+      end: 2026-08-31
+      date_style: mdy_slash
+      amount_style: en
+      group_by: month
+      bf_label: BEGINNING BALANCE
+      opening: 3480.15
+      recurring:
+        - {narration: XXSOC SEC TREAS 310, credit: 1612.00, day: 10, months: [6], seq: 10, meta: {group: ssa}}
+        - {narration: XXSOC SEC TREAS 310, credit: 1612.00, day: 8, months: [7], seq: 10, meta: {group: ssa}}
+        - {narration: XXSOC SEC TREAS 310, credit: 1612.00, day: 12, months: [8], seq: 10, meta: {group: ssa}}
+        - {narration: RIVERWALK LOGISTICS PAYROLL, credit: 1184.62, every_days: 14, first: 2026-06-10, seq: 12, meta: {group: payroll}}
+        - {narration: LONE STAR LIFE PREM LSL55, debit: 86.40, day: 1, seq: 20, meta: {group: lonestar_premium}}
+        - {narration: CPS ENERGY AUTOPAY, debit: [168.12, 214.55, 231.08], day: 18, seq: 22, meta: {group: energy}}
+        - {narration: SAWS WATER AUTOPAY, debit: [58.90, 66.14, 71.02], day: 20, seq: 23, meta: {group: water}}
+        - {narration: ATT WIRELESS AUTOPAY, debit: 94.00, day: 24, seq: 24, meta: {group: phone}}
+        - {narration: HEB 0231 SAN ANTONIO, debit: [142.37, 156.80, 133.29], day: 6, seq: 40}
+        - {narration: HEB 0231 SAN ANTONIO, debit: [118.64, 127.05, 149.90], day: 20, seq: 41}
+        - {narration: ZELLE TO LUCIA MORALES, debit: 200.00, day: 15, seq: 30, meta: {group: zelle_lucia}}
+      lines:
+        - {date: 2026-06-13, narration: WALGREENS 3917, debit: 41.18}
+        - {date: 2026-06-27, narration: ATM WITHDRAWAL CULEBRA RD, debit: 200.00}
+        - {date: 2026-07-11, narration: HOME DEPOT 6810, debit: 87.43}
+        - {date: 2026-07-25, narration: ATM WITHDRAWAL CULEBRA RD, debit: solve}
+        - {date: 2026-08-09, narration: WALGREENS 3917, debit: 36.72}
+        - {date: 2026-08-22, narration: ATM WITHDRAWAL CULEBRA RD, debit: 200.00}
+      anchors:
+        - {closing: 5210.44}
+    summary_fields: {closing_balance: closing}
+    closing_note: "Ending balance on {d:2026-08-31|mdy_slash}: {closing}"
+    fine_print: "Mission River Bank is a fictional bank created for the AfterLedger demo; this is a sample document."
+    fields:
+      account_holder: {value: JOSE L MORALES}
+      account_number: {value: XXXXXX3318}
+
+  # --------------------------------------------------------------------------------------------
+  - id: mission_activity
+    title: Mission River Bank account activity, September and October
+    doc_type: bank_statement
+    institution_id: us_mission_river_bank
+    holding_id: h_checking
+    country: US
+    languages: [en]
+    scripts: [Latn]
+    origin: upload
+    uploaded_by: p_daniel
+    uploaded_on: 2026-10-14
+    template: statement
+    style: {accent: "#7B3F00", lang: en, size: 8.6}
+    brand: {name: MISSION RIVER BANK, line: "Online banking · account activity printout (fictional bank for the AfterLedger demo)"}
+    heading: ACCOUNT ACTIVITY
+    kv:
+      - [Account holder, JOSE L MORALES, account_holder]
+      - [Account number, "XXXXXX3318", account_number]
+      - [Account type, EVERYDAY CHECKING, account_type]
+      - [Printed, "{d:2026-10-14|mdy_slash}", printed]
+    continued: "MISSION RIVER BANK · Account activity (continued) · XXXXXX3318"
+    columns:
+      - {key: date, label: Date, width: 0.12}
+      - {key: narration, label: Description, width: 0.42}
+      - {key: debit, label: Withdrawals, width: 0.15, align: right}
+      - {key: credit, label: Deposits, width: 0.15, align: right}
+      - {key: balance, label: Balance, width: 0.16, align: right}
+    ledger:
+      start: 2026-09-01
+      end: 2026-10-14
+      date_style: mdy_slash
+      amount_style: en
+      group_by: month
+      bf_label: BEGINNING BALANCE
+      opening: 5210.44
+      lines:
+        - {date: 2026-09-01, narration: LONE STAR LIFE PREM LSL55, debit: 86.40, meta: {group: lonestar_premium}}
+        - {date: 2026-09-02, narration: RIVERWALK LOGISTICS PAYROLL, credit: 1184.62, meta: {group: payroll}}
+        - {date: 2026-09-06, narration: HEB 0231 SAN ANTONIO, debit: 128.55}
+        - {date: 2026-09-09, narration: XXSOC SEC TREAS 310, credit: 1612.00, meta: {group: ssa}}
+        - {date: 2026-09-12, narration: FUNERAL HOME PMT 0912, debit: 3450.00}
+        - {date: 2026-09-15, narration: ZELLE TO LUCIA MORALES, debit: 200.00, meta: {group: zelle_lucia}}
+        - {date: 2026-09-16, narration: RIVERWALK LOGISTICS PAYROLL, credit: 1184.62, meta: {group: payroll}}
+        - {date: 2026-09-18, narration: CPS ENERGY AUTOPAY, debit: 197.40, meta: {group: energy}}
+        - {date: 2026-09-20, narration: SAWS WATER AUTOPAY, debit: 63.88, meta: {group: water}}
+        - {date: 2026-09-24, narration: ATT WIRELESS AUTOPAY, debit: 94.00, meta: {group: phone}}
+        - {date: 2026-09-30, narration: RIVERWALK LOGISTICS FINAL PAY, credit: 1846.15, meta: {group: payroll}}
+        - {date: 2026-10-01, narration: LONE STAR LIFE PREM LSL55, debit: 86.40, meta: {group: lonestar_premium, after_death: true}}
+        - {date: 2026-10-06, narration: HEB 0231 SAN ANTONIO, debit: 96.12}
+        - {date: 2026-10-14, narration: XXSOC SEC TREAS 310, credit: 1612.00, meta: {group: ssa, after_death: true}}
+    summary_fields: {closing_balance: closing}
+    closing_note: "Available balance on {d:2026-10-14|mdy_slash}: {closing}"
+    fine_print: "Printed from online banking. Mission River Bank is fictional; this is a sample document."
+    fields:
+      account_holder: {value: JOSE L MORALES}
+      account_number: {value: XXXXXX3318}
+
+  # --------------------------------------------------------------------------------------------
+  - id: lonestar_policy
+    title: Lone Star Life policy
+    doc_type: insurance_policy
+    institution_id: us_lone_star_life
+    holding_id: h_lonestar
+    country: US
+    languages: [en]
+    scripts: [Latn]
+    origin: photo
+    uploaded_by: p_daniel
+    uploaded_on: 2026-09-22
+    template: certificate
+    style: {accent: "#8E1B1B", lang: en, size: 9}
+    brand: {name: LONE STAR LIFE INSURANCE COMPANY, line: "Fictional life insurer created for the AfterLedger demo · Sample document"}
+    titles:
+      - {text: POLICY SCHEDULE - WHOLE LIFE, size: 12.5}
+    sections:
+      - kv:
+          - [Policy number, LSL-WL-55-30412, policy_number]
+          - [Insured, JOSE LUIS MORALES, life_assured]
+          - [Date of birth, "{d:1955-03-04|mon_d_y}", birth_date]
+          - [Face amount, "$50,000.00", sum_assured]
+          - [Monthly premium, "$86.40, drafted on the 1st", premium]
+          - [Policy date, "{d:2009-07-01|mon_d_y}", commencement]
+          - [Primary beneficiary, "MARIA ELENA MORALES (WIFE)", nominee]
+          - [Contingent beneficiaries, "DANIEL MORALES, LUCIA MORALES (CHILDREN), EQUAL SHARES", contingent]
+        cols: 1
+        label_w: 160
+      - heading: Claims · Reclamaciones
+        text: "To claim, the beneficiary sends our claimant's statement and a certified copy of the death certificate. Forms are available in English and Spanish."
+    signature: {label: For Lone Star Life, name: "R. Gutiérrez"}
+    photo: {angle: -1.3, blur: 0.5}
+    fields:
+      sum_assured: {value: "50000.00"}
+      nominee: {value: MARIA ELENA MORALES}
+      policy_number: {value: LSL-WL-55-30412}
+      birth_date: {value: 1955-03-04}

@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+dist
+packages/contracts/src/schema.d.ts
+packages/contracts/openapi.json
+services
+data
+*.md
+pnpm-lock.yaml
+apps/web/next-env.d.ts
+apps/web/messages
+test-results
+playwright-report
+.firebaserc

@@ -1,0 +1,23 @@
+# Builds the API and web images and pushes them to Artifact Registry. From the repository root:
+#   gcloud builds submit --config infra/cloudbuild.yaml --substitutions=_REGION=asia-south1,_TAG=latest
+# The API image builds the six demo cases offline (about four minutes), so the build gets a larger machine.
+substitutions:
+  _REGION: asia-south1
+  _TAG: latest
+options:
+  machineType: E2_HIGHCPU_8
+  logging: CLOUD_LOGGING_ONLY
+timeout: 2400s
+steps:
+  - id: api
+    name: gcr.io/cloud-builders/docker
+    env: ['DOCKER_BUILDKIT=1']
+    args: ['build', '-f', 'services/api/Dockerfile', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/afterledger/api:${_TAG}', '.']
+  - id: web
+    name: gcr.io/cloud-builders/docker
+    env: ['DOCKER_BUILDKIT=1']
+    waitFor: ['-']
+    args: ['build', '-f', 'apps/web/Dockerfile', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/afterledger/web:${_TAG}', '.']
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/afterledger/api:${_TAG}
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/afterledger/web:${_TAG}

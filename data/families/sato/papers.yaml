@@ -1,0 +1,240 @@
+# The Sato family's papers (Osaka). The banks, the shinkin bank, the insurer and the card company are
+# fictional; the medical certificate of death uses a generic layout with a sample watermark. Dates
+# are written for the story day 14 October 2026 (令和8年10月14日) and shift with it.
+papers:
+  # --------------------------------------------------------------------------------------------
+  - id: death_cert
+    title: 死亡診断書（写し）
+    title_en: Medical certificate of death (copy)
+    doc_type: death_certificate
+    country: JP
+    languages: [ja]
+    scripts: [Jpan]
+    origin: photo
+    uploaded_by: p_daisuke
+    uploaded_on: 2026-09-13
+    template: certificate
+    style: {accent: "#333333", lang: ja, size: 9.5}
+    pre_title: "（デモ用の見本・合成書類）"
+    pre_title_lang: ja
+    titles:
+      - {text: "死亡診断書", lang: ja, size: 16}
+    subtitle: "この書類はAfterLedgerデモ用に作成した見本です"
+    subtitle_lang: ja
+    sections:
+      - kv:
+          - ["氏名", "佐藤 健二", deceased_name]
+          - ["性別", "男", sex]
+          - ["生年月日", "{d:1958-04-18|jp_era}", birth_date]
+          - ["死亡したとき", "{d:2026-09-07|jp_era}　午前４時１２分", date_of_death]
+          - ["死亡したところ", "大阪府大阪市北区（病院）", place_of_death]
+          - ["住所", "大阪府吹田市千里山東2丁目14番7号", address]
+          - ["死亡の原因", "急性心筋梗塞", cause_of_death]
+          - ["診断年月日", "{d:2026-09-07|jp_era}", registration_date]
+        label_w: 130
+        lang: ja
+    stamp: {text: "見本 SPECIMEN", round: true}
+    signature: {label: "医師", name: "中村 誠"}
+    note: "This is a sample document created for the AfterLedger demo. It has no legal effect."
+    photo: {angle: 0.8, blur: 0.4, tint: "#F5F3EE"}
+    fields:
+      deceased_name: {value: 佐藤 健二}
+      birth_date: {value: 1958-04-18}
+      date_of_death: {value: 2026-09-07}
+      place_of_death: {value: 大阪市}
+      address: {value: 大阪府吹田市千里山東2丁目14番7号}
+
+  # --------------------------------------------------------------------------------------------
+  - id: naniwa_passbook
+    title: 浪速銀行 普通預金通帳
+    title_en: Naniwa Bank passbook
+    doc_type: passbook
+    institution_id: jp_naniwa_bank
+    holding_id: h_naniwa
+    country: JP
+    languages: [ja]
+    scripts: [Jpan]
+    origin: photo
+    uploaded_by: p_daisuke
+    uploaded_on: 2026-09-13
+    template: passbook
+    style: {accent: "#0B3D91", lang: ja, size: 8}
+    brand: {name: 浪速銀行}
+    heading: 普通預金通帳
+    kv:
+      - [お名前, サトウ ケンジ, account_holder]
+      - [店番, 千里山支店 214, branch]
+      - [口座, "1234567", account_number]
+    columns:
+      - {key: date, label: 年月日, width: 0.17}
+      - {key: narration, label: 摘要, width: 0.31}
+      - {key: debit, label: お支払金額, width: 0.17, align: right}
+      - {key: credit, label: お預り金額, width: 0.16, align: right}
+      - {key: balance, label: 差引残高, width: 0.19, align: right}
+    ledger:
+      start: 2026-04-01
+      end: 2026-09-05
+      date_style: jp_era_numeric
+      amount_style: jp
+      group_by: breaks
+      page_breaks: [2026-07-01]
+      bf_label: 繰越
+      opening: 1174430
+      recurring:
+        - {narration: ネンキン, credit: 186400, day: 15, months: [4, 6, 8], seq: 10, meta: {group: pension}}
+        - {narration: ナニワカード, debit: 32000, day: 27, months: [4, 5, 6, 7, 8], seq: 20, meta: {group: card_loan}}
+        - {narration: ミナトセイメイ, debit: 9850, day: 26, months: [4, 5, 6, 7, 8], seq: 22, meta: {group: minato_premium}}
+        - {narration: カンサイデンリョク, debit: [9120, 8040, 8420, 9910, 12380], day: 20, months: [4, 5, 6, 7, 8], seq: 30, meta: {group: electricity}}
+        - {narration: オオサカガス, debit: [5280, 4760, 4310, 3980, 3620], day: 21, months: [4, 5, 6, 7, 8], seq: 31, meta: {group: gas}}
+      lines:
+        - {date: 2026-04-06, narration: カード, debit: 30000}
+        - {date: 2026-05-07, narration: カード, debit: 30000}
+        - {date: 2026-06-05, narration: カード, debit: 30000}
+        - {date: 2026-07-03, narration: カード, debit: 30000}
+        - {date: 2026-08-04, narration: カード, debit: solve}
+        - {date: 2026-09-01, narration: カード, debit: 20000}
+      anchors:
+        - {closing: 1284560}
+    photo: {angle: -1.4, blur: 0.6}
+    fields:
+      account_holder: {value: サトウ ケンジ}
+      account_number: {value: "1234567"}
+      branch: {value: 千里山支店}
+      account_type: {value: 普通預金}
+
+  # --------------------------------------------------------------------------------------------
+  - id: yodogawa_passbook
+    title: 淀川信用金庫 普通預金通帳
+    title_en: Yodogawa Shinkin passbook
+    doc_type: passbook
+    institution_id: jp_yodogawa_shinkin
+    holding_id: h_yodogawa
+    country: JP
+    languages: [ja]
+    scripts: [Jpan]
+    origin: photo
+    uploaded_by: p_daisuke
+    uploaded_on: 2026-09-13
+    template: passbook
+    style: {accent: "#1E6B3A", lang: ja, size: 8}
+    brand: {name: 淀川信用金庫}
+    heading: 普通預金
+    kv:
+      - [お名前, 佐藤 健二 様, account_holder]
+      - [口座, "0087412", account_number]
+    columns:
+      - {key: date, label: 年月日, width: 0.17}
+      - {key: narration, label: 摘要, width: 0.31}
+      - {key: debit, label: お支払金額, width: 0.17, align: right}
+      - {key: credit, label: お預り金額, width: 0.16, align: right}
+      - {key: balance, label: 差引残高, width: 0.19, align: right}
+    ledger:
+      start: 2026-01-01
+      end: 2026-09-30
+      date_style: jp_era_numeric
+      amount_style: jp
+      group_by: breaks
+      page_breaks: []
+      bf_label: 繰越
+      opening: 604215
+      lines:
+        - {date: 2026-02-20, narration: 利息, credit: 12}
+        - {date: 2026-04-10, narration: 現金, credit: 50000}
+        - {date: 2026-06-12, narration: 現金, debit: 41940}
+        - {date: 2026-08-20, narration: 利息, credit: 13}
+    photo: {angle: 1.7, blur: 0.7}
+    fields:
+      account_holder: {value: 佐藤 健二}
+      account_number: {value: "0087412"}
+
+  # --------------------------------------------------------------------------------------------
+  - id: minato_policy
+    title: みなと生命 保険証券
+    title_en: Minato Seimei policy
+    doc_type: insurance_policy
+    institution_id: jp_minato_seimei
+    holding_id: h_minato
+    country: JP
+    languages: [ja]
+    scripts: [Jpan]
+    origin: upload
+    uploaded_by: p_daisuke
+    uploaded_on: 2026-09-13
+    template: certificate
+    style: {accent: "#8A1538", lang: ja, size: 9.5}
+    brand: {name: みなと生命, line: "AfterLedgerデモ用の架空の保険会社 · Sample document"}
+    titles:
+      - {text: 保険証券, lang: ja, size: 15}
+    sections:
+      - kv:
+          - [証券番号, MS-0412-77815, policy_number]
+          - [被保険者, 佐藤 健二 様, life_assured]
+          - [生年月日, "{d:1958-04-18|jp_era}", birth_date]
+          - [死亡保険金額, "3,000,000円", sum_assured]
+          - [保険料, "月払 9,850円", premium]
+          - [契約日, "{d:2011-05-01|jp_era}", commencement]
+          - [死亡保険金受取人, "佐藤 恵子 様（妻）", nominee]
+        cols: 1
+        label_w: 130
+        lang: ja
+      - heading: ご請求について
+        heading_lang: ja
+        text: "受取人さまから請求書、死亡診断書、受取人さまの本人確認書類をお送りください。"
+        lang: ja
+    signature: {label: みなと生命, name: "取締役社長"}
+    fields:
+      sum_assured: {value: "3000000"}
+      nominee: {value: 佐藤 恵子}
+      policy_number: {value: MS-0412-77815}
+      birth_date: {value: 1958-04-18}
+
+  # --------------------------------------------------------------------------------------------
+  - id: card_statement
+    title: ナニワカード ご利用明細
+    title_en: Naniwa Card loan statement
+    doc_type: card_statement
+    institution_id: jp_naniwa_card
+    holding_id: h_card_loan
+    country: JP
+    languages: [ja]
+    scripts: [Jpan]
+    origin: upload
+    uploaded_by: p_daisuke
+    uploaded_on: 2026-09-13
+    template: statement
+    style: {accent: "#C0392B", lang: ja, size: 8.6}
+    brand: {name: ナニワカード, line: "AfterLedgerデモ用の架空のカード会社 · Sample document"}
+    heading: カードローン ご利用明細書
+    heading_lang: ja
+    kv:
+      - [お名前, サトウ ケンジ 様, account_holder]
+      - [会員番号, 4980-XXXX-XXXX-2207, account_number]
+      - [ご契約, カードローン, account_type]
+      - [ご利用残高, "2,140,000円", outstanding]
+      - [次回ご返済日, "{d:2026-09-27|jp_era}", due_date]
+    columns:
+      - {key: date, label: ご利用日, width: 0.18}
+      - {key: narration, label: 内容, width: 0.36}
+      - {key: credit, label: ご利用額, width: 0.15, align: right}
+      - {key: debit, label: ご返済額, width: 0.15, align: right}
+      - {key: balance, label: 残高, width: 0.16, align: right}
+    ledger:
+      start: 2026-06-01
+      end: 2026-08-31
+      date_style: jp_era_numeric
+      amount_style: jp
+      group_by: breaks
+      page_breaks: []
+      bf_label: 前回残高
+      opening: 2186000
+      lines:
+        - {date: 2026-06-27, narration: ご返済, debit: 32000}
+        - {date: 2026-07-10, narration: ご融資, credit: 50000}
+        - {date: 2026-07-27, narration: ご返済, debit: 32000}
+        - {date: 2026-08-27, narration: ご返済, debit: 32000}
+    closing_note: "ご利用残高（{d:2026-08-31|jp_era}現在）：2,140,000円"
+    fine_print: "ナニワカードはデモ用の架空のカード会社です。Sample document."
+    fields:
+      account_holder: {value: サトウ ケンジ}
+      outstanding: {value: "2140000"}
+      account_type: {value: カードローン}

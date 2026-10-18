@@ -1,0 +1,33 @@
+{
+  "name": "afterledger",
+  "private": true,
+  "version": "0.1.0",
+  "description": "AfterLedger: finds what a person left behind and prepares every claim, in any country.",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev:web": "pnpm --filter @afterledger/web dev",
+    "build:web": "pnpm --filter @afterledger/web build",
+    "test:web": "pnpm --filter @afterledger/web test",
+    "lint:web": "pnpm --filter @afterledger/web lint",
+    "typecheck:web": "pnpm --filter @afterledger/web typecheck",
+    "e2e": "pnpm --filter @afterledger/web e2e",
+    "contracts": "pnpm --filter @afterledger/contracts generate",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "@swc/core",
+      "unrs-resolver",
+      "sharp",
+      "@tailwindcss/oxide"
+    ]
+  },
+  "devDependencies": {
+    "prettier": "3.8.1"
+  }
+}

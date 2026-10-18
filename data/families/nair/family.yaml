@@ -1,0 +1,350 @@
+# The Nair family (Kochi and Singapore). Fictional people; the Indian and Singapore rules applied are
+# real, and the fictional institutions' rules are stored with their sources in data/knowledge.
+key: nair
+story_day: 2026-10-14
+title: Suresh Narayanan Nair
+family_label: The Nairs
+where: Kochi, India, after a death in Singapore
+spoken: Malayalam and English
+shows: Holdings in two countries; CPF with no nomination; handwritten Malayalam notes read and confirmed
+languages: [ml, en]
+countries: [IN, SG]
+timezone: Asia/Kolkata            # the story's clock: activity times are this family's local times
+viewer: p_arjun
+order: 5
+
+deceased:
+  id: p_suresh
+  display_name: Suresh Narayanan Nair
+  names:
+    - {text: Suresh Narayanan Nair, script: Latn, seen_on: family}
+    - {text: SURESH NARAYANAN NAIR, script: Latn, seen_on: death_cert}
+    - {text: SURESH N NAIR, script: Latn, seen_on: cpf_statement}
+    - {text: NAIR SURESH NARAYANAN, script: Latn, seen_on: merlion_statement}
+    - {text: സുരേഷ്, script: Mlym, lang: ml, seen_on: lakshmi_notes}
+  birth_date: 1972-06-30
+  death_date: 2026-09-11
+  death_place: Singapore
+  death_country: SG
+  death_cause: illness
+  nationalities: [IN]
+  residences: [{country: SG, city: Singapore}, {country: IN, city: Kochi}]
+  personal_law: hindu
+  state: Kerala
+  occupation: Marine engineer at Straits Marine Engineering, Singapore
+  identifiers: {fin: G0000417Z}
+  initials: SN
+
+people:
+  - id: p_lakshmi
+    display_name: Lakshmi Nair
+    names:
+      - {text: Lakshmi Nair, script: Latn}
+      - {text: ലക്ഷ്മി നായർ, script: Mlym, lang: ml}
+      - {text: LAKSHMI NAIR, script: Latn, seen_on: nre_statement}
+    relationship: wife
+    roles: [claimant, heir, nominee]
+    languages: [ml]
+    channel: voice
+    country: IN
+    city: Kochi
+    address: TC 41/1022, Elamakkara, Kochi 682026
+    age: 51
+    initials: LN
+    color: "#F3D9C4"
+  - id: p_arjun
+    display_name: Arjun Nair
+    names:
+      - {text: Arjun Nair, script: Latn}
+      - {text: ARJUN SURESH NAIR, script: Latn, seen_on: death_cert}
+    relationship: son
+    roles: [heir, helper]
+    languages: [en, ml]
+    channel: text
+    country: SG
+    city: Singapore
+    age: 26
+    initials: AN
+    color: "#CFE3F5"
+  - id: p_saraswathy
+    display_name: Saraswathy Amma
+    names:
+      - {text: Saraswathy Amma, script: Latn}
+      - {text: SARASWATHY AMMA, script: Latn, seen_on: nro_statement}
+    relationship: mother
+    roles: [heir]
+    languages: [ml]
+    country: IN
+    city: Kochi
+    age: 79
+    unconfirmed: true            # only the payments show her; the family has not said who she is yet
+    payee_question:
+      guess: mother
+      question: Is Saraswathy Amma Suresh's mother?
+      question_local: സരസ്വതി അമ്മ സുരേഷിന്റെ അമ്മയാണോ?
+      why: "His NRO account sent ₹5,000 to Saraswathy Amma every month. If she is his mother, she is also a legal heir for his money in India, and she will need to sign a no-objection letter."
+      evidence: "₹5,000 on the 5th of every month from his NRO account, twelve times."
+
+holdings:
+  - {id: h_nre, institution_id: in_periyar_bank, kind: nre, label: NRE savings account, account_mask: "2290", value: "412560.00", nominee: "yes", nominee_person_id: p_lakshmi, found_from: [nre_statement], claim: c_nre}
+  - {id: h_nro, institution_id: in_periyar_bank, kind: nro, label: NRO savings account, account_mask: "2291", value: "186300.00", nominee: "no", found_from: [nro_statement], claim: c_nro}
+  - {id: h_chit, institution_id: in_periyar_chits, kind: chit_fund, label: "A chit fund, ₹5,000 a month", status: lead, found_from: [lakshmi_notes], claim: c_chit}
+  - {id: h_gold, kind: locker, label: Gold in a bank locker, status: lead, found_from: [lakshmi_notes]}
+  - {id: h_cpf, institution_id: sg_cpf_board, kind: cpf, label: "CPF savings, all accounts", value: "146820.00", nominee: "no", found_from: [cpf_statement], claim: c_cpf}
+  - {id: h_merlion, institution_id: sg_merlion_savings, kind: savings, label: Savings account, account_mask: "7781", value: "18240.55", found_from: [merlion_statement], claim: c_merlion}
+  - {id: h_card, institution_id: sg_merlion_savings, kind: credit_card, direction: debt, label: Credit card, account_mask: "3306", value: "2310.40", found_from: [card_statement], claim: c_merlion}
+  - {id: h_salary, institution_id: sg_straits_marine, kind: salary, direction: entitlement, label: September salary and unused leave, status: lead, found_from: [lead:employer], claim: c_straits}
+
+claims:
+  - id: c_nre
+    institution_id: in_periyar_bank
+    holdings: [h_nre]
+    plan: IN/bank_deposit
+    facts: {nominee_or_survivor: "yes", death_abroad: "yes"}
+    expected_route: [nominee_route]
+    explain:
+      match: NRE
+      summary: Lakshmi is the nominee, so no succession papers are needed.
+      summary_local: ലക്ഷ്മിയാണ് നോമിനി, അതിനാൽ പിന്തുടർച്ചാ രേഖകൾ ആവശ്യമില്ല.
+  - id: c_nro
+    institution_id: in_periyar_bank
+    holdings: [h_nro]
+    plan: IN/bank_deposit
+    facts: {nominee_or_survivor: "no", has_will: "no", dispute: "no", heirship_proof: annex_ix, death_abroad: "yes"}
+    expected_route: [no_nominee_within]
+    explain:
+      match: NRO
+      summary: No nominee. Under the ₹15 lakh limit, so the bank's simplified route applies.
+      summary_local: നോമിനി ഇല്ല. ₹15 ലക്ഷത്തിൽ താഴെയായതിനാൽ ബാങ്കിന്റെ ലളിതമായ നടപടിക്രമം ബാധകമാണ്.
+  - id: c_cpf
+    institution_id: sg_cpf_board
+    holdings: [h_cpf]
+    plan: SG/cpf_no_nomination
+    facts: {cpf_nomination: "no"}
+    expected_route: [to_public_trustee]
+    explain:
+      match: CPF
+      summary: No nomination was made, so the savings go to the Public Trustee's Office, which pays them out under the intestacy laws.
+  - id: c_merlion
+    institution_id: sg_merlion_savings
+    holdings: [h_merlion, h_card]
+    plan: SG/bank_bereavement@sg_merlion_savings
+    facts: {}
+    expected_route: [next_of_kin_release]
+    explain:
+      match: Merlion
+      summary: Under S$150,000 in total, so the bank may release the money to the next of kin without a grant, at its discretion. The card balance is paid from the estate.
+  - id: c_straits
+    institution_id: sg_straits_marine
+    holdings: [h_salary]
+    plan: SG/employer_final_pay@sg_straits_marine
+    facts: {}
+    expected_route: [contact_hr]
+    explain:
+      match: Straits
+      summary: Salary to the date of death and unused annual leave are paid to the next of kin. The last salary credit was on 31 August.
+  - id: c_foreign
+    institution_id: in_certifying_authority_abroad
+    holdings: []
+    plan: IN/foreign_death_certificate
+    facts: {certification_mode: apostille}
+    expected_route: [use_it]
+    explain:
+      match: death certificate
+      summary: The Singapore death certificate is certified by apostille in Singapore, then used for every claim in India.
+      summary_local: സിംഗപ്പൂരിലെ മരണ സർട്ടിഫിക്കറ്റ് അവിടെ അപ്പോസ്റ്റിൽ ചെയ്ത ശേഷം ഇന്ത്യയിലെ എല്ലാ ക്ലെയിമുകൾക്കും ഉപയോഗിക്കാം.
+
+answers:
+  has_will: "no"
+  dispute: "no"
+  heirship_proof: annex_ix
+  certification_mode: apostille
+  claimant: p_lakshmi
+
+leads:
+  - key: chit
+    category: chit_fund
+    kind: asset
+    papers: [lakshmi_notes]
+    institution_id: in_periyar_chits
+    title: "A chit fund, ₹5,000 a month"
+    title_local: "പെരിയാർ ചിട്ടി — മാസം 5000"
+    sentence: "Lakshmi's notes say “Periyar chit, 5,000 a month”. A chit pays out to the member whose bid wins, so his membership may be worth something, or may still owe instalments."
+    sentence_local: "ലക്ഷ്മിയുടെ കുറിപ്പിൽ ‘പെരിയാർ ചിട്ടി — മാസം 5000’ എന്ന് ഉണ്ട്."
+    investigator_note: Read from the photo of Lakshmi's notes and confirmed by her. No chit instalment appears on the Periyar Bank statements, so it was probably paid in cash at the branch.
+    how_to_confirm: Find his chit passbook, or ask the Periyar Chits branch.
+    next_step_note: The heirs can continue the chit or take back what he paid in, less the foreman's commission.
+    signals: {source: family_note, confirmed: "yes"}
+    cites: [in_periyar_chits_heirs]
+    label: likely
+    status: open
+    holding: h_chit
+  - key: gold
+    category: gold
+    kind: asset
+    papers: [lakshmi_notes]
+    title: Gold in a bank locker
+    title_local: "സ്വർണ്ണം — ബാങ്ക് ലോക്കർ"
+    sentence: Lakshmi's notes mention gold in a bank locker. Which bank is not written, so Lakshmi has been asked.
+    sentence_local: "ലക്ഷ്മിയുടെ കുറിപ്പിൽ ‘സ്വർണ്ണം — ബാങ്ക് ലോക്കർ’ എന്ന് ഉണ്ട്. ഏത് ബാങ്ക് എന്ന് എഴുതിയിട്ടില്ല."
+    investigator_note: Neither Periyar Bank statement shows locker rent, so the locker may be at another bank.
+    how_to_confirm: Ask Lakshmi which bank, and look for the locker key and agreement.
+    signals: {source: family_note}
+    cites: []
+    label: likely
+    status: open
+    holding: h_gold
+  - key: employer
+    category: salary
+    kind: entitlement
+    holding_kind: salary
+    group: salary
+    institution_id: sg_straits_marine
+    title: September salary and unused leave
+    sentence: Straits Marine Engineering paid his salary on the last day of each month. The last salary credit was on 31 August; pay to the date of death and unused leave go to the next of kin.
+    investigator_note: "SALARY STRAITS MARINE ENGRG credits of S$6,850.00 on 30 June, 31 July and 31 August."
+    how_to_confirm: Arjun asks HR with the death certificate.
+    signals: {cadence: monthly, product_match: partial}
+    cites: [sg_straits_final_pay, sg_straits_contact]
+    label: likely
+    status: open
+    holding: h_salary
+decoys: [nre_to_nro, remit_nre, water, card_payment, utilities, rent]
+
+groups:
+  salary: {counterparty: Straits Marine Engineering, kind: employer, interpretation: "His salary.", alternatives: []}
+  saraswathy: {counterparty: SARASWATHY AMMA, kind: person, interpretation: "Money sent every month to Saraswathy Amma in Kochi, perhaps a relative.", alternatives: [A tenant or a helper]}
+  nre_to_nro: {counterparty: Periyar Bank, kind: own_account, interpretation: "Transfers between his own NRE and NRO accounts.", alternatives: []}
+  remit_nre: {counterparty: Periyar Bank, kind: own_account, interpretation: "Money he sent home to his own NRE account.", alternatives: []}
+  water: {counterparty: Kerala Water Authority, kind: utility, interpretation: "The water bill for the Kochi home.", alternatives: []}
+  card_payment: {counterparty: Merlion Savings Bank, kind: bank, interpretation: "Payments to his own Merlion credit card.", alternatives: []}
+  utilities: {counterparty: SP Services, kind: utility, interpretation: "Electricity and water in Singapore.", alternatives: []}
+  rent: {counterparty: HDB, kind: housing, interpretation: "Rent for the flat in Tampines.", alternatives: []}
+
+coverage:
+  bank_accounts: {status: found, detail: "Periyar Bank (2), Merlion Savings Bank"}
+  life_cover: {status: not_seen, detail: No paper mentions one; his employer may have group cover., ask: "Did Suresh have life insurance, through work or of his own?"}
+  cpf: {status: found, detail: No nomination}
+  employer: {status: lead, detail: Final salary and leave}
+  cards: {status: found, detail: "Merlion card, S$2,310.40"}
+
+jurisdiction:
+  succession_law: null
+  contested: false
+  summary: "Two countries. India's rules for the Periyar Bank accounts and the chit; Singapore's for CPF, Merlion Savings Bank and his employer."
+  summary_local: "രണ്ട് രാജ്യങ്ങൾ. പെരിയാർ ബാങ്കിലെ അക്കൗണ്ടുകൾക്ക് ഇന്ത്യയിലെ നിയമങ്ങൾ; സിംഗപ്പൂരിലെ പണത്തിന് സിംഗപ്പൂരിലെ നിയമങ്ങൾ."
+  findings:
+    - {assertion_ids: [in_hsa_s8_class1, in_hsa_class1_list], rule: "For his money in India: a Hindu man's property goes first to the Class I heirs, who include his widow, children and mother.", points_to: IN}
+  legs:
+    - {country: IN, succession_law: IN, papers_from: [SG], certification: ["apostille, or one of the other four ways RBI paragraph 324 accepts"], cites: [in_rbi_324_foreign_death, in_rbi_324_apostille], note: "The Singapore death certificate has to be certified in Singapore before Periyar Bank can use it. An apostille is the quickest, because Singapore issues them."}
+    - {country: SG, succession_law: SG, papers_from: [SG], certification: [], cites: [sg_cpf_no_nomination], note: "The Singapore death certificate works for Singapore claims as it is."}
+  cites: [in_hsa_s8_class1, in_rbi_324_foreign_death, in_rbi_324_apostille, sg_apostille_sal, sg_cpf_no_nomination]
+
+intake:
+  started_on: 2026-09-15
+  by: p_lakshmi
+  turns:
+    - role: assistant
+      lang: ml
+      text: നിങ്ങളുടെ നഷ്ടത്തിൽ ഞങ്ങൾ അതിയായി ദുഃഖിക്കുന്നു. ആദ്യം, ആരാണ് മരണപ്പെട്ടത് എന്ന് പറയാമോ?
+      translation: We are deeply sorry for your loss. First, could you tell us who has passed away?
+    - role: family
+      person: p_lakshmi
+      lang: ml
+      channel: voice
+      seconds: 16
+      text: എന്റെ ഭർത്താവ്, സുരേഷ് നാരായണൻ നായർ. സെപ്റ്റംബർ പതിനൊന്നിന് സിംഗപ്പൂരിൽ വെച്ച്. ഹൃദയാഘാതം ആയിരുന്നു. അവിടെ ജോലി ചെയ്യുകയായിരുന്നു.
+      translation: My husband, Suresh Narayanan Nair. On 11 September, in Singapore. It was a heart attack. He was working there.
+    - role: assistant
+      lang: ml
+      text: കുടുംബത്തിൽ ആരൊക്കെയുണ്ട്? പണത്തിന്റെ കാര്യങ്ങൾ ആരാണ് നോക്കിയിരുന്നത്?
+      translation: Who is in the family? Who looked after the money?
+    - role: family
+      person: p_lakshmi
+      lang: ml
+      channel: voice
+      seconds: 14
+      text: ഞാനും മകൻ അർജുനും. അർജുൻ സിംഗപ്പൂരിലാണ്. കൊച്ചിയിൽ പെരിയാർ ബാങ്കിൽ രണ്ട് അക്കൗണ്ടുകളുണ്ട്.
+      translation: Me and our son Arjun. Arjun is in Singapore. There are two accounts at Periyar Bank in Kochi.
+    - role: assistant
+      lang: ml
+      text: എന്തെങ്കിലും കുറിപ്പുകളോ ബാങ്ക് പേപ്പറുകളോ കയ്യിലുണ്ടോ?
+      translation: Do you have any notes or bank papers?
+    - role: family
+      person: p_lakshmi
+      lang: ml
+      channel: voice
+      seconds: 9
+      text: ഞാൻ എഴുതിവെച്ച ഒരു കുറിപ്പുണ്ട്. സിംഗപ്പൂരിലെ പേപ്പറുകൾ അർജുൻ അയക്കും.
+      translation: I have a note I wrote down. Arjun will send the Singapore papers.
+  situation:
+    1:
+      deceased_name: Suresh Narayanan Nair
+      died_on: 2026-09-11
+      died_in: Singapore
+      death_country: SG
+      death_cause: illness
+      country_codes: [SG, IN]
+      occupation: Marine engineer in Singapore
+      family:
+        - {name: Lakshmi Nair, relationship: wife, city: Kochi, country: IN, languages: [ml], roles: [claimant, heir]}
+      will: unknown
+      mode: family
+      unknowns: [other heirs, papers at hand]
+    2:
+      family:
+        - {name: Arjun Nair, relationship: son, city: Singapore, country: SG, languages: [en, ml], roles: [heir, helper]}
+      holdings_mentioned: [two accounts at Periyar Bank, Kochi]
+      unknowns: [papers at hand]
+    3:
+      papers_at_hand: [Lakshmi's notes, Singapore papers with Arjun]
+      urgent: ["A death certificate issued in Singapore has to be certified there before Indian banks can use it."]
+      unknowns: []
+
+timeline:
+  - {on: 2026-09-15, do: intake}
+  - {on: 2026-09-15, do: confirm_summary, by: p_lakshmi}
+  - {on: 2026-09-15, do: invite, person: p_arjun, by: p_lakshmi}
+  - {on: 2026-09-17, do: upload, paper: death_cert, by: p_arjun}
+  - {on: 2026-09-17, do: upload, paper: cpf_statement, by: p_arjun}
+  - {on: 2026-09-17, do: upload, paper: merlion_statement, by: p_arjun}
+  - {on: 2026-09-17, do: upload, paper: card_statement, by: p_arjun}
+  - {on: 2026-09-18, do: upload, paper: nre_statement, by: p_arjun}
+  - {on: 2026-09-18, do: upload, paper: nro_statement, by: p_arjun}
+  - {on: 2026-09-18, do: upload, paper: lakshmi_notes, by: p_arjun}
+  - {on: 2026-09-18, do: upload, paper: lakshmi_pan, by: p_arjun}
+  - {on: 2026-09-19, do: confirm_people, by: p_arjun}
+  - {on: 2026-09-22, do: approve_plan, claim: c_cpf, by: p_arjun}
+  - {on: 2026-09-23, do: approve_plan, claim: c_foreign, by: p_arjun}
+  - {on: 2026-09-25, do: approve_plan, claim: c_nre, by: p_lakshmi}
+  - {on: 2026-09-25, do: prepare_pack, claim: c_nre}
+  - {on: 2026-09-25, do: approve_plan, claim: c_nro, by: p_lakshmi}
+  - {on: 2026-09-25, do: prepare_pack, claim: c_nro}
+  - {on: 2026-10-01, do: approve_plan, claim: c_merlion, by: p_arjun}
+  - {on: 2026-10-01, do: claim_event, claim: c_merlion, event: notified, note: "Arjun told Merlion Savings Bank, with a copy of the death certificate."}
+  - {on: 2026-10-02, do: approve_plan, claim: c_straits, by: p_arjun}
+  - {on: 2026-10-14, do: today}
+
+expected_today:
+  tasks: [answer:payee, step:c_foreign:apostille, step:c_straits:contact_hr]
+  totals: {INR: {known: "598860.00"}, SGD: {known: "165060.55", owed: "2310.40"}}
+
+today_greeting_local:
+  Lakshmi: "സുപ്രഭാതം, ലക്ഷ്മി. മൂന്ന് കാര്യങ്ങൾ കുടുംബം ചെയ്യേണ്ടതുണ്ട്."
+  Arjun: "സുപ്രഭാതം, അർജുൻ. മൂന്ന് കാര്യങ്ങൾ കുടുംബം ചെയ്യേണ്ടതുണ്ട്."
+today_tasks:
+  - kind: ask
+    key_prefix: "ask:identity"
+    title: Tell us who Saraswathy Amma is
+    body: "His NRO account sent ₹5,000 to Saraswathy Amma every month. If she is his mother, she is a legal heir for his money in India and signs a no-objection letter."
+    local: {lang: ml, title: "സരസ്വതി അമ്മ ആരാണ്?", body: "അദ്ദേഹത്തിന്റെ NRO അക്കൗണ്ടിൽ നിന്ന് എല്ലാ മാസവും സരസ്വതി അമ്മയ്ക്ക് ₹5,000 അയച്ചിരുന്നു. അവർ അദ്ദേഹത്തിന്റെ അമ്മയാണെങ്കിൽ, ഇന്ത്യയിലെ പണത്തിന് അവരും അവകാശിയാണ്."}
+  - kind: certify
+    institution_id: in_certifying_authority_abroad
+    title: Get an apostille on the death certificate
+    body: "Periyar Bank can use the Singapore death certificate only once it is certified in Singapore. The Singapore Academy of Law issues apostilles, and it is the quickest of the five ways the Reserve Bank of India accepts."
+    local: {lang: ml, title: "മരണ സർട്ടിഫിക്കറ്റിന് അപ്പോസ്റ്റിൽ വാങ്ങുക", body: "സിംഗപ്പൂരിലെ മരണ സർട്ടിഫിക്കറ്റ് അവിടെ സാക്ഷ്യപ്പെടുത്തിയാൽ മാത്രമേ പെരിയാർ ബാങ്കിന് അത് ഉപയോഗിക്കാനാകൂ. സിംഗപ്പൂർ അക്കാദമി ഓഫ് ലോ അപ്പോസ്റ്റിൽ നൽകുന്നു; റിസർവ് ബാങ്ക് അംഗീകരിക്കുന്ന അഞ്ച് വഴികളിൽ ഏറ്റവും വേഗമുള്ളത് ഇതാണ്."}
+  - kind: submit
+    institution_id: sg_straits_marine
+    title: Ask Straits Marine Engineering for his final pay
+    body: "Salary to the date of death and unused leave are paid to the next of kin. HR needs the death certificate."
+    local: {lang: ml, title: "അവസാന ശമ്പളത്തിനായി സ്ട്രെയിറ്റ്സ് മറൈൻ എഞ്ചിനീയറിങ്ങിനോട് ചോദിക്കുക", body: "മരണദിവസം വരെയുള്ള ശമ്പളവും ബാക്കിയുള്ള അവധിയുടെ തുകയും അടുത്ത ബന്ധുവിന് ലഭിക്കും. എച്ച്ആർ വിഭാഗത്തിന് മരണ സർട്ടിഫിക്കറ്റ് വേണം."}

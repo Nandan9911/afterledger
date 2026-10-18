@@ -1,0 +1,310 @@
+# The Verma family's papers. Every bank, insurer and depository participant is fictional; the
+# government papers use a generic layout and carry a sample watermark. Dates are written for the
+# story day 14 October 2026 and shift with it.
+papers:
+  # --------------------------------------------------------------------------------------------
+  - id: death_cert
+    title: Death certificate
+    doc_type: death_certificate
+    country: IN
+    languages: [hi, en]
+    scripts: [Deva, Latn]
+    origin: upload
+    uploaded_by: p_amit
+    uploaded_on: 2026-09-09
+    template: certificate
+    style: {accent: "#5B3A1E", lang: en, size: 9}
+    pre_title: "Office of the Registrar of Births and Deaths, Lucknow (sample specimen)"
+    titles:
+      - {text: "मृत्यु प्रमाण पत्र", lang: hi, size: 15}
+      - {text: "CERTIFICATE OF DEATH", size: 13}
+    subtitle: "Issued under the Registration of Births and Deaths Act, 1969 · Specimen for the AfterLedger demo"
+    sections:
+      - kv:
+          - ["नाम / Name", "राजेश कुमार वर्मा / RAJESH KUMAR VERMA", deceased_name]
+          - ["लिंग / Sex", "पुरुष / MALE", sex]
+          - ["आयु / Age", "52 वर्ष / 52 YEARS", age]
+          - ["मृत्यु की तिथि / Date of death", "{d:2026-09-02|dmy_slash}", date_of_death]
+          - ["मृत्यु का स्थान / Place of death", "निवास, लखनऊ / RESIDENCE, LUCKNOW", place_of_death]
+          - ["पिता का नाम / Name of father", "स्व. मोहन लाल वर्मा / LATE MOHAN LAL VERMA", father_name]
+          - ["माता का नाम / Name of mother", "कमला देवी / KAMLA DEVI", mother_name]
+          - ["पत्नी का नाम / Name of wife", "सुनीता वर्मा / SUNITA VERMA", spouse_name]
+          - ["स्थायी पता / Permanent address", "14/2 VIKAS NAGAR, LUCKNOW 226022", address]
+          - ["पंजीकरण संख्या / Registration no.", "D-2026-SYN-0480913", registration_number]
+          - ["पंजीकरण तिथि / Date of registration", "{d:2026-09-08|dmy_slash}", registration_date]
+          - ["जारी करने की तिथि / Date of issue", "{d:2026-09-09|dmy_slash}", issue_date]
+        label_w: 205
+    stamp: {text: "REGISTRAR · LUCKNOW · SPECIMEN", round: true}
+    signature: {label: "Registrar (Births & Deaths)", name: "S. K. Mishra"}
+    note: "This is a sample document created for the AfterLedger demo. It is not a certificate and has no legal effect."
+    fields:
+      deceased_name: {value: Rajesh Kumar Verma}
+      date_of_death: {value: 2026-09-02}
+      place_of_death: {value: Lucknow}
+      mother_name: {value: Kamla Devi}
+      spouse_name: {value: Sunita Verma}
+      registration_date: {value: 2026-09-08}
+
+  # --------------------------------------------------------------------------------------------
+  - id: sahyadri_statement
+    title: Sahyadri Bank statement
+    doc_type: bank_statement
+    institution_id: in_sahyadri_bank
+    holding_id: h_sahyadri_sb
+    country: IN
+    languages: [en]
+    scripts: [Latn]
+    origin: upload
+    uploaded_by: p_amit
+    uploaded_on: 2026-09-10
+    template: statement
+    style: {accent: "#0F5E7A", lang: en, size: 8.6}
+    brand: {name: SAHYADRI BANK, line: "Hazratganj Branch, 22 Ashok Marg, Lucknow 226001 · IFSC SAHY0001023 · Fictional bank for the AfterLedger demo"}
+    heading: STATEMENT OF ACCOUNT - SAVINGS BANK
+    kv:
+      - [Customer name, RAJESH KUMAR VERMA, account_holder]
+      - [Account number, XXXXXXXX4417, account_number]
+      - [PAN, ZZZPV0042K, pan]
+      - [Address, "14/2 VIKAS NAGAR, LUCKNOW 226022", address]
+      - [Account type, SAVINGS - PENSION, account_type]
+      - [Nomination, "REGISTERED: SUNITA VERMA", nomination]
+      - [Period, "{d:2026-03-01|dmy_slash} to {d:2026-08-31|dmy_slash}", period]
+    continued: "SAHYADRI BANK · Statement of account (continued) · A/c XXXXXXXX4417"
+    columns:
+      - {key: date, label: Date, width: 0.11}
+      - {key: narration, label: Narration, width: 0.43}
+      - {key: debit, label: Debit, width: 0.15, align: right}
+      - {key: credit, label: Credit, width: 0.15, align: right}
+      - {key: balance, label: Balance, width: 0.16, align: right}
+    ledger:
+      start: 2026-03-01
+      end: 2026-08-31
+      date_style: dmy2
+      amount_style: in
+      group_by: month
+      bf_label: BALANCE B/F
+      recurring:
+        - {narration: PENSION UP TREASURY LKO, credit: 38450.00, day: 1, seq: 10, meta: {group: pension}}
+        - {narration: ACH D- NACH MF SIP CAMS 4471, debit: 5000.00, day: 5, seq: 20, meta: {group: mf_sip}}
+        - {narration: EMI SCOOTY LOAN 0041 SAHYADRI, debit: 2150.00, day: 5, seq: 21, from: 2026-07-01, meta: {group: scooter_emi}}
+        - {narration: UPI/AMIT VERMA/PUNE, debit: 3000.00, day: 12, seq: 30, meta: {group: upi_amit}}
+        - {narration: UPPCL ELEC BILL LKO, debit: [1410.00, 1652.00, 1284.00, 2208.00, 2396.00, 1977.00], day: 30, seq: 40, meta: {group: electricity}}
+        - {narration: NACH CR DIV GOMTI PAPER MILLS, credit: 1240.00, day: 16, months: [3, 6], seq: 35, meta: {group: gomti_div}}
+      lines:
+        - {date: 2026-03-15, narration: BSL PREM POLICY 8812, debit: 6850.00, meta: {group: bsl_premium}}
+        - {date: 2026-03-22, narration: ATM WDL LKO HZG 0193, debit: 4000.00}
+        - {date: 2026-04-08, narration: LOCKER RENT 2026-27 SAH LKO, debit: 2360.00, meta: {group: locker_rent}}
+        - {date: 2026-04-19, narration: ATM WDL LKO HZG 0193, debit: 3000.00}
+        - {date: 2026-05-27, narration: PMJJBY PREM RENEWAL 2026-27, debit: 436.00, meta: {group: pmjjby}}
+        - {date: 2026-05-31, narration: PMSBY PREM RENEWAL 2026-27, debit: 20.00, meta: {group: pmsby}}
+        - {date: 2026-06-09, narration: CASH DEP LKO HZG, credit: 15000.00, seq: 36}
+        - {date: 2026-06-24, narration: ATM WDL LKO HZG 0193, debit: 5000.00}
+        - {date: 2026-07-18, narration: UPI/SHIVAM MEDICALS/LKO, debit: 2840.00}
+        - {date: 2026-08-14, narration: UPI/SHIVAM MEDICALS/LKO, debit: 3115.00}
+        - {date: 2026-08-21, narration: ATM WDL LKO HZG 0193, debit: solve}
+      anchors:
+        - {date: 2026-05-01, narration: PENSION, balance: 162318.40}
+        - {closing: 152912.00}
+    summary_fields: {closing_balance: closing}
+    closing_note: "Closing balance as on {d:2026-08-31|dmy_slash}: {closing}"
+    fine_print: "This statement is computer generated. Sahyadri Bank is a fictional bank created for the AfterLedger demo; this is a sample document."
+    fields:
+      account_holder: {value: RAJESH KUMAR VERMA}
+      account_number: {value: XXXXXXXX4417}
+      nomination: {value: "REGISTERED: SUNITA VERMA"}
+
+  # --------------------------------------------------------------------------------------------
+  - id: narmada_passbook
+    title: Narmada Bank passbook
+    doc_type: passbook
+    institution_id: in_narmada_bank
+    holding_id: h_narmada_sb
+    country: IN
+    languages: [en]
+    scripts: [Latn]
+    origin: photo
+    uploaded_by: p_amit
+    uploaded_on: 2026-09-16
+    template: passbook
+    style: {accent: "#2E5B2A", lang: en, size: 8}
+    brand: {name: NARMADA BANK}
+    heading: SB PASS BOOK
+    kv:
+      - [NAME, R K VERMA, account_holder]
+      - [A/C, XXXX XXXX 0932, account_number]
+    columns:
+      - {key: date, label: DATE, width: 0.17}
+      - {key: narration, label: PARTICULARS, width: 0.33}
+      - {key: debit, label: WITHDRAWAL, width: 0.17, align: right}
+      - {key: credit, label: DEPOSIT, width: 0.15, align: right}
+      - {key: balance, label: BALANCE, width: 0.18, align: right}
+    ledger:
+      start: 2026-01-01
+      end: 2026-09-30
+      date_style: dmy2
+      amount_style: in
+      group_by: breaks
+      page_breaks: [2026-07-05]
+      bf_label: B/F
+      opening: 48920.00
+      lines:
+        - {date: 2026-01-10, narration: CASH DEP, credit: 2000.00}
+        - {date: 2026-02-05, narration: ATM WDL LKO HZG, debit: 1500.00}
+        - {date: 2026-03-03, narration: CASH DEP, credit: 3000.00}
+        - {date: 2026-03-31, narration: INT CREDIT, credit: 398.00}
+        - {date: 2026-04-15, narration: ATM WDL LKO HZG, debit: 2000.00}
+        - {date: 2026-05-12, narration: CASH DEP, credit: 1500.00}
+        - {date: 2026-06-18, narration: ATM WDL LKO HZG, debit: 670.00}
+        - {date: 2026-07-05, narration: INT CREDIT, credit: 412.00}
+        - {date: 2026-07-15, narration: CASH DEP, credit: 2000.00}
+        - {date: 2026-08-02, narration: ATM WDL LKO HZG, debit: 1600.00}
+        - {date: 2026-09-10, narration: ATM WDL LKO 4471, debit: 10000.00, meta: {after_death: true}}
+        - {date: 2026-09-15, narration: DR CARD AMC, debit: 590.00, meta: {after_death: true}}
+    photo: {angle: -1.6, blur: 0.7}
+    misreads:
+      reader_b: {rows: {11: {balance: "41670.00"}}}
+    fields:
+      account_holder: {value: R K VERMA}
+      account_number: {value: XXXX XXXX 0932}
+
+  # --------------------------------------------------------------------------------------------
+  - id: narmada_fd
+    title: Narmada Bank fixed deposit
+    doc_type: fixed_deposit_receipt
+    institution_id: in_narmada_bank
+    holding_id: h_narmada_fd
+    country: IN
+    languages: [en]
+    scripts: [Latn]
+    origin: photo
+    uploaded_by: p_amit
+    uploaded_on: 2026-09-16
+    template: certificate
+    page_size: [595, 400]
+    style: {accent: "#2E5B2A", lang: en, size: 9}
+    brand: {name: NARMADA BANK, line: "Hazratganj Branch, Lucknow · Fictional bank for the AfterLedger demo"}
+    titles:
+      - {text: FIXED DEPOSIT RECEIPT, size: 13}
+    subtitle: "Not transferable · Sample document"
+    sections:
+      - kv:
+          - [Receipt no., FDR 0007312215, receipt_number]
+          - [Depositor, RAJESH KUMAR VERMA, account_holder]
+          - [Amount, "Rs. 6,00,000.00 (Rupees Six Lakh only)", principal]
+          - [Date of deposit, "{d:2024-03-15|dmy_slash}", deposit_date]
+          - [Period, 36 months, period]
+          - [Rate of interest, 7.10% p.a. (compounded quarterly), rate]
+          - [Maturity date, "{d:2027-03-15|dmy_slash}", maturity_date]
+          - [Nomination, NOT REGISTERED, nomination]
+        cols: 2
+        label_w: 95
+    stamp: {text: NARMADA BANK · HAZRATGANJ}
+    signature: {label: Authorised signatory, name: "P. Srivastava"}
+    photo: {angle: 1.2, blur: 0.6}
+    fields:
+      principal: {value: "600000.00"}
+      nomination: {value: NOT REGISTERED}
+      maturity_date: {value: 2027-03-15}
+
+  # --------------------------------------------------------------------------------------------
+  - id: bsl_policy
+    title: Bharat Suraksha Life policy
+    doc_type: insurance_policy
+    institution_id: in_bharat_suraksha_life
+    holding_id: h_bsl_policy
+    country: IN
+    languages: [en]
+    scripts: [Latn]
+    origin: upload
+    uploaded_by: p_amit
+    uploaded_on: 2026-09-18
+    template: certificate
+    style: {accent: "#7A1F3D", lang: en, size: 9}
+    brand: {name: BHARAT SURAKSHA LIFE, line: "Fictional life insurer created for the AfterLedger demo · Sample document"}
+    titles:
+      - {text: POLICY SCHEDULE - SURAKSHA TERM PLAN, size: 12.5}
+    sections:
+      - kv:
+          - [Policy number, BSL-TP-0042-8812, policy_number]
+          - [Life assured, RAJESH K VERMA, life_assured]
+          - [Date of birth, "{d:1974-03-21|dmy_slash}", birth_date]
+          - [Sum assured on death, "Rs. 5,00,000", sum_assured]
+          - [Annual premium, "Rs. 6,850 (due 15 March)", premium]
+          - [Date of commencement, "{d:2016-03-15|dmy_slash}", commencement]
+          - [Policy term, 20 years, term]
+          - [Nominee, "SUNITA VERMA (WIFE)", nominee]
+        cols: 1
+        label_w: 160
+      - heading: Claims
+        text: "In the event of death of the life assured, the nominee may intimate the claim online, at any branch or through the advisor, with the claim form, a copy of the death certificate, this policy document, the nominee's identity proof and a cancelled cheque."
+    signature: {label: For Bharat Suraksha Life, name: "A. Kulkarni"}
+    fields:
+      sum_assured: {value: "500000.00"}
+      nominee: {value: SUNITA VERMA}
+      policy_number: {value: BSL-TP-0042-8812}
+
+  # --------------------------------------------------------------------------------------------
+  - id: demat_statement
+    title: Demat account statement
+    doc_type: demat_holding_statement
+    institution_id: in_awadh_securities
+    holding_id: h_demat
+    country: IN
+    languages: [en]
+    scripts: [Latn]
+    origin: upload
+    uploaded_by: p_amit
+    uploaded_on: 2026-09-20
+    template: holdings
+    style: {accent: "#3A3F8F", lang: en, size: 8.6}
+    brand: {name: AWADH SECURITIES LTD, line: "Depository participant (fictional, for the AfterLedger demo) · DP ID IN309999"}
+    heading: STATEMENT OF HOLDINGS AS ON {d:2026-08-31|dmy_slash}
+    kv:
+      - [First holder, RAJESH KUMAR VARMA, account_holder]
+      - [PAN, ZZZPV0042K, pan]
+      - [DP ID, IN309999, dp_id]
+      - [Client ID, "10095521", client_id]
+      - [Nomination, NOT OPTED, nomination]
+      - [Holding mode, SINGLE, holding_mode]
+    columns:
+      - {key: isin, label: ISIN, width: 0.17}
+      - {key: name, label: Security, width: 0.35}
+      - {key: qty, label: Quantity, width: 0.12, align: right}
+      - {key: price, label: Closing price, width: 0.17, align: right}
+      - {key: value, label: Value (Rs.), width: 0.19, align: right}
+    rows:
+      - {isin: INE0SYN01011, name: GANGA CEMENT LTD (SAMPLE), qty: "400", price: "612.50", value: "2,45,000.00"}
+      - {isin: INE0SYN02019, name: DECCAN PHARMA LTD (SAMPLE), qty: "150", price: "1,480.00", value: "2,22,000.00"}
+      - {isin: INE0SYN03017, name: KONKAN POWER LTD (SAMPLE), qty: "1,200", price: "118.75", value: "1,42,500.00"}
+      - {isin: INE0SYN04015, name: MALWA TEXTILES LTD (SAMPLE), qty: "500", price: "381.00", value: "1,90,500.00"}
+      - {name: TOTAL, value: "8,00,000.00", _bold: true, _fields: {value: total_value}}
+    closing_note: "Values at the previous closing price on a recognised stock exchange. Sample document."
+    fields:
+      account_holder: {value: RAJESH KUMAR VARMA}
+      pan: {value: ZZZPV0042K}
+      total_value: {value: "800000.00"}
+      nomination: {value: NOT OPTED}
+
+  # --------------------------------------------------------------------------------------------
+  - id: sunita_pan
+    title: Sunita's PAN card
+    doc_type: identity_card
+    country: IN
+    languages: [en]
+    scripts: [Latn]
+    origin: photo
+    uploaded_by: p_amit
+    uploaded_on: 2026-09-20
+    subject_person: p_sunita
+    template: card
+    style: {accent: "#24508F", lang: en}
+    header: "PERMANENT ACCOUNT NUMBER CARD (SPECIMEN)"
+    kv:
+      - [Name, SUNITA VERMA, holder_name]
+      - [Father's name, RAMESH CHANDRA SRIVASTAVA, father_name]
+      - [Date of birth, "{d:1977-06-11|dmy_slash}", birth_date]
+      - [PAN, ZZZPV0187S, pan]
+    photo: {angle: 2.0, blur: 0.5, tint: "#F6F6F2"}
+    fields:
+      holder_name: {value: SUNITA VERMA}
+      pan: {value: ZZZPV0187S}

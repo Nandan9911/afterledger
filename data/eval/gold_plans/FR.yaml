@@ -1,0 +1,63 @@
+# Gold plans used only to score the research workflow. They are NOT loaded as knowledge: the
+# challenge asks the system to research these situations from scratch, and the compiled plan's
+# route must match the gold route on every table-driven case.
+plans:
+  - key: FR/life_insurance_search
+    title: Finding out whether you are the beneficiary of a life insurance policy (France)
+    jurisdiction: FR
+    institution_kind: other
+    holding_kinds: [life_policy]
+    language: fr
+    level: gold
+    verified_on: 2026-10-14
+    # justice.fr says AGIRA for a death "depuis moins de 10 ans" and Ciclade "depuis plus de 10 ans": neither says
+    # which applies at exactly ten years, so a plan is not tested on that day.
+    unclear_at_threshold: [years_since_death]
+    variables:
+      - name: years_since_death
+        type: number
+        derive: years_since_death
+        cites: [fr_agira_10_years, fr_agira_over_10]
+      - name: can_use_internet
+        type: tri
+        question: Can you make the request online?
+        cites: [fr_agira_online]
+    documents:
+      - id: death_cert_copy
+        name: Copy of the death certificate (acte de décès)
+        cites: [fr_agira_death_cert]
+      - id: agira_request
+        name: Request to AGIRA
+        cites: [fr_agira_ask, fr_agira_free]
+    clocks:
+      - id: insurer_1_month
+        label: An insurer that finds a contract for you has one month to tell you
+        owner: institution
+        starts_on: insurer_informed
+        length: 1
+        unit: months
+        cites: [fr_insurer_1_month]
+    steps:
+      - id: ask_agira
+        kind: submit
+        actor: family
+        text: Ask AGIRA, free of charge, online (or by post if you cannot use the internet), with a copy of the death certificate.
+        when: years_since_death < 10
+        documents: [agira_request, death_cert_copy]
+        cites: [fr_agira_ask, fr_agira_10_years, fr_agira_free, fr_agira_online, fr_agira_death_cert]
+      - id: ask_ciclade
+        kind: submit
+        actor: family
+        text: For a death more than 10 years ago, use the Caisse des dépôts' online service Ciclade.
+        when: years_since_death >= 10
+        cites: [fr_agira_over_10]
+      - id: insurers_told
+        kind: wait
+        actor: institution
+        text: AGIRA tells every insurer about the death; an insurer holding a contract in your favour has one month to tell you.
+        when: years_since_death < 10
+        clocks: [insurer_1_month]
+        after: [ask_agira]
+        cites: [fr_agira_informs_insurers, fr_insurer_1_month]
+    compiled_from: [fr_agira_ask, fr_agira_10_years, fr_agira_over_10, fr_agira_free, fr_agira_online, fr_agira_death_cert,
+                    fr_agira_informs_insurers, fr_insurer_1_month]

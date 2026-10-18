@@ -1,0 +1,8 @@
+project_id = "your-project-id"
+region     = "asia-south1"
+image_tag  = "latest"
+# timezone = "Asia/Kolkata"            # the clock new activity is written on
+# create_firestore_database = false   # if the project already has a (default) Firestore database
+# keep_one_instance_warm    = true    # during judging: no cold starts
+# model_armor_location     = "us-central1" # must offer the injection and malicious-URI filters
+# case_budget_usd          = 2.0           # most a case may spend on optional model work

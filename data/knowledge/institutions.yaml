@@ -1,0 +1,426 @@
+# The institution directory. Fictional institutions carry fictional: true and a .example domain.
+# narration_tokens are the payee strings seen on statements; aliases cover names in every script.
+institutions:
+  # ---- India -----------------------------------------------------------------------------------
+  - id: in_sahyadri_bank
+    name: Sahyadri Bank
+    aliases: [SAHYADRI BANK, SAHYADRI, सह्याद्रि बैंक]
+    narration_tokens: [SAH LKO, SAHYADRI]
+    country: IN
+    kind: bank
+    bank_type: commercial
+    identifiers: {ifsc_prefix: SAHY}
+    domain: sahyadri-bank.example
+    bereavement_url: https://www.sahyadri-bank.example/bereavement
+    fictional: true
+  - id: in_narmada_bank
+    name: Narmada Bank
+    aliases: [NARMADA BANK, NARMADA, नर्मदा बैंक]
+    country: IN
+    kind: bank
+    bank_type: commercial
+    identifiers: {ifsc_prefix: NARM}
+    domain: narmada-bank.example
+    bereavement_url: https://www.narmada-bank.example/deceased-claims
+    fictional: true
+  - id: in_bharat_suraksha_life
+    name: Bharat Suraksha Life
+    aliases: [BHARAT SURAKSHA LIFE, BSL, BSL LIFE, भारत सुरक्षा लाइफ]
+    narration_tokens: [BSL PREMIUM, BSL LIFE PREM]
+    country: IN
+    kind: insurer
+    domain: bharat-suraksha-life.example
+    bereavement_url: https://www.bharat-suraksha-life.example/claims/death-claim
+    fictional: true
+  - id: in_periyar_bank
+    name: Periyar Bank
+    aliases: [PERIYAR BANK, PERIYAR, പെരിയാർ ബാങ്ക്]
+    country: IN
+    kind: bank
+    bank_type: commercial
+    identifiers: {ifsc_prefix: PRYR}
+    domain: periyar-bank.example
+    bereavement_url: https://www.periyar-bank.example/nri/deceased-accounts
+    fictional: true
+  - id: in_periyar_chits
+    name: Periyar Chits
+    aliases: [PERIYAR CHITS, പെരിയാർ ചിട്ടി]
+    country: IN
+    kind: chit_fund
+    domain: periyar-chits.example
+    bereavement_url: https://www.periyar-chits.example/members/bereavement
+    fictional: true
+  - id: in_gomti_paper_mills
+    name: Gomti Paper Mills Ltd
+    short_name: Gomti Paper Mills
+    aliases: [GOMTI PAPER MILLS, GOMTI PAPER]
+    narration_tokens: [DIV GOMTI PAPER MILLS, GOMTI PAPER]
+    country: IN
+    kind: company
+    domain: gomti-paper-mills.example
+    bereavement_url: https://www.gomti-paper-mills.example/investors/transmission
+    fictional: true
+  - id: in_awadh_securities
+    name: Awadh Securities Ltd
+    short_name: Awadh Securities
+    aliases: [AWADH SECURITIES, AWADH SECURITIES LTD]
+    country: IN
+    kind: depository
+    identifiers: {dp_id: IN309999}
+    domain: awadh-securities.example
+    fictional: true
+    note: A fictional depository participant holding the demo family's demat account.
+  - id: in_cams
+    name: CAMS (Computer Age Management Services)
+    short_name: CAMS
+    aliases: [CAMS]
+    narration_tokens: [MF SIP CAMS, NACH MF SIP CAMS]
+    country: IN
+    kind: registrar
+    note: A real registrar and transfer agent for mutual funds; it appears here only as the narration on a direct debit.
+    fictional: false
+  - id: in_pmjjby
+    name: Pradhan Mantri Jeevan Jyoti Bima Yojana (PMJJBY)
+    short_name: PMJJBY
+    aliases: [PMJJBY]
+    narration_tokens: [PMJJBY PREM, PMJJBY]
+    country: IN
+    kind: government
+    note: A government life cover scheme linked to a bank account.
+    fictional: false
+  - id: in_pmsby
+    name: Pradhan Mantri Suraksha Bima Yojana (PMSBY)
+    short_name: PMSBY
+    aliases: [PMSBY]
+    narration_tokens: [PMSBY PREM, PMSBY]
+    country: IN
+    kind: government
+    note: A government accident cover scheme linked to a bank account.
+    fictional: false
+  - id: in_up_treasury
+    name: Uttar Pradesh Treasury (pension)
+    short_name: UP Treasury
+    aliases: [UP TREASURY]
+    narration_tokens: [PENSION UP TREASURY]
+    country: IN
+    kind: pension
+    note: The state treasury that pays a state government pension.
+    fictional: false
+  - id: in_uppcl
+    name: Uttar Pradesh Power Corporation (electricity)
+    short_name: UPPCL
+    aliases: [UPPCL]
+    narration_tokens: [UPPCL ELEC]
+    country: IN
+    kind: other
+    note: Household electricity; a routine payment.
+    fictional: false
+  - id: in_rbi
+    name: Reserve Bank of India
+    short_name: RBI
+    aliases: [RBI]
+    country: IN
+    kind: regulator
+    domain: rbi.org.in
+    fictional: false
+  - id: in_sebi
+    name: Securities and Exchange Board of India
+    short_name: SEBI
+    aliases: [SEBI]
+    country: IN
+    kind: regulator
+    domain: sebi.gov.in
+    fictional: false
+  - id: in_irdai
+    name: Insurance Regulatory and Development Authority of India
+    short_name: IRDAI
+    aliases: [IRDAI]
+    country: IN
+    kind: regulator
+    domain: irdai.gov.in
+    fictional: false
+  - id: in_depository_participant
+    name: Rajesh's depository participant (demat account)
+    short_name: His depository participant
+    aliases: [DEPOSITORY PARTICIPANT, DP]
+    country: IN
+    kind: depository
+    note: The demat account provider named on the statement; fictional in the demo.
+    fictional: true
+  # ---- Japan -----------------------------------------------------------------------------------
+  - id: jp_naniwa_bank
+    name: 浪速銀行
+    short_name: Naniwa Bank
+    aliases: [Naniwa Bank, ナニワギンコウ, ﾅﾆﾜｷﾞﾝｺｳ]
+    country: JP
+    kind: bank
+    identifiers: {bank_code: "0598"}
+    domain: naniwa-bank.example
+    bereavement_url: https://www.naniwa-bank.example/souzoku
+    fictional: true
+  - id: jp_yodogawa_shinkin
+    name: 淀川信用金庫
+    short_name: Yodogawa Shinkin Bank
+    aliases: [Yodogawa Shinkin, ヨドガワシンキン, ﾖﾄﾞｶﾞﾜｼﾝｷﾝ]
+    country: JP
+    kind: bank
+    identifiers: {bank_code: "1871"}
+    domain: yodogawa-shinkin.example
+    bereavement_url: https://www.yodogawa-shinkin.example/souzoku
+    fictional: true
+  - id: jp_minato_seimei
+    name: みなと生命
+    short_name: Minato Life
+    aliases: [Minato Seimei, ミナトセイメイ, ﾐﾅﾄｾｲﾒｲ]
+    narration_tokens: [ﾐﾅﾄｾｲﾒｲ]
+    country: JP
+    kind: insurer
+    domain: minato-seimei.example
+    bereavement_url: https://www.minato-seimei.example/seikyu/shibou
+    fictional: true
+  - id: jp_naniwa_card
+    name: ナニワカード
+    short_name: Naniwa Card
+    aliases: [Naniwa Card, ﾅﾆﾜｶｰﾄﾞ]
+    narration_tokens: [ﾅﾆﾜｶｰﾄﾞ, ｶ-ﾄﾞﾛ-ﾝ]
+    country: JP
+    kind: bank
+    domain: naniwa-card.example
+    bereavement_url: https://www.naniwa-card.example/souzoku
+    fictional: true
+  - id: jp_toto_bank
+    name: 東都銀行
+    short_name: Toto Bank
+    aliases: [Toto Bank, トウトギンコウ, ﾄｳﾄｷﾞﾝｺｳ]
+    country: JP
+    kind: bank
+    domain: toto-bank.example
+    bereavement_url: https://www.toto-bank.example/souzoku
+    fictional: true
+  - id: jp_nenkin
+    name: 日本年金機構 (pension)
+    short_name: Japan Pension Service
+    aliases: [Japan Pension Service, ﾈﾝｷﾝ]
+    narration_tokens: [ﾈﾝｷﾝ]
+    country: JP
+    kind: pension
+    fictional: false
+  - id: jp_legal_affairs_bureau
+    name: 法務局 (Legal Affairs Bureau)
+    short_name: Legal Affairs Bureau
+    aliases: [Legal Affairs Bureau, 法務局]
+    country: JP
+    kind: government
+    domain: houmukyoku.moj.go.jp
+    fictional: false
+  - id: jp_family_court
+    name: 家庭裁判所 (Family Court)
+    short_name: Family Court
+    aliases: [Family Court, 家庭裁判所]
+    country: JP
+    kind: court
+    domain: courts.go.jp
+    fictional: false
+  - id: jp_liaj
+    name: 生命保険協会 (Life Insurance Association of Japan)
+    short_name: Life Insurance Association of Japan
+    aliases: [Life Insurance Association of Japan, 生命保険協会]
+    country: JP
+    kind: other
+    fictional: false
+  # ---- United Kingdom ----------------------------------------------------------------------------
+  - id: gb_aire_valley_bank
+    name: Aire Valley Bank
+    aliases: [AIRE VALLEY BANK, AIRE VALLEY]
+    country: GB
+    kind: bank
+    identifiers: {sort_code_prefix: "40-"}
+    domain: airevalleybank.example
+    bereavement_url: https://www.airevalleybank.example/bereavement
+    fictional: true
+  - id: gb_pennine_bs
+    name: Pennine Building Society
+    aliases: [PENNINE BS, PENNINE BUILDING SOCIETY]
+    narration_tokens: [PENNINE BS]
+    country: GB
+    kind: bank
+    domain: penninebs.example
+    bereavement_url: https://www.penninebs.example/help/bereavement
+    fictional: true
+  - id: gb_leeds_mills_pension
+    name: Leeds Mills Pension Scheme
+    aliases: [LEEDS MILLS PENSION, LEEDS MILLS PENS]
+    narration_tokens: [LEEDS MILLS PENS]
+    country: GB
+    kind: pension
+    domain: leedsmillspension.example
+    bereavement_url: https://www.leedsmillspension.example/members/death
+    fictional: true
+  - id: gb_nsandi
+    name: NS&I (National Savings and Investments)
+    short_name: "NS&I"
+    aliases: [NS&I, NSANDI, NATIONAL SAVINGS]
+    narration_tokens: [NS&I PRIZE, NSI PRIZE]
+    country: GB
+    kind: government
+    domain: nsandi.com
+    bereavement_url: https://www.nsandi.com/help/manage-money-for-others/customers-who-have-died
+    fictional: false
+  - id: gb_dwp
+    name: Department for Work and Pensions (State Pension)
+    short_name: DWP
+    aliases: [DWP, DWP SP]
+    narration_tokens: [DWP SP]
+    country: GB
+    kind: government
+    fictional: false
+  - id: gb_leeds_council
+    name: Leeds City Council (council tax)
+    short_name: Leeds City Council
+    aliases: [LEEDS CC]
+    narration_tokens: [LEEDS CC CTAX]
+    country: GB
+    kind: government
+    fictional: false
+  # ---- United States -----------------------------------------------------------------------------
+  - id: us_mission_river_bank
+    name: Mission River Bank
+    aliases: [MISSION RIVER BANK, MISSION RIVER]
+    country: US-TX
+    kind: bank
+    identifiers: {routing: "111000025"}
+    domain: missionriverbank.example
+    bereavement_url: https://www.missionriverbank.example/estate-services
+    fictional: true
+  - id: us_lone_star_life
+    name: Lone Star Life Insurance Company
+    short_name: Lone Star Life
+    aliases: [LONE STAR LIFE, LONE STAR LIFE INS]
+    narration_tokens: [LONE STAR LIFE INS PREM]
+    country: US-TX
+    kind: insurer
+    domain: lonestarlife.example
+    bereavement_url: https://www.lonestarlife.example/claims
+    fictional: true
+  - id: us_riverwalk_logistics
+    name: Riverwalk Logistics
+    aliases: [RIVERWALK LOGISTICS, RIVERWALK LOG]
+    narration_tokens: [RIVERWALK LOGISTICS PAYROLL]
+    country: US-TX
+    kind: employer
+    domain: riverwalklogistics.example
+    bereavement_url: https://www.riverwalklogistics.example/hr/benefits-after-a-death
+    fictional: true
+  - id: us_ssa
+    name: Social Security Administration
+    short_name: Social Security
+    aliases: [SSA, SOCIAL SECURITY]
+    narration_tokens: [SSA TREAS 310 XXSOC SEC, XXSOC SEC]
+    country: US
+    kind: government
+    domain: ssa.gov
+    fictional: false
+  - id: us_naic
+    name: National Association of Insurance Commissioners (policy locator)
+    short_name: NAIC
+    aliases: [NAIC]
+    country: US
+    kind: other
+    domain: naic.org
+    fictional: false
+  # ---- Singapore ---------------------------------------------------------------------------------
+  - id: sg_merlion_savings
+    name: Merlion Savings Bank
+    aliases: [MERLION SAVINGS BANK, MERLION SAVINGS, MERLION]
+    country: SG
+    kind: bank
+    domain: merlionsavings.example
+    bereavement_url: https://www.merlionsavings.example/bereavement
+    fictional: true
+  - id: sg_cpf_board
+    name: CPF Board
+    aliases: [CPF, CENTRAL PROVIDENT FUND]
+    narration_tokens: [CPF CONTRIBUTION]
+    country: SG
+    kind: government
+    domain: cpf.gov.sg
+    fictional: false
+  - id: sg_public_trustee
+    name: Public Trustee's Office
+    aliases: [PUBLIC TRUSTEE, PTO]
+    country: SG
+    kind: government
+    fictional: false
+  - id: sg_straits_marine
+    name: Straits Marine Engineering Pte Ltd
+    short_name: Straits Marine
+    aliases: [STRAITS MARINE, STRAITS MARINE ENGINEERING]
+    narration_tokens: [STRAITS MARINE SALARY]
+    country: SG
+    kind: employer
+    domain: straitsmarine.example
+    bereavement_url: https://www.straitsmarine.example/hr/bereavement
+    fictional: true
+  - id: sg_sal
+    name: Singapore Academy of Law (apostilles)
+    short_name: Singapore Academy of Law
+    aliases: [Singapore Academy of Law, SAL]
+    country: SG
+    kind: other
+    fictional: false
+  # ---- France and Germany ------------------------------------------------------------------------
+  - id: fr_agira
+    name: AGIRA (Association pour la gestion des informations sur le risque en assurance)
+    short_name: AGIRA
+    aliases: [AGIRA, Agira]
+    country: FR
+    kind: other
+    fictional: false
+  - id: de_isarbank
+    name: Isarbank München
+    short_name: Isarbank
+    aliases: [ISARBANK, ISARBANK MUENCHEN]
+    country: DE
+    kind: bank
+    domain: isarbank.example
+    bereavement_url: https://www.isarbank.example/nachlass
+    fictional: true
+  # ---- authorities for procedures (generic descriptions, not specific offices) -------------------
+  - id: gb_probate_service
+    name: Probate service (HM Courts and Tribunals Service)
+    short_name: Probate service
+    country: GB
+    kind: court
+    fictional: false
+    note: The government probate service; named generically for the demo.
+  - id: us_tx_probate_court
+    name: County court that hears probate matters (Texas)
+    short_name: County court
+    country: US
+    kind: court
+    fictional: false
+    note: In Texas the affidavit is filed with the court in the county where the person lived; named generically.
+  - id: in_revenue_office
+    name: Tehsil or revenue office that issues legal heir certificates
+    short_name: Revenue office
+    country: IN
+    kind: government
+    fictional: false
+    note: Issued by the state's revenue authority; named generically.
+  - id: in_certifying_authority_abroad
+    name: Certifying authority in the country of death (apostille, notary, Indian bank branch or consulate)
+    short_name: Certifying authority abroad
+    country: IN
+    kind: government
+    fictional: false
+    note: Which body certifies depends on the mode the family chooses under RBI paragraph 324.
+
+  - id: de_drv
+    name: Deutsche Rentenversicherung (state pension)
+    short_name: Deutsche Rentenversicherung
+    aliases: [DRV BUND, DRV]
+    narration_tokens: [DRV BUND]
+    country: DE
+    kind: pension
+    fictional: false
+    note: The German statutory pension insurance; it appears here only as the payer on a statement line.

@@ -1,0 +1,138 @@
+# Fields worth reading on each kind of paper. tier A: money moves on it; B: shapes the plan;
+# C: useful context. The readers return every field; the schema inducer writes new types here at run time.
+schemas:
+  - id: death_certificate
+    label: Death certificate
+    fields:
+      - {name: deceased_name, label: Name of the person who died, kind: name, required: true, tier: A}
+      - {name: date_of_death, label: Date of death, kind: date, required: true, tier: A}
+      - {name: place_of_death, label: Place of death, kind: text, tier: B}
+      - {name: sex, label: Sex, kind: text, tier: C}
+      - {name: age, label: Age, kind: text, tier: C}
+      - {name: father_name, label: Father's name, kind: name, tier: C}
+      - {name: mother_name, label: Mother's name, kind: name, tier: B}
+      - {name: spouse_name, label: Spouse's name, kind: name, tier: B}
+      - {name: address, label: Address, kind: text, tier: C}
+      - {name: registration_number, label: Registration number, kind: identifier, tier: B}
+      - {name: registration_date, label: Date of registration, kind: date, tier: B}
+      - {name: issue_date, label: Date of issue, kind: date, tier: C}
+      - {name: cause_of_death, label: Cause of death, kind: text, tier: C}
+      - {name: nationality, label: Nationality, kind: text, tier: B}
+      - {name: id_number, label: Identity number, kind: identifier, tier: B}
+  - id: bank_statement
+    label: Bank statement
+    has_transactions: true
+    fields:
+      - {name: account_holder, label: Account holder, kind: name, required: true, tier: A}
+      - {name: account_number, label: Account number, kind: identifier, required: true, tier: A}
+      - {name: pan, label: PAN, kind: identifier, tier: B}
+      - {name: nomination, label: Nomination, kind: text, tier: B}
+      - {name: account_type, label: Account type, kind: text, tier: C}
+      - {name: period, label: Period, kind: text, tier: C}
+      - {name: closing_balance, label: Closing balance, kind: amount, tier: A}
+      - {name: address, label: Address, kind: text, tier: C}
+      - {name: id_number, label: Identity number, kind: identifier, tier: B}
+  - id: passbook
+    label: Passbook
+    has_transactions: true
+    fields:
+      - {name: account_holder, label: Account holder, kind: name, required: true, tier: A}
+      - {name: account_number, label: Account number, kind: identifier, required: true, tier: A}
+      - {name: account_type, label: Account type, kind: text, tier: C}
+      - {name: branch, label: Branch, kind: text, tier: C}
+  - id: fixed_deposit_receipt
+    label: Fixed deposit receipt
+    fields:
+      - {name: receipt_number, label: Receipt number, kind: identifier, required: true, tier: A}
+      - {name: account_holder, label: Depositor, kind: name, required: true, tier: A}
+      - {name: principal, label: Amount deposited, kind: amount, required: true, tier: A}
+      - {name: deposit_date, label: Date of deposit, kind: date, tier: C}
+      - {name: maturity_date, label: Maturity date, kind: date, tier: B}
+      - {name: rate, label: Rate of interest, kind: text, tier: C}
+      - {name: nomination, label: Nomination, kind: text, tier: B}
+  - id: insurance_policy
+    label: Insurance policy
+    fields:
+      - {name: policy_number, label: Policy number, kind: identifier, required: true, tier: A}
+      - {name: life_assured, label: Life assured, kind: name, required: true, tier: A}
+      - {name: sum_assured, label: Sum assured, kind: amount, required: true, tier: A}
+      - {name: nominee, label: Nominee or beneficiary, kind: name, tier: A}
+      - {name: premium, label: Premium, kind: text, tier: C}
+      - {name: commencement, label: Date of commencement, kind: date, tier: C}
+      - {name: birth_date, label: Date of birth, kind: date, tier: C}
+      - {name: term, label: Policy term, kind: text, tier: C}
+  - id: demat_holding_statement
+    label: Demat holding statement
+    fields:
+      - {name: account_holder, label: First holder, kind: name, required: true, tier: A}
+      - {name: pan, label: PAN, kind: identifier, tier: A}
+      - {name: dp_id, label: DP ID, kind: identifier, tier: A}
+      - {name: client_id, label: Client ID, kind: identifier, tier: A}
+      - {name: nomination, label: Nomination, kind: text, tier: B}
+      - {name: holding_mode, label: Holding mode, kind: text, tier: B}
+      - {name: total_value, label: Total value, kind: amount, tier: A}
+  - id: identity_card
+    label: Identity card
+    fields:
+      - {name: holder_name, label: Name, kind: name, required: true, tier: A}
+      - {name: pan, label: Card number, kind: identifier, tier: A}
+      - {name: birth_date, label: Date of birth, kind: date, tier: B}
+      - {name: father_name, label: Father's name, kind: name, tier: C}
+  - id: card_statement
+    label: Card or loan statement
+    has_transactions: true
+    fields:
+      - {name: account_holder, label: Card holder, kind: name, required: true, tier: A}
+      - {name: account_number, label: Card or loan number, kind: identifier, tier: A}
+      - {name: account_type, label: Type of card or loan, kind: text, tier: C}
+      - {name: outstanding, label: Amount outstanding, kind: amount, required: true, tier: A}
+      - {name: statement_date, label: Statement date, kind: date, tier: B}
+      - {name: due_date, label: Payment due date, kind: date, tier: B}
+      - {name: minimum_due, label: Minimum payment, kind: amount, tier: C}
+  - id: cpf_statement
+    label: CPF statement
+    fields:
+      - {name: member_name, label: Member, kind: name, required: true, tier: A}
+      - {name: id_number, label: FIN or NRIC, kind: identifier, tier: A}
+      - {name: total_balance, label: Total balance, kind: amount, required: true, tier: A}
+      - {name: statement_date, label: As at, kind: date, tier: B}
+      - {name: nomination, label: Nomination, kind: text, tier: A}
+  - id: pension_letter
+    label: Pension or benefit letter
+    fields:
+      - {name: member_name, label: Member, kind: name, required: true, tier: A}
+      - {name: reference, label: Reference, kind: identifier, tier: B}
+      - {name: amount, label: Amount, kind: amount, tier: A}
+      - {name: frequency, label: Paid, kind: text, tier: C}
+      - {name: letter_date, label: Date of letter, kind: date, tier: C}
+  - id: payslip
+    label: Payslip
+    fields:
+      - {name: employee_name, label: Employee, kind: name, required: true, tier: A}
+      - {name: employer, label: Employer, kind: text, tier: A}
+      - {name: period, label: Pay period, kind: text, tier: B}
+      - {name: net_pay, label: Net pay, kind: amount, tier: A}
+      - {name: leave_balance, label: Leave balance, kind: text, tier: B}
+      - {name: id_number, label: Identity number, kind: identifier, tier: B}
+  - id: will
+    label: Will
+    fields:
+      - {name: testator, label: Person making the will, kind: name, required: true, tier: A}
+      - {name: executor, label: Executor, kind: name, required: true, tier: A}
+      - {name: will_date, label: Date of the will, kind: date, tier: B}
+      - {name: beneficiaries, label: Beneficiaries, kind: text, tier: B}
+  - id: handwritten_note
+    label: Handwritten notes
+    fields:
+      - {name: note_1, label: Note, kind: text, tier: B}
+      - {name: note_2, label: Note, kind: text, tier: B}
+      - {name: note_3, label: Note, kind: text, tier: B}
+      - {name: note_4, label: Note, kind: text, tier: B}
+  - id: insurance_notice
+    label: Insurance premium notice
+    fields:
+      - {name: policy_number, label: Policy number, kind: identifier, required: true, tier: A}
+      - {name: insured, label: Insured, kind: name, tier: A}
+      - {name: face_amount, label: Face amount, kind: amount, tier: A}
+      - {name: beneficiary, label: Beneficiary, kind: name, tier: A}
+      - {name: premium, label: Premium, kind: amount, tier: C}

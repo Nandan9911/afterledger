@@ -1,0 +1,309 @@
+# Pages of the demo's fictional institutions. Every one is invented for AfterLedger's synthetic
+# families, sits on a reserved .example domain and says so. They let the demo show research on
+# an institution's own rules (source tier 2) without imitating any real bank or insurer.
+pages:
+  - url: https://www.sahyadri-bank.example/bereavement
+    title: Sahyadri Bank - Settlement of claims of deceased customers
+    publisher: Sahyadri Bank (fictional)
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: IN
+    fictional: true
+    text: |
+      Fictional institution created for the AfterLedger demo.
+      Sahyadri Bank settles claims of deceased customers as set out in the Reserve Bank of India Directions on responsible business conduct.
+      Our threshold limit for the simplified procedure is ₹15 lakh.
+      Claims can be lodged at any of our branches, and we issue an acknowledgement on receipt.
+      Locker rent for the year is charged on the first working day of April.
+      Pradhan Mantri Jeevan Jyoti Bima Yojana and Pradhan Mantri Suraksha Bima Yojana claims are lodged at the branch where the account is held.
+      Outstanding loans of a deceased borrower are settled from the estate; the bank will tell the family the amount due on request.
+
+  - url: https://www.narmada-bank.example/deceased-claims
+    title: Narmada Bank - Claims for accounts of deceased customers
+    publisher: Narmada Bank (fictional)
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: IN
+    fictional: true
+    text: |
+      Fictional institution created for the AfterLedger demo.
+      Narmada Bank follows the Reserve Bank of India Directions for settlement of claims of deceased depositors.
+      Our threshold limit for the simplified procedure is ₹15 lakh.
+      Claims can be lodged at any branch. When all required documents are received we confirm this in writing.
+      Term deposits of a deceased depositor can be closed before maturity without any penal charge.
+
+  - url: https://www.bharat-suraksha-life.example/claims/death-claim
+    title: Bharat Suraksha Life - How to make a death claim
+    publisher: Bharat Suraksha Life Insurance (fictional)
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: IN
+    fictional: true
+    text: |
+      Fictional institution created for the AfterLedger demo.
+      To make a death claim, the nominee submits the claim form, a copy of the death certificate, the policy document, the nominee's identity proof and a cancelled cheque.
+      Claims can be intimated online, at any branch or through your advisor.
+      We settle death claims that do not need investigation within 15 days of intimation, as the IRDAI requires.
+
+  - url: https://www.periyar-bank.example/nri/deceased-accounts
+    title: Periyar Bank - Accounts of deceased NRI customers
+    publisher: Periyar Bank (fictional)
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: IN
+    fictional: true
+    text: |
+      Fictional institution created for the AfterLedger demo.
+      Claims on NRE and NRO accounts of deceased customers are settled under the Reserve Bank of India Directions.
+      Where the death occurred outside India, the death certificate must be certified in the country where it was issued in one of the modes the Reserve Bank accepts.
+      Our threshold limit for the simplified procedure is ₹15 lakh.
+
+  - url: https://www.periyar-chits.example/members/bereavement
+    title: Periyar Chits - When a subscriber dies
+    publisher: Periyar Chits (fictional)
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: IN
+    fictional: true
+    text: |
+      Fictional institution created for the AfterLedger demo.
+      If a subscriber dies before bidding, the nominee or legal heirs may continue the chit or receive the subscriptions paid after deduction of the foreman's commission.
+      Please inform the branch with a copy of the death certificate and the subscriber's passbook.
+      If the subscriber had already received the prize amount, the remaining subscriptions are recovered from the estate, and we send the family a statement on request.
+
+  - url: https://www.naniwa-bank.example/souzoku
+    title: 浪速銀行 相続手続のご案内
+    publisher: 浪速銀行 (Naniwa Bank, fictional)
+    lang: ja
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: JP
+    fictional: true
+    text: |
+      このページはAfterLedgerのデモ用に作成した架空の銀行のものです。
+      相続のお手続きには、相続手続依頼書、法定相続情報一覧図の写しまたは被相続人の出生から死亡までの戸籍謄本、相続人全員の印鑑証明書、通帳とキャッシュカードが必要です。
+      相続手続依頼書には相続人全員が署名し、実印を押印してください。
+      残高証明書は相続人のお一人からのご請求で発行します。
+      書類がそろってから約2週間でお手続きが完了します。
+
+  - url: https://www.yodogawa-shinkin.example/souzoku
+    title: 淀川信用金庫 相続のお手続き
+    publisher: 淀川信用金庫 (Yodogawa Shinkin, fictional)
+    lang: ja
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: JP
+    fictional: true
+    text: |
+      このページはAfterLedgerのデモ用に作成した架空の信用金庫のものです。
+      相続のお手続きには、相続届、法定相続情報一覧図の写し、相続人全員の印鑑証明書が必要です。
+      お手続きの前に、お取引店へご連絡ください。
+
+  - url: https://www.minato-seimei.example/seikyu/shibou
+    title: みなと生命 死亡保険金のご請求
+    publisher: みなと生命 (Minato Seimei, fictional)
+    lang: ja
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: JP
+    fictional: true
+    text: |
+      このページはAfterLedgerのデモ用に作成した架空の生命保険会社のものです。
+      死亡保険金のご請求には、請求書、死亡診断書または死体検案書、受取人の本人確認書類が必要です。
+      ご請求書類が到着した日の翌日から5営業日以内にお支払いします。
+
+  - url: https://www.naniwa-card.example/souzoku
+    title: ナニワカード 会員様がお亡くなりになった場合
+    publisher: ナニワカード (Naniwa Card, fictional)
+    lang: ja
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: JP
+    fictional: true
+    text: |
+      このページはAfterLedgerのデモ用に作成した架空のカード会社のものです。
+      会員様がお亡くなりになった場合は、ご遺族からご連絡ください。カードローンの残高証明書をお送りします。
+      相続放棄をされる場合は、家庭裁判所の受理通知書の写しをお送りください。
+
+  - url: https://www.airevalleybank.example/bereavement
+    title: Aire Valley Bank - Dealing with the accounts of someone who has died
+    publisher: Aire Valley Bank (fictional)
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: GB
+    fictional: true
+    text: |
+      Fictional institution created for the AfterLedger demo.
+      You can tell us about a death through the Death Notification Service or at any branch.
+      If the total held with us is £50,000 or less, we can usually release the money without a grant of probate.
+      We will need the death certificate, the will if there is one, and identification for the executor or next of kin.
+      We aim to release funds within 10 working days of receiving everything we need.
+
+  - url: https://www.penninebs.example/help/bereavement
+    title: Pennine Building Society - When a member dies
+    publisher: Pennine Building Society (fictional)
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: GB
+    fictional: true
+    text: |
+      Fictional institution created for the AfterLedger demo.
+      We can usually release balances of up to £30,000 in total without a grant of representation.
+      Above that amount we will ask for a grant of probate or letters of administration.
+      Send us the death certificate and our bereavement form signed by the executors.
+
+  - url: https://www.leedsmillspension.example/members/death
+    title: Leeds Mills Pension Scheme - Telling us about a death
+    publisher: Leeds Mills Pension Scheme (fictional)
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: GB
+    fictional: true
+    text: |
+      Fictional workplace pension scheme created for the AfterLedger demo.
+      Please tell us as soon as possible when a pensioner dies, so that payments can stop.
+      Any pension paid for the period after the date of death will need to be returned.
+      A dependant's pension or lump sum may be payable; we will write to the next of kin with the details.
+
+  - url: https://www.missionriverbank.example/estate-services
+    title: Mission River Bank - Estate services
+    publisher: Mission River Bank (fictional)
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: US-TX
+    fictional: true
+    text: |
+      Fictional institution created for the AfterLedger demo.
+      To close the account of a customer who has died, bring a certified copy of the death certificate.
+      If no personal representative has been appointed, we accept a small estate affidavit approved by a Texas court.
+      Federal benefit payments received after the date of death may be returned to the Treasury from the account.
+
+  - url: https://www.lonestarlife.example/claims
+    title: Lone Star Life - Filing a life insurance claim
+    publisher: Lone Star Life Insurance Company (fictional)
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: US-TX
+    fictional: true
+    text: |
+      Fictional institution created for the AfterLedger demo.
+      Beneficiaries can file a claim with our claimant statement and a certified copy of the death certificate.
+      Formularios disponibles en español.
+      We aim to decide claims within 30 days of receiving the completed claimant statement.
+
+  - url: https://www.riverwalklogistics.example/hr/benefits-after-a-death
+    title: Riverwalk Logistics - Benefits when an employee dies
+    publisher: Riverwalk Logistics (fictional employer)
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: US-TX
+    fictional: true
+    text: |
+      Fictional employer created for the AfterLedger demo.
+      Contact Human Resources about the final paycheck, the 401(k) plan account and the group life insurance that eligible employees receive.
+      Beneficiaries named on the 401(k) and group life forms are paid directly by the plan administrator and the insurer.
+
+  - url: https://www.merlionsavings.example/bereavement
+    title: Merlion Savings Bank - Bereavement services
+    publisher: Merlion Savings Bank (fictional)
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: SG
+    fictional: true
+    text: |
+      Fictional institution created for the AfterLedger demo.
+      Please inform us of the passing of an account holder with a copy of the death certificate.
+      Where the total balance is S$150,000 or less, we may release the funds to the next of kin without a Grant of Probate or Letters of Administration, at our discretion.
+      Outstanding credit card balances are recovered from the estate.
+
+  - url: https://www.straitsmarine.example/hr/bereavement
+    title: Straits Marine Engineering - Employee bereavement
+    publisher: Straits Marine Engineering Pte Ltd (fictional employer)
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: SG
+    fictional: true
+    text: |
+      Fictional employer created for the AfterLedger demo.
+      Salary up to the date of death and payment for unused annual leave are paid to the next of kin.
+      Please contact Human Resources with the death certificate.
+
+  - url: https://www.isarbank.example/nachlass
+    title: Isarbank München - Nachlassabwicklung
+    publisher: Isarbank München (fictional)
+    lang: de
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: DE
+    fictional: true
+    text: |
+      Diese Seite gehört zu einer erfundenen Bank für die AfterLedger-Demo.
+      Für die Auszahlung an die Erben benötigen wir in der Regel einen Erbschein oder ein Europäisches Nachlasszeugnis.
+      Ein eröffnetes notarielles Testament kann den Erbschein ersetzen.
+      Bitte senden Sie uns die Sterbeurkunde und den Erbnachweis.
+
+  - url: https://www.toto-bank.example/souzoku
+    title: 東都銀行 相続手続のご案内
+    publisher: 東都銀行 (Toto Bank, fictional)
+    lang: ja
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: JP
+    fictional: true
+    text: |
+      このページはAfterLedgerのデモ用に作成した架空の銀行のものです。
+      相続のお手続きには、相続手続依頼書、法定相続情報一覧図の写しまたは戸籍謄本一式、相続人全員の印鑑証明書が必要です。
+      相続人が外国に住んでいる場合は、印鑑証明書の代わりに在外公館で発行されたサイン証明書をご提出ください。
+
+  - url: https://www.gomti-paper-mills.example/investors/transmission
+    title: Gomti Paper Mills - Transmission of shares
+    publisher: Gomti Paper Mills Ltd (fictional company)
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: IN
+    fictional: true
+    text: |
+      Fictional company created for the AfterLedger demo.
+      Shares held in physical form by a deceased shareholder are transmitted to the legal heirs under the SEBI framework for transmission of securities.
+      Dividends are paid by NACH into the bank account registered with our registrar.
+      Please contact our registrar with the original share certificates and the transmission request form.
+
+  - url: https://forum-entraide.example/assurance-vie-deces
+    title: "Forum d'entraide - Assurance vie après un décès ?"
+    publisher: Forum d'entraide (fictional)
+    lang: fr
+    retrieved: "2026-10-14"
+    tier: 5
+    jurisdiction: FR
+    fictional: true
+    text: |
+      Forum fictif créé pour la démo AfterLedger.
+      Bonjour, mon père est décédé le mois dernier. Comment savoir s'il avait une assurance vie ? Quelqu'un m'a dit qu'il fallait écrire à chaque banque une par une.
+      Réponse : il me semble qu'il y a un organisme pour ça, mais je ne sais plus lequel, et je crois que c'est payant.
+
+  - url: https://questions-famille.example/heritage/assurance-vie
+    title: "Questions de famille - Héritage et assurance vie"
+    publisher: Questions de famille (fictional)
+    lang: fr
+    retrieved: "2026-10-14"
+    tier: 5
+    jurisdiction: FR
+    fictional: true
+    text: |
+      Forum fictif créé pour la démo AfterLedger.
+      Après un décès, l'assureur doit prévenir les bénéficiaires, mais en pratique il faut souvent relancer plusieurs fois.
+

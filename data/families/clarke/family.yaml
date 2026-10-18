@@ -1,0 +1,317 @@
+# The Clarke family (Leeds, England). Fictional people; the rules applied are real or are the
+# published rules of fictional institutions, stored with their sources in data/knowledge.
+key: clarke
+story_day: 2026-10-14
+title: Margaret Anne Clarke
+family_label: The Clarkes
+where: Leeds, United Kingdom
+spoken: English
+shows: Each bank's own probate limit researched; Premium Bonds found; an objection when a bank asks for more than its rules allow
+languages: [en]
+countries: [GB]
+timezone: Europe/London            # the story's clock: activity times are this family's local times
+viewer: p_thomas
+order: 3
+
+deceased:
+  id: p_margaret
+  display_name: Margaret Anne Clarke
+  names:
+    - {text: Margaret Anne Clarke, script: Latn, seen_on: family}
+    - {text: Margaret Anne CLARKE, script: Latn, seen_on: death_cert}
+    - {text: MRS MARGARET A CLARKE, script: Latn, seen_on: aire_statement}
+    - {text: MRS M A CLARKE, script: Latn, seen_on: pennine_passbook}
+    - {text: Mrs Margaret Anne Clarke, script: Latn, seen_on: pension_letter}
+    - {text: MARGARET ANNE CLARKE, script: Latn, seen_on: will}
+  birth_date: 1945-02-11
+  death_date: 2026-09-14
+  death_place: Leeds
+  death_country: GB
+  death_cause: illness
+  nationalities: [GB]
+  residences: [{country: GB, city: Leeds}]
+  occupation: Retired mill office clerk; widow of Peter James Clarke
+  initials: MC
+
+people:
+  - id: p_thomas
+    display_name: Thomas Clarke
+    names:
+      - {text: Thomas Clarke, script: Latn}
+      - {text: Thomas Edward CLARKE, script: Latn, seen_on: death_cert}
+      - {text: THOMAS EDWARD CLARKE, script: Latn, seen_on: will}
+    relationship: son
+    roles: [executor, claimant, heir, helper]
+    languages: [en]
+    channel: text
+    country: GB
+    city: Harrogate
+    age: 54
+    initials: TC
+    color: "#CFE3F5"
+  - id: p_helen
+    display_name: Helen Owen
+    names:
+      - {text: Helen Owen, script: Latn}
+      - {text: HELEN MARY OWEN, script: Latn, seen_on: will}
+    relationship: daughter
+    roles: [heir]
+    languages: [en]
+    channel: text
+    country: GB
+    city: Bristol
+    age: 51
+    initials: HO
+    color: "#F3D9C4"
+
+holdings:
+  - {id: h_aire_current, institution_id: gb_aire_valley_bank, kind: current, label: Current account, account_mask: "0273", value: "8940.12", found_from: [aire_statement], claim: c_aire}
+  - {id: h_aire_saver, institution_id: gb_aire_valley_bank, kind: savings, label: Instant Saver, account_mask: "0012", value: "21560.00", value_source: family, found_from: [lead:instant_saver], claim: c_aire}
+  - {id: h_pennine, institution_id: gb_pennine_bs, kind: savings, label: Easy Access Saver, account_mask: "7731", value: "12400.00", found_from: [pennine_passbook], claim: c_pennine}
+  - {id: h_bonds, institution_id: gb_nsandi, kind: premium_bonds, label: Premium Bonds, status: lead, found_from: [lead:premium_bonds], claim: c_nsi}
+  - {id: h_leeds_mills, institution_id: gb_leeds_mills_pension, kind: pension, direction: entitlement, label: Leeds Mills pension, found_from: [pension_letter], claim: c_leeds_mills}
+  - {id: h_state_pension, institution_id: gb_dwp, kind: social_security, direction: entitlement, label: State Pension, found_from: [lead:state_pension], claim: c_tuo}
+
+claims:
+  - id: c_aire
+    institution_id: gb_aire_valley_bank
+    holdings: [h_aire_current, h_aire_saver]
+    plan: GB/bank_bereavement@gb_aire_valley_bank
+    facts: {total: 30500.12, has_will: "yes"}
+    expected_route: [release_without_grant]
+    explain:
+      match: Aire Valley
+      summary: "£30,500.12 across two accounts. Aire Valley usually releases up to £50,000 without probate, so Thomas can claim with the will and his own ID."
+      steps:
+        - {step_id: notify, who: Thomas Clarke, text: "Tell Aire Valley Bank about the death, at the branch or through the free Death Notification Service."}
+        - {step_id: release_without_grant, who: Thomas Clarke, text: "Send the death certificate, the will and Thomas's identification as executor."}
+        - {step_id: release, who: institution, text: "The bank aims to release the money within 10 working days of having everything."}
+  - id: c_pennine
+    institution_id: gb_pennine_bs
+    holdings: [h_pennine]
+    plan: GB/bank_bereavement@gb_pennine_bs
+    facts: {total: 12400.00}
+    expected_route: [release_without_grant]
+  - id: c_nsi
+    institution_id: gb_nsandi
+    holdings: [h_bonds]
+    plan: GB/premium_bonds@gb_nsandi
+    facts: {}
+    expected_route: [claim]
+  - id: c_leeds_mills
+    institution_id: gb_leeds_mills_pension
+    holdings: [h_leeds_mills]
+    plan: GB/workplace_pension@gb_leeds_mills_pension
+    facts: {paid_after_death: "yes"}
+    expected_route: [return_overpayment]
+  - id: c_tuo
+    institution_id: gb_dwp
+    holdings: [h_state_pension]
+    plan: GB/tell_us_once
+    facts: {has_reference: "yes"}
+    expected_route: [use_service]
+
+answers:
+  has_will: "yes"
+  has_reference: "yes"
+  claimant: p_thomas
+
+leads:
+  - key: state_pension
+    category: state_pension
+    kind: entitlement
+    holding_kind: social_security
+    group: state_pension
+    institution_id: gb_dwp
+    title: Her State Pension
+    sentence: The Department for Work and Pensions paid her State Pension every four weeks. Tell Us Once stops it and tells the other government offices in one go.
+    investigator_note: Thirteen credits of £739.60 from DWP STATE PENSION, exactly 28 days apart.
+    how_to_confirm: Use the Tell Us Once reference the registrar gave Thomas.
+    next_step_note: Any pension paid for the days after her death is worked out and recovered by the department.
+    signals: {cadence: four_weekly, product_match: "yes"}
+    cites: [gb_tuo_what, gb_tuo_28_days]
+    label: sure
+    status: confirmed
+    holding: h_state_pension
+  - key: premium_bonds
+    category: premium_bonds
+    kind: asset
+    group: nsi_prize
+    institution_id: gb_nsandi
+    title: Premium Bonds with NS&I
+    sentence: Prizes are paid into the account the bondholder chose. Two prizes in five months suggest Margaret held bonds.
+    investigator_note: "NS&I PRIZE credits of £25.00 on 2 March and £50.00 on 2 July. Prizes are paid on the first working days of the month, as these were."
+    critic_note: The bonds could be in someone else's name, with prizes paid into her account.
+    how_to_confirm: Look for a bond certificate, an NS&I letter or her holder's number; or start the claim online, which needs no account.
+    next_step_note: The bonds can stay in the prize draws for up to 12 months after the death.
+    signals: {cadence: irregular, product_match: "yes"}
+    cites: [gb_nsi_claim_online, gb_nsi_12_months]
+    label: likely
+    status: open
+    holding: h_bonds
+  - key: instant_saver
+    category: bank_account
+    kind: asset
+    holding_kind: savings
+    group: instant_saver
+    institution_id: gb_aire_valley_bank
+    title: An Instant Saver account at Aire Valley Bank
+    sentence: £200 moved on the 3rd of every month to an Instant Saver ending 0012 at the same bank, so she had a second account there.
+    investigator_note: Twelve transfers of £200 to INSTANT SAVER 55180012. The account is in her name at Aire Valley Bank; its balance is not on this statement.
+    how_to_confirm: Her yearly savings statement, or ask Aire Valley Bank for the balance on the date of death.
+    next_step_note: The same bereavement claim covers both accounts.
+    signals: {cadence: monthly, product_match: "yes"}
+    cites: [gb_airevalley_documents]
+    family_value: "21560.00"
+    family_note: Her yearly savings statement says £21,560.00.
+    label: sure
+    status: confirmed
+    holding: h_aire_saver
+  - key: council_tax
+    category: council_tax
+    kind: refund
+    group: council_tax
+    institution_id: gb_leeds_council
+    title: Council tax paid by direct debit
+    sentence: Leeds City Council took council tax on the 1st of each month. Tell Us Once tells the council; any credit on her account goes back to the estate.
+    investigator_note: Ten payments of £148.00 a year, April to January, from LEEDS CC COUNCIL TAX DD.
+    how_to_confirm: The council writes to the executor once Tell Us Once has been used.
+    signals: {cadence: monthly, product_match: partial}
+    cites: [gb_tuo_what]
+    label: likely
+    status: open
+decoys: [water, energy]
+
+groups:
+  state_pension: {counterparty: Department for Work and Pensions, kind: government, interpretation: "Her State Pension, paid every four weeks.", alternatives: []}
+  works_pension: {counterparty: Leeds Mills Pension Scheme, kind: pension, interpretation: "Her workplace pension, paid on the 28th; the scheme's letter is among the papers.", alternatives: []}
+  council_tax: {counterparty: Leeds City Council, kind: government, interpretation: "Council tax, by monthly direct debit.", alternatives: []}
+  water: {counterparty: Yorkshire Water, kind: utility, interpretation: "The water bill.", alternatives: []}
+  energy: {counterparty: Northern Gas and Power, kind: utility, interpretation: "Gas and electricity.", alternatives: []}
+  instant_saver: {counterparty: Aire Valley Bank, kind: bank, interpretation: "Monthly transfers to her own savings account at the same bank.", alternatives: []}
+  nsi_prize: {counterparty: NS&I, kind: government, interpretation: "Premium Bond prizes.", alternatives: [Prizes on bonds held by someone else]}
+
+coverage:
+  bank_accounts: {status: found, detail: "Aire Valley Bank (2), Pennine Building Society"}
+  premium_bonds: {status: lead, detail: 1 lead}
+  pensions: {status: found, detail: "Leeds Mills, State Pension"}
+  government: {status: found, detail: Tell Us Once used}
+
+jurisdiction:
+  succession_law: GB
+  contested: false
+  summary: England, for every holding. She lived and died in Leeds, and everything she held is in the United Kingdom.
+  findings: []
+  legs:
+    - {country: GB, succession_law: GB, papers_from: [GB], certification: [], cites: [], note: ""}
+  cites: []
+
+intake:
+  started_on: 2026-09-17
+  by: p_thomas
+  turns:
+    - role: assistant
+      lang: en
+      text: I'm sorry for your loss. To start, who has died, and when?
+    - role: family
+      person: p_thomas
+      lang: en
+      channel: text
+      text: My mother, Margaret Anne Clarke. She died on 14 September at St James's in Leeds. She'd had COPD for years and it turned into pneumonia.
+    - role: assistant
+      lang: en
+      text: Thank you, Thomas. Did she leave a will, and who is the executor?
+    - role: family
+      person: p_thomas
+      lang: en
+      channel: text
+      text: Yes, she made a will in 2019. I'm the executor. My sister Helen lives in Bristol.
+    - role: assistant
+      lang: en
+      text: Do you have her bank papers, or letters from pensions or insurers?
+      why: Papers are where the accounts nobody listed usually show up.
+    - role: family
+      person: p_thomas
+      lang: en
+      channel: text
+      text: I have her Aire Valley Bank statements, a Pennine Building Society passbook, a letter from her works pension and a copy of the will.
+  situation:
+    1:
+      deceased_name: Margaret Anne Clarke
+      died_on: 2026-09-14
+      died_in: Leeds
+      death_country: GB
+      death_cause: illness
+      country_codes: [GB]
+      family:
+        - {name: Thomas Clarke, relationship: son, city: Harrogate, country: GB, languages: [en], roles: [claimant, heir]}
+      will: unknown
+      mode: family
+      unknowns: [will, other heirs, papers at hand]
+    2:
+      family:
+        - {name: Thomas Clarke, relationship: son, city: Harrogate, country: GB, languages: [en], roles: [executor, claimant, heir, helper]}
+        - {name: Helen Owen, relationship: daughter, city: Bristol, country: GB, languages: [en], roles: [heir]}
+      will: "yes"
+      unknowns: [papers at hand]
+    3:
+      holdings_mentioned: [an account at Aire Valley Bank, savings with Pennine Building Society, a workplace pension]
+      papers_at_hand: [Aire Valley Bank statements, a Pennine passbook, a pension letter, a copy of the will]
+      urgent: [Use the Tell Us Once reference within 28 days of getting it.]
+      unknowns: []
+
+replies:
+  - title: Pennine Building Society, letter of 2 October
+    summary: Pennine asks for a grant of probate before it will release the £12,400.00 balance.
+    requests: [grant of probate]
+    outcome: null
+    complete_set_confirmed_on: null
+    settled_amount: null
+    objection: "Pennine's own published policy is to release up to £30,000 in total without a grant; this balance is £12,400.00."
+
+timeline:
+  - {on: 2026-09-17, do: intake}
+  - {on: 2026-09-17, do: confirm_summary, by: p_thomas}
+  - {on: 2026-09-17, do: upload, paper: death_cert, by: p_thomas}
+  - {on: 2026-09-18, do: upload, paper: aire_statement, by: p_thomas}
+  - {on: 2026-09-18, do: upload, paper: pennine_passbook, by: p_thomas}
+  - {on: 2026-09-18, do: upload, paper: pension_letter, by: p_thomas}
+  - {on: 2026-09-18, do: upload, paper: will, by: p_thomas}
+  - {on: 2026-09-18, do: answer_values, by: p_thomas}
+  - {on: 2026-09-19, do: confirm_people, by: p_thomas}
+  - {on: 2026-09-19, do: mark_leads, by: p_thomas}
+  - {on: 2026-09-19, do: approve_plan, claim: c_tuo, by: p_thomas}
+  - {on: 2026-09-19, do: claim_event, claim: c_tuo, event: reference_received, on_event: 2026-09-17}
+  - {on: 2026-09-19, do: claim_event, claim: c_tuo, event: tell_us_once_used,
+     note: "Thomas reported the death to the government offices through Tell Us Once."}
+  - {on: 2026-09-20, do: approve_plan, claim: c_leeds_mills, by: p_thomas}
+  - {on: 2026-09-20, do: claim_event, claim: c_leeds_mills, event: notified, note: "Thomas told the scheme about the death."}
+  - {on: 2026-09-21, do: approve_plan, claim: c_aire, by: p_thomas}
+  - {on: 2026-09-21, do: approve_pack, claim: c_aire, by: p_thomas}
+  - {on: 2026-09-21, do: claim_event, claim: c_aire, event: submitted}
+  - {on: 2026-09-21, do: approve_plan, claim: c_pennine, by: p_thomas}
+  - {on: 2026-09-21, do: approve_pack, claim: c_pennine, by: p_thomas}
+  - {on: 2026-09-22, do: claim_event, claim: c_pennine, event: submitted}
+  - {on: 2026-09-24, do: claim_event, claim: c_aire, event: complete_set_confirmed}
+  - {on: 2026-10-02, do: reply, claim: c_pennine, title: "Pennine Building Society, letter of 2 October",
+     text: "Thank you for your letter about the late Mrs M A Clarke. Before we can release the balance of £12,400.00 on her Easy Access Saver we will need to see the Grant of Probate. Please send it to us when you have it."}
+  - {on: 2026-10-07, do: claim_event, claim: c_aire, event: settled, amount: "30500.12"}
+  - {on: 2026-10-14, do: today}
+
+expected_today:
+  tasks: [send:c_pennine, find:premium_bonds, submit:c_leeds_mills]
+  totals: {known: "42900.12", paid: "30500.12", in_progress: "12400.00", owed: "0", unknown_leads: 3}
+
+today_tasks:
+  - kind: review
+    institution_id: gb_pennine_bs
+    title: Send the objection to Pennine Building Society
+    body: "Pennine asked for probate on £12,400, but its own published limit is £30,000. The letter quotes its rule and asks it to release the money."
+  - kind: find
+    lead_category: premium_bonds
+    title: Look for her Premium Bond records
+    body: "Two NS&I prizes suggest she held Premium Bonds. A bond certificate, an NS&I letter or her holder's number makes the claim quicker."
+  - kind: submit
+    institution_id: gb_leeds_mills_pension
+    title: Return the pension paid after 14 September
+    body: "Leeds Mills paid £412.60 on 28 September, partly for days after her death. The scheme asks for that part back."

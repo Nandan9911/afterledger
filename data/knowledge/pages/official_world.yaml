@@ -1,0 +1,491 @@
+# Excerpts of real official and professional pages, captured on the date shown.
+# Each line of an excerpt is a fragment copied word for word from the page (fragments are on
+# separate lines; nothing between them is implied). Offline research can only quote what is
+# here, and the quote check runs against this text. Live mode fetches the real page.
+pages:
+  - url: https://www.gov.uk/after-a-death/organisations-you-need-to-contact-and-tell-us-once
+    title: "What to do after someone dies: Tell Us Once"
+    publisher: GOV.UK
+    lang: en
+    retrieved: "2026-10-14"
+    updated: "2 December 2024"
+    tier: 1
+    jurisdiction: GB
+    excerpt: true
+    text: |
+      Tell Us Once is a service that lets you report a death to most government organisations in one go.
+      HM Revenue and Customs
+      Department for Work and Pensions
+      Passport Office
+      Driver and Vehicle Licensing Agency
+      the local council
+      You must use the service within 28 days of getting your unique reference number.
+      To close or change the details of the person’s financial accounts, you’ll need to contact organisations like:
+      banks
+      mortgage providers
+      insurance providers
+
+  - url: https://www.deathnotificationservice.co.uk/
+    title: The Death Notification Service
+    publisher: The Death Notification Service
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 3
+    jurisdiction: GB
+    excerpt: true
+    text: |
+      The Death Notification Service is a free service which allows you to notify a number of member organisations of a person's death, at the same time.
+      member organisations that are involved in this service
+
+  - url: https://www.nsandi.com/help/manage-money-for-others/customers-who-have-died
+    title: What to do if an NS&I customer has died
+    publisher: NS&I (National Savings and Investments)
+    lang: en
+    retrieved: "2026-10-14"
+    updated: "2 October 2026"
+    tier: 2
+    jurisdiction: GB
+    excerpt: true
+    text: |
+      The first step is to make a claim, which can be done online, without needing to create an online account.
+      Premium Bonds can remain eligible for the draw for 12 months after the date of death in the existing NS&I holder's name.
+      may ask for this if the customer's total NS&I savings are £5,000 or over.
+      We also reserve the right to request a Grant of Representation for savings of any value.
+      within eight weeks
+
+  - url: https://www.cpf.gov.sg/service/article/what-happens-to-my-cpf-savings-if-i-did-not-make-a-cpf-nomination
+    title: What happens to my CPF savings if I did not make a CPF nomination?
+    publisher: CPF Board
+    lang: en
+    retrieved: "2026-10-14"
+    updated: "12 Jun 2025"
+    tier: 1
+    jurisdiction: SG
+    excerpt: true
+    text: |
+      When you are no longer around, we will pay your CPF savings to the Public Trustee's Office for distribution in cash to your family member(s) in accordance with the relevant intestacy laws or inheritance certificate (for Muslims).
+      This ensures that the welfare of your dependants is provided for.
+
+  - url: https://www.allenandgledhill.com/sg/publication/articles/19129/apostille-act-2020-abolishes-legalisation-requirements-for-foreign-public-documents-from-16-september-2021
+    title: Apostille Act 2020 abolishes legalisation requirements for foreign public documents from 16 September 2021
+    publisher: Allen & Gledhill
+    lang: en
+    retrieved: "2026-10-14"
+    updated: "20 August 2021"
+    tier: 4
+    jurisdiction: SG
+    excerpt: true
+    text: |
+      Singapore acceded to the Apostille Convention and became a contracting party on 18 January 2021.
+      the Singapore Academy of Law ("SAL") has been designated as Singapore's competent authority under the Apostille Convention.
+
+  - url: https://www.everycrsreport.com/files/20110705_93-792_8db12073917b83c79d5b3b3555f12afdf1a41343.html
+    title: Social Security Benefits Are Not Paid for the Month of Death (93-792)
+    publisher: Congressional Research Service
+    lang: en
+    retrieved: "2026-10-14"
+    updated: "5 July 2011"
+    tier: 3
+    jurisdiction: US
+    excerpt: true
+    text: |
+      Social Security benefits are not paid for the month in which a beneficiary dies.
+      Subsequently, they are informed that the check must be returned to the government.
+      the spouse who was living with the worker, or a spouse or child eligible for survivor benefits
+      may receive a Social Security lump-sum death payment of $255
+
+  - url: https://content.naic.org/article/naic-life-insurance-policy-locator-tool-helps-match-consumers-more-16-billion-lost-and-unclaimed
+    title: NAIC Life Insurance Policy Locator Tool Helps Match Consumers with More Than $16 Billion in Lost and Unclaimed Benefits
+    publisher: National Association of Insurance Commissioners
+    lang: en
+    retrieved: "2026-10-14"
+    updated: "3 September 2026"
+    tier: 3
+    jurisdiction: US
+    excerpt: true
+    text: |
+      Consumers can submit a request through the secure, encrypted portal.
+      since the free tool launched in November 2016
+      totaling $16,991,229,586 through July 31, 2026
+
+  - url: https://tcss.legis.texas.gov/resources/ES/htm/ES.205.htm
+    title: "Texas Estates Code, Chapter 205: Small Estate Affidavit"
+    publisher: Texas Legislature
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 1
+    jurisdiction: US-TX
+    excerpt: true
+    text: |
+      The distributees of the estate of a decedent who dies intestate are entitled to the decedent's estate without waiting for the appointment of a personal
+      30 days have elapsed since the date of the decedent's death;
+      no petition for the appointment of a personal representative is pending or has been granted;
+      excluding homestead and exempt property, does not exceed $75,000
+      (1) be sworn to by: (A) two disinterested witnesses;
+      the relevant family history facts concerning heirship
+      The judge may approve the affidavit if the judge determines that the affidavit conforms to the requirements of this chapter.
+      The distributees of the estate shall provide a copy of the affidavit under this chapter, certified by the court clerk,
+      A person making a payment, delivery, transfer, or issuance under an affidavit described by this chapter is released
+
+  - url: https://www.courts.go.jp/saiban/syurui/syurui_kazi/kazi_06_13/index.html
+    title: 相続の放棄の申述
+    publisher: 裁判所 (Courts in Japan)
+    lang: ja
+    retrieved: "2026-10-14"
+    tier: 1
+    jurisdiction: JP
+    excerpt: true
+    text: |
+      申述は，民法により自己のために相続の開始があったことを知ったときから3か月以内にしなければならないと定められています。
+      被相続人の最後の住所地の家庭裁判所
+      収入印紙800円分（申述人1人につき）
+      相続の承認又は放棄の期間の伸長の申立てにより，家庭裁判所はその期間を伸ばすことができます。
+
+  - url: https://houmukyoku.moj.go.jp/homu/page7_000013.html
+    title: 「法定相続情報証明制度」について
+    publisher: 法務局 (Legal Affairs Bureau)
+    lang: ja
+    retrieved: "2026-10-14"
+    updated: "2024-04-01"
+    tier: 1
+    jurisdiction: JP
+    excerpt: true
+    text: |
+      相続関係を一覧に表した図（法定相続情報一覧図）とともに、戸除籍謄本等の束を登記所に提出
+      その一覧図に認証文を付した写しを無料で交付する
+      戸除籍謄本等の束の代わりに相続登記にご利用いただくことができる
+
+  - url: https://www.zeiken.co.jp/zeikenpress/press/0007pp20211026/
+    title: 生命保険契約照会制度［アクタス税理士法人 News Letter］
+    publisher: ZEIKEN PRESS (アクタス税理士法人)
+    lang: ja
+    retrieved: "2026-10-14"
+    updated: "2021/10/26"
+    tier: 4
+    jurisdiction: JP
+    excerpt: true
+    text: |
+      2021 年7 月1 日から生命保険契約照会制度が始まりました
+      死亡を利用事由とする場合の照会者は、照会対象者の法定相続人
+      契約者または被保険者が照会対象者である生命保険契約の有無
+      利用料は1 回の照会あたり3,000 円（税込）となります
+      生命保険協会への申請から照会結果の回答までは約2 週間程度の時間を要します
+
+  - url: https://www.kitahama.or.jp/wp-content/uploads/2019/11/International-Inheritance-Newsletter-Vol.-1.pdf
+    title: International Inheritance Newsletter Vol. 1
+    publisher: Kitahama Partners
+    lang: ja
+    retrieved: "2026-10-14"
+    updated: "November 2019"
+    tier: 4
+    jurisdiction: JP
+    excerpt: true
+    text: |
+      相続は、被相続人の本国法による
+
+  - url: https://www.legislation.gov.uk/eur/2012/650/article/21
+    title: "Regulation (EU) No 650/2012, Article 21: General rule"
+    publisher: legislation.gov.uk (EUR 2012/650)
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 1
+    jurisdiction: EU
+    excerpt: true
+    text: |
+      Unless otherwise provided for in this Regulation, the law applicable to the succession as a whole shall be the law of the State in which the deceased had his habitual residence at the time of death.
+      Where, by way of exception, it is clear from all the circumstances of the case that, at the time of death, the deceased was manifestly more closely connected with a State other than the State whose law would be applicable under paragraph 1, the law applicable to the succession shall be the law of that other State.
+
+  - url: https://www.justice.fr/fiche/assurance-vie-savoir-on-beneficiaire-assure-decede
+    title: "Assurance-vie : comment savoir si on est bénéficiaire d'un assuré décédé ?"
+    publisher: Ministère de la Justice (justice.fr)
+    lang: fr
+    retrieved: "2026-10-14"
+    updated: "01 janvier 2026"
+    tier: 1
+    jurisdiction: FR
+    excerpt: true
+    text: |
+      Il faut interroger l'Agira.
+      L'Agira est compétente pour rechercher les contrats d'assurance-vie d'une personne décédée depuis moins de 10 ans.
+      Si la personne est décédée depuis plus de 10 ans, il faut s'adresser à la Caisse des dépôts et consignations (CDC) en utilisant son service en ligne Ciclade.
+      Une demande auprès de l'Agira est gratuite.
+      Vous pouvez effectuer la démarche sur internet (ou par courrier postal si vous ne pouvez pas utiliser internet)
+      vous devez joindre une copie de l'acte de décès de la personne qui aurait souscrit le contrat.
+      l'Agira va informer l'ensemble des compagnies d'assurance du décès de l'assuré.
+      l'assureur a 1 mois pour vous informer de l'existence d'un contrat à votre profit.
+
+  - url: https://static.pib.gov.in/WriteReadData/specificdocs/documents/2025/may/doc202558551501.pdf
+    title: Pradhan Mantri Jeevan Jyoti Bima Yojana (PMJJBY) 10 Years of Empowering Indian Families
+    publisher: Press Information Bureau, Government of India
+    lang: en
+    retrieved: "2026-10-14"
+    updated: "8 May 2025"
+    tier: 1
+    jurisdiction: IN
+    excerpt: true
+    text: |
+      Eligibility: Age 18–50 years to enroll; coverage continues up to age 55 for those who join before 50.
+      Affordable Premium: Just ₹436 per annum, auto-debited from the subscriber's bank or post office account.
+      Coverage: ₹2 lakh life insurance in case of the subscriber's death (from any cause).
+
+  - url: https://static.pib.gov.in/WriteReadData/specificdocs/documents/2023/may/doc202359196601.pdf
+    title: Eight Years of Pradhan Mantri Suraksha Bima Yojana
+    publisher: Press Information Bureau, Ministry of Finance
+    lang: en
+    retrieved: "2026-10-14"
+    updated: "9 May 2023"
+    tier: 1
+    jurisdiction: IN
+    excerpt: true
+    text: |
+      Individuals in the age group of 18-70 years having a savings bank or a post office account
+      against a premium of just ₹ 20 per annum
+      Accidental death cum disability cover of Rs. Two Lakh (Rs. One Lakh in case of partial disability)
+
+  - url: https://www.kotak.bank.in/content/dam/Kotak/form/Revised-claims-procedure-PMJJBY.pdf
+    title: Revised claims procedure under PMJJBY
+    publisher: A bank's published PMJJBY procedure (Kotak Mahindra Bank)
+    lang: en
+    retrieved: "2026-10-14"
+    tier: 2
+    jurisdiction: IN
+    excerpt: true
+    text: |
+      preferably within 30 days from the date of the death
+      Maximum time limit for bank / post office to forward duly completed claim form to the insurer is seven days
+      maximum time limit for the insurer to approve claim and disburse money thereafter is seven days
+
+  - url: https://www.caalley.com/rbi26/NOTI282BE83CF8F7E464D97B1AA95699F9D721A.pdf
+    title: "RBI/2026-27/282: Liquidity Adjustment Facility - Change in rates (7 October 2026)"
+    publisher: Reserve Bank of India (circular, as republished)
+    lang: en
+    retrieved: "2026-10-14"
+    updated: "October 07, 2026"
+    tier: 1
+    jurisdiction: IN
+    excerpt: true
+    text: |
+      increase the policy repo rate under the Liquidity Adjustment Facility (LAF) by 25 basis points
+      stand adjusted to 5.25 per cent and 5.75 per cent respectively
+
+  - url: https://www.gov.uk/applying-for-probate
+    title: "Applying for probate: What is probate"
+    publisher: GOV.UK
+    lang: en
+    retrieved: "2026-10-14"
+    updated: "8 November 2024"
+    tier: 1
+    jurisdiction: GB
+    excerpt: true
+    text: |
+      Probate is the legal right to deal with someone’s property, money and possessions (their ‘estate’) when they die.
+      You may not need probate if the person who died:
+      owned land or property as ‘joint tenants’ with others - this automatically passes to the surviving owners
+      Contact the financial organisations the person who died used
+      to find out if you’ll need probate to get access to their assets.
+      Every organisation has its own rules.
+
+  - url: https://rbidocs.rbi.org.in/rdocs/notification/PDFs/292UCB.PDF
+    title: Reserve Bank of India (Urban Co-operative Banks - Responsible Business Conduct) Directions, 2025 (Updated as on July 1, 2026)
+    publisher: Reserve Bank of India
+    lang: en
+    retrieved: "2026-10-12"
+    updated: "Updated as on July 1, 2026"
+    tier: 1
+    jurisdiction: IN
+    excerpt: true
+    text: |
+      (3) ‘Threshold limit’ means ₹5 lakh or such higher limit as may be fixed by a UCB.
+
+  - url: https://www.caalley.com/rbi26/NT28307C186A1A5F84D47870911D72F069023.pdf
+    title: 'RBI/2026-27/283, 7 October 2026: Penal Interest on shortfall in CRR and SLR requirements - Change in Bank Rate (copy of the RBI circular)'
+    publisher: Reserve Bank of India
+    lang: en
+    retrieved: '2026-10-14'
+    updated: October 07, 2026
+    tier: 1
+    jurisdiction: IN
+    excerpt: true
+    text: |
+      As announced in the Monetary Policy Statement, 2026-27 dated October 07, 2026,
+      the Bank Rate is revised upwards by 25 basis points from 5.50 per cent to 5.75 per cent with immediate effect.
+
+  - url: https://www.advocatekhoj.com/library/bareacts/hindusuccession/8.php
+    title: 'The Hindu Succession Act, 1956, section 8: General rules of succession in the case of males'
+    publisher: AdvocateKhoj (bare act text)
+    lang: en
+    retrieved: '2026-10-14'
+    tier: 4
+    jurisdiction: IN
+    excerpt: true
+    text: |
+      8.General rules of succession in the case of males
+      (a) firstly, upon the heirs, being the relatives specified in class I of the Schedule;
+
+  - url: https://www.advocatekhoj.com/library/bareacts/hindusuccession/schedule.php
+    title: 'The Hindu Succession Act, 1956, the Schedule: heirs in class I and class II'
+    publisher: AdvocateKhoj (bare act text)
+    lang: en
+    retrieved: '2026-10-14'
+    tier: 4
+    jurisdiction: IN
+    excerpt: true
+    text: |
+      THE SCHEDULE
+      HEIRS IN CLASS I AND CLASS II
+      CLASS I
+      Son; daughter; widow; mother; son of a pre-deceased son; dau
+
+  - url: https://www.advocatekhoj.com/library/bareacts/hindusuccession/9.php
+    title: 'The Hindu Succession Act, 1956, section 9: order of succession among heirs in the Schedule'
+    publisher: AdvocateKhoj (bare act text)
+    lang: en
+    retrieved: '2026-10-14'
+    tier: 4
+    jurisdiction: IN
+    excerpt: true
+    text: |
+      Among the heirs specified in the Schedule, those in class I shall take simultaneously and to the exclusion of all other
+
+  - url: https://laws.e-gov.go.jp/api/1/articles;lawId=129AC0000000089;article=887
+    title: 民法 第八百八十七条（子及びその代襲者等の相続権）
+    publisher: e-Gov法令検索（デジタル庁）
+    lang: ja
+    retrieved: '2026-10-14'
+    tier: 1
+    jurisdiction: JP
+    excerpt: true
+    text: |
+      （子及びその代襲者等の相続権）
+      第八百八十七条 被相続人の子は、相続人となる。
+
+  - url: https://laws.e-gov.go.jp/api/1/articles;lawId=129AC0000000089;article=890
+    title: 民法 第八百九十条（配偶者の相続権）
+    publisher: e-Gov法令検索（デジタル庁）
+    lang: ja
+    retrieved: '2026-10-14'
+    tier: 1
+    jurisdiction: JP
+    excerpt: true
+    text: |
+      （配偶者の相続権）
+      第八百九十条 被相続人の配偶者は、常に相続人となる。この場合において、第八百八十七条又は前条の規定により相続人となるべき者があるときは、その者と同順位とする。
+
+  - url: https://laws.e-gov.go.jp/api/1/articles;lawId=129AC0000000089;article=896
+    title: 民法 第八百九十六条（相続の一般的効力）
+    publisher: e-Gov法令検索（デジタル庁）
+    lang: ja
+    retrieved: '2026-10-14'
+    tier: 1
+    jurisdiction: JP
+    excerpt: true
+    text: |
+      （相続の一般的効力）
+      第八百九十六条 相続人は、相続開始の時から、被相続人の財産に属した一切の権利義務を承継する。
+
+  - url: https://laws.e-gov.go.jp/api/1/articles;lawId=129AC0000000089;article=915
+    title: 民法 第九百十五条（相続の承認又は放棄をすべき期間）
+    publisher: e-Gov法令検索（デジタル庁）
+    lang: ja
+    retrieved: '2026-10-14'
+    tier: 1
+    jurisdiction: JP
+    excerpt: true
+    text: |
+      （相続の承認又は放棄をすべき期間）
+      第九百十五条 相続人は、自己のために相続の開始があったことを知った時から三箇月以内に、相続について、単純若しくは限定の承認又は放棄をしなければならない。ただし、この期間は、利害関係人又は検察官の請求によって、家庭裁判所において伸長することができる。
+
+  - url: https://laws.e-gov.go.jp/api/1/articles;lawId=129AC0000000089;article=939
+    title: 民法 第九百三十九条（相続の放棄の効力）
+    publisher: e-Gov法令検索（デジタル庁）
+    lang: ja
+    retrieved: '2026-10-14'
+    tier: 1
+    jurisdiction: JP
+    excerpt: true
+    text: |
+      （相続の放棄の効力）
+      第九百三十九条 相続の放棄をした者は、その相続に関しては、初めから相続人とならなかったものとみなす。
+
+  - url: https://www.ssa.gov/benefits/survivors/
+    title: Survivor benefits
+    publisher: U.S. Social Security Administration
+    lang: en
+    retrieved: '2026-10-14'
+    tier: 1
+    jurisdiction: US
+    excerpt: true
+    text: |
+      Survivor benefits
+      A funeral home will usually tell us when someone dies, so you may not need to report a death to us.
+      You may qualify if you’re the spouse, divorced spouse, child, or dependent parent of someone who worked and paid Social
+
+  - url: https://laws.e-gov.go.jp/api/1/articles;lawId=129AC0000000089;article=921
+    title: 民法 第九百二十一条（法定単純承認）
+    publisher: e-Gov法令検索（デジタル庁）
+    lang: ja
+    retrieved: '2026-10-14'
+    tier: 1
+    jurisdiction: JP
+    excerpt: true
+    text: |
+      （法定単純承認）
+      第九百二十一条 次に掲げる場合には、相続人は、単純承認をしたものとみなす。
+      一 相続人が相続財産の全部又は一部を処分したとき。ただし、保存行為及び第六百二条に定める期間を超えない賃貸をすることは、この限りでない。
+
+  - url: https://www.nenkin.go.jp/service/jukyu/tetsuduki/kyotsu/jukyu/20140731-01.html
+    title: 年金を受けている方が亡くなったとき
+    publisher: 日本年金機構 (Japan Pension Service)
+    lang: ja
+    retrieved: '2026-10-15'
+    updated: '2026-04-01'
+    tier: 1
+    jurisdiction: JP
+    excerpt: true
+    text: |
+      年金を受けている方が亡くなったときに、まだ受け取っていない年金や亡くなった日より後に振り込みされた年金のうち、亡くなった月分までの年金については、未支給年金としてその方と生計を同じくしていた遺族が受け取ることができます。未支給年金を受け取るためには、「年金受給権者死亡届（報告書）兼 未支給年金・未支払給付金請求書」の提出が必要です。
+      年金を受けていた方が亡くなった当時、その方と生計を同じくしていた、（1）配偶者 （2）子 （3）父母 （4）孫 （5）祖父母 （6）兄弟姉妹 （7）その他（1）から（6）以外の3親等内の親族です。未支給年金を受け取れる順位もこのとおりです。
+      先順位者がいる場合は、未支給年金を受け取ることはできません。また、同順位者が2名以上いる場合は、そのうち1名が代表して請求することとなります。
+      亡くなった方の年金証書
+      法定相続情報一覧図の写し（亡くなった方が被相続人であるもの）
+      戸籍謄本・住民票は、亡くなった日より後に交付されたものが必要です。
+      年金事務所に郵送により提出してください。
+      提出が遅れると、年金を多く受け取りすぎることとなり、後でお返しいただく場合があります。年金を受けている方が亡くなったときは、すみやかにご提出ください。
+      亡くなった方の未支給年金は、その支給金を受け取った方の一時所得に該当し、確定申告が必要になる場合があります（支給金を受け取る年分において、その支給金を含む一時所得の金額の合計額が50万円以下である場合には、確定申告は不要です。）。詳細は最寄りの税務署へ相談してください。
+
+  - url: https://www.nenkin.go.jp/faq/jukyu/jukyushatodoke/kyotsu/shibo/20140421.html
+    title: 年金受給者が亡くなりました。何か手続きは必要ですか。
+    publisher: 日本年金機構 (Japan Pension Service)
+    lang: ja
+    retrieved: '2026-10-15'
+    updated: '2025-11-04'
+    tier: 1
+    jurisdiction: JP
+    excerpt: true
+    text: |
+      年金受給権者の死亡届は日本年金機構にマイナンバーが収録されている方につきましては、原則不要です。ただし、未支給年金の届出などは必要です。
+      死亡届が必要な場合は、10日（国民年金は14日）以内に「死亡届」に死亡年月日、年金証書に記載されている基礎年金番号と年金コード、生年月日などを記入し、亡くなった方の年金証書と、死亡を明らかにすることができる書類（戸籍抄本または住民票の除票など）を添えて、年金事務所または年金相談センターにお出しください。障害基礎年金、遺族基礎年金のみを受けていた方が亡くなった場合は、市・区役所または町村役場にお出しください。死亡届の用紙は、市・区役所または町村役場の国民年金の窓口にあります。
+      なお、届出が遅れ、亡くなった日の翌日以後に年金を受け取ったときは、その分を後日お返しいただくことになりますのでご注意ください。
+
+  - url: https://www.gesetze-im-internet.de/sgb_6/__102.html
+    title: "§ 102 SGB VI – Befristung und Tod"
+    publisher: Bundesministerium der Justiz (gesetze-im-internet.de)
+    lang: de
+    retrieved: '2026-10-15'
+    tier: 1
+    jurisdiction: DE
+    excerpt: true
+    text: |
+      (5) Renten werden bis zum Ende des Kalendermonats geleistet, in dem die Berechtigten gestorben sind.
+
+  - url: https://www.gesetze-im-internet.de/sgb_6/__118.html
+    title: "§ 118 SGB VI – Fälligkeit und Auszahlung"
+    publisher: Bundesministerium der Justiz (gesetze-im-internet.de)
+    lang: de
+    retrieved: '2026-10-15'
+    tier: 1
+    jurisdiction: DE
+    excerpt: true
+    text: |
+      (1) Laufende Geldleistungen mit Ausnahme des Übergangsgeldes werden am Ende des Monats fällig, zu dessen Beginn die Anspruchsvoraussetzungen erfüllt sind; sie werden am letzten Bankarbeitstag dieses Monats ausgezahlt. Bei Zahlung auf ein Konto im Inland ist die Gutschrift der laufenden Geldleistung, auch wenn sie nachträglich erfolgt, so vorzunehmen, dass die Wertstellung des eingehenden Überweisungsbetrages auf dem Empfängerkonto unter dem Datum des Tages erfolgt, an dem der Betrag dem Geldinstitut zur Verfügung gestellt worden ist. Für die rechtzeitige Auszahlung im Sinne von Satz 1 genügt es, wenn nach dem gewöhnlichen Verlauf die Wertstellung des Betrages der laufenden Geldleistung unter dem Datum des letzten Bankarbeitstages erfolgen kann.
+      (3) Geldleistungen, die für die Zeit nach dem Tod des Berechtigten auf ein Konto bei einem Geldinstitut, für das die Verordnung (EU) Nr. 260/2012 gilt, überwiesen wurden, gelten als unter Vorbehalt erbracht. Das Geldinstitut hat sie der überweisenden Stelle oder dem Träger der Rentenversicherung zurückzuüberweisen, wenn diese sie als zu Unrecht erbracht zurückfordern. Eine Verpflichtung zur Rücküberweisung besteht nicht, soweit über den entsprechenden Betrag bei Eingang der Rückforderung bereits anderweitig verfügt wurde, es sei denn, dass die Rücküberweisung aus einem Guthaben erfolgen kann. Das Geldinstitut darf den überwiesenen Betrag nicht zur Befriedigung eigener Forderungen verwenden.

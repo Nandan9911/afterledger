@@ -1,0 +1,574 @@
+# The Verma family (Lucknow, India). Fictional people; the rules applied are real.
+# Dates are for the story day 14 October 2026 and shift with it (see seed/papers/build.py).
+key: verma
+story_day: 2026-10-14
+title: Rajesh Kumar Verma
+family_label: The Vermas
+where: Lucknow, India
+spoken: Hindi, by voice
+shows: Life cover found from a ₹436 debit; a bank five days past the regulator's limit, and the compensation it owes
+languages: [hi, en]
+countries: [IN]
+timezone: Asia/Kolkata            # the story's clock: activity times are this family's local times
+viewer: p_amit
+order: 1
+
+deceased:
+  id: p_rajesh
+  display_name: Rajesh Kumar Verma
+  names:
+    - {text: Rajesh Kumar Verma, script: Latn, seen_on: family}
+    - {text: राजेश कुमार वर्मा, script: Deva, lang: hi, seen_on: death_cert}
+    - {text: RAJESH KUMAR VERMA, script: Latn, seen_on: death_cert}
+    - {text: R K VERMA, script: Latn, seen_on: narmada_passbook}
+    - {text: RAJESH K VERMA, script: Latn, seen_on: bsl_policy}
+    - {text: RAJESH KUMAR VARMA, script: Latn, seen_on: demat_statement}
+  birth_date: 1974-03-21
+  death_date: 2026-09-02
+  death_place: Lucknow
+  death_country: IN
+  death_cause: illness
+  nationalities: [IN]
+  residences: [{country: IN, city: Lucknow}]
+  personal_law: hindu
+  state: Uttar Pradesh
+  occupation: Retired government school teacher with a state pension (voluntary retirement in 2024)
+  identifiers: {pan: ZZZPV0042K}
+  initials: RV
+
+people:
+  - id: p_sunita
+    display_name: Sunita Verma
+    names:
+      - {text: Sunita Verma, script: Latn}
+      - {text: सुनीता वर्मा, script: Deva, lang: hi}
+      - {text: SUNITA VERMA, script: Latn, seen_on: bsl_policy}
+    relationship: wife
+    roles: [claimant, heir, nominee]
+    languages: [hi]
+    channel: voice
+    country: IN
+    city: Lucknow
+    age: 49
+    initials: SV
+    color: "#F3D9C4"
+  - id: p_amit
+    display_name: Amit Verma
+    names:
+      - {text: Amit Verma, script: Latn}
+      - {text: अमित वर्मा, script: Deva, lang: hi}
+      - {text: AMIT VERMA, script: Latn, seen_on: sahyadri_statement}
+    relationship: son
+    roles: [heir, helper]
+    languages: [en, hi]
+    channel: text
+    country: IN
+    city: Pune
+    age: 24
+    initials: AV
+    color: "#CFE3F5"
+  - id: p_kamla
+    display_name: Kamla Devi
+    names:
+      - {text: Kamla Devi, script: Latn}
+      - {text: कमला देवी, script: Deva, lang: hi}
+    relationship: mother
+    roles: [heir]
+    languages: [hi]
+    channel: voice
+    country: IN
+    city: Lucknow
+    age: 76
+    initials: KD
+    color: "#E6DCF2"
+  - id: p_shukla
+    display_name: R. P. Shukla
+    names: [{text: R. P. Shukla, script: Latn}]
+    relationship: neighbour
+    roles: [declarant]
+    languages: [hi, en]
+    country: IN
+    city: Lucknow
+    initials: RS
+    color: "#E2E8E4"
+    notes: A neighbour who knows the family and is not part of any claim; signs the Annex IX declaration.
+
+# Holdings as they stand on the story day. 'found_from' is the evidence the pipeline should use.
+holdings:
+  - id: h_sahyadri_sb
+    institution_id: in_sahyadri_bank
+    kind: savings
+    label: Savings account
+    account_mask: "4417"
+    value: "184212.00"
+    value_as_of: 2026-09-26
+    nominee: "yes"
+    nominee_person_id: p_sunita
+    found_from: [sahyadri_statement]
+    claim: c_sahyadri
+  - id: h_narmada_sb
+    institution_id: in_narmada_bank
+    kind: savings
+    label: Savings account
+    account_mask: "0932"
+    value: "41870.00"
+    value_as_of: 2026-09-15
+    nominee: "no"
+    found_from: [narmada_passbook]
+    claim: c_narmada
+  - id: h_narmada_fd
+    institution_id: in_narmada_bank
+    kind: fixed_deposit
+    label: Fixed deposit
+    account_mask: "2215"
+    value: "600000.00"
+    value_as_of: 2026-09-02
+    nominee: "no"
+    found_from: [narmada_fd]
+    claim: c_narmada
+  - id: h_bsl_policy
+    institution_id: in_bharat_suraksha_life
+    kind: life_policy
+    label: Term life policy
+    account_mask: "8812"
+    value: "500000.00"
+    nominee: "yes"
+    nominee_person_id: p_sunita
+    found_from: [bsl_policy]
+    claim: c_bsl
+  - id: h_demat
+    institution_id: in_awadh_securities
+    kind: demat
+    label: Demat account (shares)
+    account_mask: "5521"
+    value: "800000.00"
+    value_as_of: 2026-08-31
+    nominee: "no"
+    found_from: [demat_statement]
+    claim: c_demat
+  - id: h_pmjjby
+    institution_id: in_pmjjby
+    kind: government_cover
+    label: PMJJBY life cover, through Sahyadri Bank
+    value: "200000.00"
+    nominee: "yes"
+    nominee_person_id: p_sunita
+    found_from: [lead:pmjjby]
+    claim: c_pmjjby
+  - id: h_mf
+    institution_id: in_cams
+    kind: mutual_fund
+    label: Mutual fund (SIP of ₹5,000 a month, fund not known yet)
+    nominee: unknown
+    status: lead
+    found_from: [lead:mf_sip]
+    claim: c_mf
+  - id: h_locker
+    institution_id: in_sahyadri_bank
+    kind: locker
+    label: Safe deposit locker
+    nominee: unknown
+    status: lead
+    found_from: [lead:locker]
+    claim: c_locker
+  - id: h_gomti
+    institution_id: in_gomti_paper_mills
+    kind: shares_physical
+    label: Shares in Gomti Paper Mills, probably on paper
+    nominee: unknown
+    status: lead
+    found_from: [lead:gomti_shares]
+  - id: h_family_pension
+    institution_id: in_up_treasury
+    kind: family_pension
+    direction: entitlement
+    label: Family pension for Sunita
+    nominee: not_applicable
+    found_from: [lead:family_pension]
+    claim: c_family_pension
+  - id: h_scooter_loan
+    institution_id: in_sahyadri_bank
+    kind: loan
+    direction: debt
+    label: Two-wheeler loan
+    account_mask: "0041"
+    value: "38200.00"
+    value_source: family
+    nominee: not_applicable
+    found_from: [lead:scooter_loan]
+
+claims:
+  - id: c_sahyadri
+    institution_id: in_sahyadri_bank
+    holdings: [h_sahyadri_sb]
+    plan: IN/bank_deposit
+    facts: {nominee_or_survivor: "yes", bank_type: commercial, has_will: "no", dispute: "no", death_abroad: "no"}
+    expected_route: [nominee_route]
+  - id: c_narmada
+    institution_id: in_narmada_bank
+    holdings: [h_narmada_sb, h_narmada_fd]
+    plan: IN/bank_deposit
+    facts: {nominee_or_survivor: "no", amount: 641870, bank_type: commercial, has_will: "no", dispute: "no",
+            non_claimant_heirs: 2, heirship_proof: annex_ix, death_abroad: "no", has_term_deposit: "yes"}
+    expected_route: [no_nominee_within]
+    signers: {annex_vi: [p_sunita], annex_vii: [p_sunita], annex_viii: [p_amit, p_kamla], annex_ix: [p_shukla]}
+    explain:
+      match: Narmada
+      summary: ₹6,41,870 with no nominee and no will. Under the ₹15 lakh limit, so the bank must use its simplified route.
+      steps:
+        - {step_id: no_nominee_within, who: Sunita Verma, text: "Sunita signs the claim form and a bond of indemnity, as the person who will receive the money."}
+        - {step_id: no_nominee_within, who: "Amit Verma, Kamla Devi", text: "Amit and Kamla Devi, the other legal heirs, each sign a letter of no objection."}
+        - {step_id: no_nominee_within, who: R. P. Shukla, text: "Mr R. P. Shukla, a neighbour who is not part of the claim, signs a declaration naming the legal heirs. This takes the place of a legal heir certificate."}
+        - {step_id: acknowledge, who: family, text: "Hand everything in at any branch and get written confirmation that the set is complete."}
+        - {step_id: settle, who: institution, text: "The bank settles within 15 calendar days of having every paper."}
+        - {step_id: chase_late, who: institution, text: "Because it is late, it pays interest for the delay at the Bank Rate plus 4% a year."}
+  - id: c_bsl
+    institution_id: in_bharat_suraksha_life
+    holdings: [h_bsl_policy]
+    plan: IN/life_insurance_claim
+    facts: {investigation: "no", nominee_named: "yes"}
+    expected_route: [claim]
+  - id: c_pmjjby
+    institution_id: in_pmjjby
+    holdings: [h_pmjjby]
+    plan: IN/pmjjby_claim
+    facts: {member_paid_premium: "yes", within_age: "yes"}
+    expected_route: [claim]
+  - id: c_demat
+    institution_id: in_awadh_securities
+    holdings: [h_demat]
+    plan: IN/demat_transmission
+    facts: {joint_holder_survives: "no", has_nomination: "no", value: 800000, claimant_immediate_relative: "yes",
+            dispute: "no", has_court_document: "no", non_claimant_heirs: 2, heirs_agreement: annexure_5, death_abroad: "no"}
+    expected_route: [simplified_route]
+    signers: {annexure_3: [p_sunita], annexure_4: [p_sunita], annexure_5: [p_sunita, p_amit, p_kamla]}
+    explain:
+      match: Awadh
+      summary: ₹8,00,000 in shares with no nominee. Under SEBI's ₹30 lakh limit, so the simplified papers apply. The depository participant has 21 days once it has everything.
+      steps:
+        - {step_id: simplified_route, who: Sunita Verma, text: "Sunita signs the transmission request and an indemnity bond, as the person the shares will move to."}
+        - {step_id: simplified_route, who: "Sunita Verma, Amit Verma, Kamla Devi", text: "All three legal heirs - Sunita, Amit and Kamla Devi - sign one affidavit and no-objection before a notary."}
+        - {step_id: simplified_route, who: Sunita Verma, text: "Sunita opens a demat account of her own, so the shares have somewhere to go."}
+        - {step_id: acknowledge, who: institution, text: "Awadh Securities confirms in writing when it has every paper."}
+        - {step_id: transmit, who: institution, text: "The shares move to Sunita's account within 21 days of that."}
+  - id: c_locker
+    institution_id: in_sahyadri_bank
+    holdings: [h_locker]
+    plan: IN/locker
+    facts: {has_will: "no", dispute: "no", non_claimant_heirs: 2, death_abroad: "no"}
+    expected_questions: [locker_nominee]
+  - id: c_mf
+    institution_id: in_cams
+    holdings: [h_mf]
+    plan: IN/mutual_fund
+    facts: {fund_known: "no", dispute: "no"}
+    expected_route: []
+  - id: c_family_pension
+    institution_id: in_up_treasury
+    holdings: [h_family_pension]
+    plan: IN/family_pension
+    facts: {pension_credit_after_settlement: "yes"}
+    expected_route: [apply]
+
+# What the family says when asked. Keys are plan variables or checkpoint subjects.
+answers:
+  has_will: "no"
+  dispute: "no"
+  heirship_proof: annex_ix
+  investigation: "no"
+  locker_nominee: unknown
+  post_office_savings: "no"
+  claimant: p_sunita
+
+# Hidden items the papers point to, for scoring discovery and for the offline investigators.
+# 'group' names the statement lines (papers.yaml meta.group); texts are what the agents should conclude.
+leads:
+  - key: pmjjby
+    category: life_cover
+    kind: entitlement
+    group: pmjjby
+    institution_id: in_pmjjby
+    title: PMJJBY life cover of ₹2,00,000
+    sentence: A ₹436 debit every May is the premium for PMJJBY, a government life cover of ₹2,00,000. Rajesh was 52, and cover runs to 55 once enrolled, so it was live when he died.
+    investigator_note: "The premium of ₹436 a year is debited automatically, and this one was taken in May 2026 for the year 2026-27. PMJJBY pays ₹2,00,000 on death from any cause, and cover continues to 55 for anyone who joined before 50."
+    how_to_confirm: The nominee claims at the Sahyadri Bank branch where the account is held.
+    next_step_note: Claim preferably within 30 days of the death; the bank forwards it within 7 days and the insurer pays within 7 days after that.
+    signals: {cadence: yearly, product_match: "yes"}
+    cites: [in_pmjjby_premium, in_pmjjby_cover, in_pmjjby_age, in_pmjjby_claim_30_days]
+    value: "200000.00"
+    label: sure
+    status: confirmed
+    holding: h_pmjjby
+  - key: mf_sip
+    category: mutual_fund
+    kind: asset
+    group: mf_sip
+    institution_id: in_cams
+    title: Mutual fund units bought every month
+    sentence: ₹5,000 left his account on the 5th of every month as a SIP through CAMS, a registrar for mutual funds. Which fund it bought is not known yet.
+    investigator_note: "Six debits of ₹5,000 on the 5th, narration ACH D- NACH MF SIP CAMS 4471. CAMS keeps the records for many fund houses, so the fund itself is not named."
+    how_to_confirm: Ask CAMS for a consolidated account statement, which names the fund and the units.
+    next_step_note: The units pass to the heirs under SEBI's transmission framework once the fund is known.
+    signals: {cadence: monthly, product_match: "yes"}
+    cites: [in_sebi_applies_amc, in_sebi_value_nav]
+    label: sure
+    status: confirmed
+    holding: h_mf
+  - key: family_pension
+    category: pension
+    kind: entitlement
+    group: pension
+    institution_id: in_up_treasury
+    title: A family pension for Sunita
+    sentence: His state pension of ₹38,450 arrived on the 1st of every month. Sunita can probably apply for a family pension, and pension paid after the death has to be sorted out with the pension office.
+    investigator_note: Six credits of ₹38,450 from PENSION UP TREASURY LKO, one each month.
+    how_to_confirm: Write to the pension office; its rules for this state have not been checked yet.
+    signals: {cadence: monthly, product_match: partial}
+    cites: [in_rbi_295_credit_after]
+    label: likely
+    status: confirmed
+    holding: h_family_pension
+  - key: locker
+    category: locker
+    kind: asset
+    group: locker_rent
+    institution_id: in_sahyadri_bank
+    title: A safe deposit locker at Sahyadri Bank
+    sentence: Sahyadri Bank takes locker rent every April, so Rajesh probably had a locker there.
+    investigator_note: Sahyadri Bank charges locker rent once a year, in April, and this ₹2,360 debit is labelled locker rent for 2026-27. No locker key or agreement is among the papers.
+    critic_note: A bank can keep charging rent after a locker is given up if nobody told it. Ask the bank before planning a visit.
+    how_to_confirm: Ask Sahyadri Bank whether he hired a locker and whether a nominee was registered for it.
+    next_step_note: If the locker exists, a nominee can open it with three papers; without one, the heirs use the simplified route. The bank has 15 days once it has every paper, or it pays ₹5,000 for each day of delay.
+    signals: {cadence: yearly, product_match: "yes", paper: "no", known_rent: "yes"}
+    cites: [in_sahyadri_locker_rent, in_rbi_299_locker_nominee, in_rbi_309_locker_simplified, in_rbi_320_locker_15_days, in_rbi_322_locker_compensation]
+    label: likely
+    status: open
+    holding: h_locker
+  - key: gomti_shares
+    category: shares
+    kind: asset
+    group: gomti_div
+    institution_id: in_gomti_paper_mills
+    title: Shares in Gomti Paper Mills, probably on paper certificates
+    sentence: Dividends of ₹1,240 from Gomti Paper Mills arrived in March and June, but the company is not in his demat account.
+    investigator_note: Two dividend credits of ₹1,240, three months apart. The company pays dividends into the bank account registered with its registrar, and his demat statement does not hold its shares, so the shares are probably paper certificates.
+    critic_note: The shares could be in Sunita's name, with the dividends paid into his account.
+    how_to_confirm: Look for share certificates at home, or ask the company's registrar which folio pays into this account.
+    next_step_note: Paper shares pass under SEBI's framework; the original certificates are needed.
+    signals: {cadence: quarterly, product_match: "no"}
+    alternatives: [The shares are in another family member's name]
+    downgrade: true
+    cites: [in_gomti_dividends, in_gomti_registrar, in_sebi_physical_original]
+    label: possible
+    status: open
+    holding: h_gomti
+  - key: scooter_loan
+    category: loan
+    kind: debt
+    group: scooter_emi
+    institution_id: in_sahyadri_bank
+    title: A two-wheeler loan at Sahyadri Bank
+    sentence: Sahyadri Bank takes ₹2,150 on the 5th of each month for a two-wheeler loan. Ask for the exact balance and whether the loan had insurance before the next instalment.
+    monthly: "2150.00"
+    family_value: "38200.00"
+    family_note: About ₹38,200 is left, going by the loan papers at home.
+    cites: [in_sahyadri_loans]
+    label: sure
+    status: open
+    holding: h_scooter_loan
+  - key: pmsby
+    category: accident_cover
+    kind: entitlement
+    group: pmsby
+    institution_id: in_pmsby
+    title: PMSBY accident cover
+    sentence: A ₹20 debit in May is the premium for PMSBY, a government accident cover.
+    investigator_note: The premium was paid for 2026-27, so the cover was in force.
+    critic_note: PMSBY pays only for accidental death or disability, and Rajesh died of an illness.
+    how_to_confirm: Nothing to claim unless the death was caused by an accident.
+    signals: {cadence: yearly, product_match: "yes"}
+    cites: [in_pmsby_premium, in_pmsby_accident_only]
+    label: likely
+    status: closed
+    closed_reason: PMSBY pays only for accidental death or disability; Rajesh died of an illness.
+decoys: [upi_amit, electricity, bsl_premium, medical_store]
+
+# How the agents should read each payment group.
+groups:
+  pension: {counterparty: UP Treasury, kind: government, interpretation: "His state pension, paid on the 1st of every month.", alternatives: []}
+  mf_sip: {counterparty: CAMS, kind: fund_registrar, interpretation: "A monthly SIP into a mutual fund, collected by CAMS.", alternatives: []}
+  scooter_emi: {counterparty: Sahyadri Bank, kind: lender, interpretation: "Instalments on a two-wheeler loan from Sahyadri Bank.", alternatives: []}
+  upi_amit: {counterparty: Amit Verma, kind: family, interpretation: "Money sent to his son Amit in Pune every month.", alternatives: []}
+  electricity: {counterparty: UPPCL, kind: utility, interpretation: "The home electricity bill.", alternatives: []}
+  gomti_div: {counterparty: Gomti Paper Mills, kind: company, interpretation: "Dividends from Gomti Paper Mills.", alternatives: [Dividends on shares held by someone else in the family]}
+  bsl_premium: {counterparty: Bharat Suraksha Life, kind: insurer, interpretation: "The yearly premium on his Bharat Suraksha Life policy, which is already among the papers.", alternatives: []}
+  locker_rent: {counterparty: Sahyadri Bank, kind: bank, interpretation: "Yearly rent for a safe deposit locker.", alternatives: []}
+  pmjjby: {counterparty: PMJJBY, kind: government, interpretation: "The yearly premium for PMJJBY government life cover.", alternatives: []}
+  pmsby: {counterparty: PMSBY, kind: government, interpretation: "The yearly premium for PMSBY government accident cover.", alternatives: []}
+
+# What families in India usually hold, as it stands for this case.
+coverage:
+  bank_accounts: {status: found, detail: 2 banks}
+  life_cover: {status: found, detail: Found 2}
+  mutual_funds: {status: lead, detail: 1 lead}
+  shares: {status: found, detail: "Demat, 1 lead"}
+  pension: {status: found, detail: Family pension}
+  provident_fund: {status: not_applicable, detail: Paid at retirement}
+  lockers: {status: lead, detail: 1 lead}
+  post_office: {status: not_seen, detail: No paper mentions one. A quick question to Sunita settles it., ask: "Did Rajesh have any post office savings?"}
+  loans: {status: found, detail: A two-wheeler loan}
+
+jurisdiction:
+  succession_law: IN
+  contested: false
+  summary: India, for every holding so far. Our agents check this against the law; there is nothing for you to confirm.
+  findings:
+    - {assertion_ids: [in_hsa_s8_class1, in_hsa_class1_list], rule: "A Hindu man's property goes first to the Class I heirs: his widow, children and mother.", points_to: IN}
+  legs:
+    - {country: IN, succession_law: IN, papers_from: [IN], certification: [], cites: [in_hsa_s8_class1], note: ""}
+  cites: [in_hsa_s8_class1, in_hsa_class1_list, in_hsa_s9_together]
+
+# The intake conversation (Sunita, by voice, in Hindi).
+intake:
+  started_on: 2026-09-08
+  by: p_sunita
+  turns:
+    - role: assistant
+      lang: hi
+      text: नमस्ते। आपके नुकसान का हमें बहुत दुख है। सबसे पहले, क्या आप बताएँगी कि किनका देहांत हुआ है?
+      translation: Namaste. We are very sorry for your loss. First, could you tell us who has passed away?
+    - role: family
+      person: p_sunita
+      lang: hi
+      channel: voice
+      seconds: 14
+      text: मेरे पति, राजेश कुमार वर्मा। दो सितंबर को लखनऊ में, कुछ महीनों की बीमारी के बाद। वो सरकारी स्कूल में पढ़ाते थे, फिर वीआरएस ले लिया था।
+      translation: My husband, Rajesh Kumar Verma. On 2 September, in Lucknow, after a few months of illness. He taught at a government school, then took voluntary retirement.
+    - role: assistant
+      lang: hi
+      text: धन्यवाद। पैसों का काम कौन देखता था? और क्या आपके पास बैंक के कोई कागज़ हैं?
+      translation: Thank you. Who looked after the money? And do you have any bank papers?
+    - role: family
+      person: p_sunita
+      lang: hi
+      channel: voice
+      seconds: 22
+      text: सब वही देखते थे। दो बैंक हैं, सह्याद्रि और नर्मदा। एक एफडी भी है। बेटा अमित पुणे में है, वो फोटो भेज देगा।
+      translation: He handled everything. There are two banks, Sahyadri and Narmada. There is a fixed deposit too. Our son Amit is in Pune; he will send photos.
+    - role: assistant
+      lang: hi
+      text: ठीक है। एक बात और - क्या राजेश जी की माँ जीवित हैं? बैंक के कागज़ों पर उनकी सहमति भी लग सकती है।
+      translation: All right. One more thing - is Rajesh ji's mother alive? The bank papers may need her consent too.
+      why: A mother is a Class I heir under the Hindu Succession Act, so her consent may be needed.
+      cites: [in_hsa_class1_list, in_rbi_288_disclaimer]
+    - role: family
+      person: p_sunita
+      lang: hi
+      channel: voice
+      seconds: 6
+      text: हाँ, अम्मा जी हमारे साथ रहती हैं। कमला देवी।
+      translation: Yes, Amma ji lives with us. Kamla Devi.
+
+  # What the situation extractor should know after each family turn (cumulative deltas).
+  situation:
+    1:
+      deceased_name: Rajesh Kumar Verma
+      died_on: 2026-09-02
+      died_in: Lucknow
+      death_country: IN
+      death_cause: illness
+      country_codes: [IN]
+      occupation: Retired government school teacher (voluntary retirement)
+      family:
+        - {name: Sunita Verma, relationship: wife, city: Lucknow, country: IN, languages: [hi], roles: [claimant, heir]}
+      holdings_mentioned: [his state pension]
+      will: unknown
+      mode: family
+      unknowns: [which banks, papers at hand, other heirs]
+    2:
+      family:
+        - {name: Amit Verma, relationship: son, city: Pune, country: IN, languages: [en, hi], roles: [heir, helper]}
+      holdings_mentioned: [an account at Sahyadri Bank, an account at Narmada Bank, a fixed deposit]
+      papers_at_hand: [Amit will send photos of the papers]
+      unknowns: [other heirs]
+    3:
+      family:
+        - {name: Kamla Devi, relationship: mother, city: Lucknow, country: IN, languages: [hi], roles: [heir]}
+      urgent: ["Tell the pension office about the death. A September pension paid after 2 September usually has to be returned, and Sunita can apply for a family pension."]
+      unknowns: []
+
+# Everything that happens in the story, in order. The seeder plays these through the app's own services.
+timeline:
+  - {on: 2026-09-08, do: intake}
+  - {on: 2026-09-08, do: confirm_summary, by: p_sunita}
+  - {on: 2026-09-08, do: invite, person: p_amit, by: p_sunita}
+  - {on: 2026-09-09, do: upload, paper: death_cert, by: p_amit}
+  - {on: 2026-09-10, do: upload, paper: sahyadri_statement, by: p_amit}
+  - {on: 2026-09-11, do: mark_leads, by: p_amit}
+  - {on: 2026-09-11, do: approve_plan, claim: c_sahyadri, by: p_sunita}
+  - {on: 2026-09-11, do: approve_pack, claim: c_sahyadri, by: p_sunita}
+  - {on: 2026-09-12, do: claim_event, claim: c_sahyadri, event: submitted}
+  - {on: 2026-09-12, do: claim_event, claim: c_sahyadri, event: complete_set_confirmed}
+  - {on: 2026-09-16, do: upload, paper: narmada_passbook, by: p_amit}
+  - {on: 2026-09-16, do: upload, paper: narmada_fd, by: p_amit}
+  - {on: 2026-09-17, do: answer_values, by: p_amit}
+  - {on: 2026-09-18, do: upload, paper: bsl_policy, by: p_amit}
+  - {on: 2026-09-20, do: upload, paper: demat_statement, by: p_amit}
+  - {on: 2026-09-20, do: upload, paper: sunita_pan, by: p_amit}
+  - {on: 2026-09-20, do: confirm_people, by: p_amit}
+  - {on: 2026-09-21, do: approve_plan, claim: c_pmjjby, by: p_sunita}
+  - {on: 2026-09-21, do: approve_pack, claim: c_pmjjby, by: p_sunita}
+  - {on: 2026-09-21, do: claim_event, claim: c_pmjjby, event: submitted}
+  - {on: 2026-09-22, do: add_person, person: p_shukla, by: p_amit}
+  - {on: 2026-09-23, do: approve_plan, claim: c_narmada, by: p_sunita}
+  - {on: 2026-09-23, do: approve_pack, claim: c_narmada, by: p_sunita}
+  - {on: 2026-09-23, do: claim_event, claim: c_narmada, event: submitted}
+  - {on: 2026-09-24, do: claim_event, claim: c_narmada, event: complete_set_confirmed,
+     note: "Narmada Bank confirmed in writing that every document had been received."}
+  - {on: 2026-09-26, do: claim_event, claim: c_sahyadri, event: settled, amount: "184212.00"}
+  - {on: 2026-09-26, do: claim_event, claim: c_pmjjby, event: forwarded_to_insurer}
+  - {on: 2026-10-01, do: correspondence, claim: c_family_pension, direction: in, channel: letter,
+     title: Sahyadri Bank returned the October pension credit,
+     summary: "Sahyadri Bank returned the pension credited on 1 October to the treasury with the remark 'Account holder deceased', because the account had been settled."}
+  - {on: 2026-10-03, do: claim_event, claim: c_pmjjby, event: settled, amount: "200000.00"}
+  - {on: 2026-10-06, do: approve_plan, claim: c_bsl, by: p_sunita}
+  - {on: 2026-10-06, do: approve_pack, claim: c_bsl, by: p_sunita}
+  - {on: 2026-10-06, do: claim_event, claim: c_bsl, event: submitted}
+  - {on: 2026-10-06, do: claim_event, claim: c_bsl, event: claim_intimated}
+  - {on: 2026-10-07, do: correspondence, claim: c_mf, direction: out, channel: email,
+     title: Asked CAMS for a consolidated account statement,
+     summary: "Amit asked CAMS which fund the monthly SIP of ₹5,000 went to. CAMS said a statement would follow by 28 October.",
+     expected_on: 2026-10-28, expected_title: Fund statement expected from CAMS, expected_note: "Shows which fund the ₹5,000 went to"}
+  - {on: 2026-10-12, do: approve_plan, claim: c_demat, by: p_sunita}
+  - {on: 2026-10-12, do: prepare_pack, claim: c_demat}
+  - {on: 2026-10-14, do: draft_letter, claim: c_narmada, kind: reminder}
+  - {on: 2026-10-14, do: today}
+
+# What 'Today' should show on the story day (used by tests and the evaluation harness).
+expected_today:
+  tasks: [remind:c_narmada, sign:c_demat, find:locker_key]
+  late_claims: [c_narmada]
+  totals: {known: "2326082.00", paid: "384212.00", in_progress: "1941870.00", owed: "38200.00", unknown_leads: 4}
+  narmada_compensation: {days_late: 5, per_day: "167.06", owed: "835.31", base_rate_pct: "5.50"}
+
+# How the supervisor words today's tasks (the scripted stand-in for the model's wording).
+today_greeting_local:
+  Sunita: "सुप्रभात, सुनीता जी। एक बैंक देर कर रहा है, और दो काम परिवार के लिए हैं।"
+  Amit: "सुप्रभात, अमित। एक बैंक देर कर रहा है, और दो काम परिवार के लिए हैं।"
+  Kamla: "सुप्रभात, अम्मा जी। एक बैंक देर कर रहा है, और दो काम परिवार के लिए हैं।"
+today_tasks:
+  - kind: follow_up
+    institution_id: in_narmada_bank
+    title: Remind Narmada Bank that the claim is overdue
+    local: {lang: hi, title: "नर्मदा बैंक को याद दिलाएँ कि दावे में देर हो चुकी है", body: "बैंक ने 24 सितंबर को लिखकर माना था कि उसके पास सारे कागज़ हैं। नियम के अनुसार 15 दिन में, यानी 9 अक्टूबर तक, भुगतान होना था। देरी के लिए बैंक पर अब तक ₹835 बनते हैं, और हर दिन ₹167 और।"}
+  - kind: sign
+    institution_id: in_awadh_securities
+    title: Sign the demat transfer papers
+    body: "Sunita signs the request and the indemnity. All three legal heirs - Sunita, Amit and Kamla Devi - sign the affidavit and no-objection before a notary."
+    local: {lang: hi, title: "डीमैट के कागज़ों पर हस्ताक्षर करें", body: "सुनीता जी अनुरोध पत्र और क्षतिपूर्ति बांड पर हस्ताक्षर करेंगी। तीनों कानूनी वारिस - सुनीता, अमित और कमला देवी - नोटरी के सामने हलफ़नामे और अनापत्ति पत्र पर हस्ताक्षर करेंगे। कागज़ तैयार हैं।"}
+  - kind: find
+    lead_category: locker
+    title: Look for the locker key
+    body: Sahyadri Bank takes locker rent every April, so Rajesh probably had a locker there. The key and the locker agreement will make the visit quicker.
+    local: {lang: hi, title: "लॉकर की चाबी ढूँढें", body: "सह्याद्रि बैंक हर अप्रैल लॉकर का किराया लेता है, तो शायद वहाँ राजेश जी का लॉकर है। चाबी और लॉकर का अनुबंध मिल जाए तो बैंक का काम जल्दी होगा।"}
+

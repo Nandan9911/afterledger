@@ -1,0 +1,1394 @@
+# Procedure plans for India. Every step, document, clock and variable cites assertion ids in
+# data/knowledge/assertions. Conditions use the small language in domain/plan_language.py:
+#   name = value, name != value, <, <=, >, >=, name in [a, b], and/or/not, brackets, and @named
+# conditions declared under 'conditions'. Words such as yes and no are compared as text.
+#
+# The RBI, SEBI and IRDAI plans are the gold set: the research workflow must reproduce their routes
+# (the submit and hand-off steps) on every table-driven case before a compiled plan is stored.
+plans:
+  # ===============================================================================================
+  - key: IN/bank_deposit
+    title: Money in a bank account or deposit (RBI rules)
+    jurisdiction: IN
+    institution_kind: bank
+    holding_kinds: [savings, current, fixed_deposit, recurring_deposit, nre, nro]
+    level: gold
+    verified_on: 2026-10-14
+    conditions:
+      within_threshold: (bank_type = commercial and amount <= 1500000) or (bank_type = urban_coop and amount <= 500000)
+      simplified: nominee_or_survivor = no and @within_threshold and has_will = no and dispute = no
+      above: nominee_or_survivor = no and not @within_threshold and has_will = no and dispute = no
+    variables:
+      - name: nominee_or_survivor
+        type: tri
+        question: Was a nominee registered for this account, or was it held jointly with someone who is still alive?
+        derive: holding_nominee
+        cites: [in_rbi_284, in_rbi_287_simplified]
+      - name: amount
+        type: money
+        unit: INR
+        question: Roughly how much is in all his accounts at this bank, including fixed deposits?
+        derive: claim_amount
+        cites: [in_rbi_threshold, in_rbi_287_simplified]
+      - name: bank_type
+        type: choice
+        options: [commercial, urban_coop, other]
+        derive: institution:bank_type
+        cites: [in_rbi_threshold, in_rbi_ucb_threshold]
+      - name: has_will
+        type: tri
+        question: Did he leave a will?
+        derive: situation_will
+        cites: [in_rbi_287_no_will, in_rbi_291_will]
+      - name: dispute
+        type: tri
+        question: Does anyone in the family disagree about who should receive this money?
+        derive: situation_dispute
+        cites: [in_rbi_287_no_contest, in_rbi_293_dispute]
+      - name: non_claimant_heirs
+        type: number
+        question: Apart from the person claiming, how many other legal heirs are there?
+        derive: heirs_not_claiming
+        cites: [in_rbi_288_disclaimer]
+      - name: heirship_proof
+        type: choice
+        options: [legal_heir_cert, annex_ix]
+        question: Do you already have a legal heir certificate, or should someone independent who knows the family sign a declaration instead?
+        derive: paper_choice:legal_heir_cert
+        cites: [in_rbi_288_heirship]
+      - name: above_basis
+        type: choice
+        options: [succession_certificate, heirship_document]
+        question: Above the limit, the bank settles on a succession certificate from a court, or on a legal heir certificate or a sworn affidavit with an indemnity. Which will you use?
+        cites: [in_rbi_290_above]
+      - name: death_abroad
+        type: tri
+        derive: death_outside:IN
+        question: Did he die outside India?
+        cites: [in_rbi_324_foreign_death]
+      - name: has_term_deposit
+        type: tri
+        derive: claim_has_kind:fixed_deposit
+        cites: [in_rbi_296_fd_premature]
+    documents:
+      - id: annex_v
+        name: Claim form for accounts with a nominee (Annex V)
+        form_key: IN/rbi_annex_v
+        signed_by: [nominee]
+        cites: [in_rbi_286_claim_form]
+      - id: annex_vi
+        name: Claim form for accounts without a nominee (Annex VI)
+        form_key: IN/rbi_annex_vi
+        signed_by: [claimant]
+        cites: [in_rbi_288_claim_form]
+      - id: annex_vii
+        name: Bond of indemnity (Annex VII)
+        form_key: IN/rbi_annex_vii
+        certification: [stamp_paper]
+        signed_by: [claimant]
+        note: Executed on stamp paper of the value the state's Stamp Act requires.
+        cites: [in_rbi_288_indemnity, in_rbi_annex_vii_stamped, in_rbi_annex_vii_surety_note]
+      - id: annex_viii
+        name: Letter of disclaimer or no objection from heirs who are not claiming (Annex VIII)
+        form_key: IN/rbi_annex_viii
+        certification: [stamp_paper]
+        signed_by: [other_heirs]
+        when: non_claimant_heirs > 0
+        cites: [in_rbi_288_disclaimer, in_rbi_annex_viii_stamped]
+      - id: annex_ix
+        name: Declaration about the legal heirs by an independent person (Annex IX)
+        form_key: IN/rbi_annex_ix
+        certification: [stamp_paper]
+        signed_by: [independent_person]
+        note: Signed by someone who knows the family well, is not claiming, and is acceptable to the bank.
+        cites: [in_rbi_288_heirship, in_rbi_annex_ix_stamped]
+      - id: annex_ix_affidavit
+        name: Affidavit about the legal heirs by an independent person, sworn before a notary (Annex IX)
+        form_key: IN/rbi_annex_ix
+        certification: [stamp_paper, notarised]
+        signed_by: [independent_person]
+        cites: [in_rbi_290_above, in_rbi_annex_ix_stamped]
+      - id: legal_heir_cert
+        name: Legal heir certificate from the revenue authority
+        acquire_plan: IN/legal_heir_certificate
+        cites: [in_rbi_288_heirship]
+      - id: succession_cert
+        name: Succession certificate from a civil court
+        cites: [in_rbi_290_above]
+      - id: death_cert
+        name: Death certificate
+        when: death_abroad = no
+        cites: [in_rbi_286_ovd, in_rbi_288_death_cert]
+      - id: death_cert_certified_abroad
+        name: Foreign death certificate, certified in the country that issued it
+        certification: [apostille]
+        acquire_plan: IN/foreign_death_certificate
+        when: death_abroad = yes
+        note: An apostille is one of five accepted ways of certifying it; the acquire plan lists them.
+        cites: [in_rbi_324_foreign_death, in_rbi_324_apostille]
+      - id: claimant_ovd
+        name: The claimant's identity and address document (an officially valid document)
+        signed_by: [claimant]
+        cites: [in_rbi_286_ovd, in_rbi_288_ovd]
+    clocks:
+      - id: settle_15
+        short: settlement
+        label: The bank settles within 15 days of having every paper
+        owner: institution
+        starts_on: complete_set_confirmed
+        length: 15
+        unit: calendar_days
+        compensation: rate_per_year_on_amount
+        compensation_params: {base_rate: in_bank_rate, base_rate_on: clock_start, spread_pct: "4"}
+        notes: Interest at not less than the Bank Rate plus 4% a year on the amount due, for the days of delay; the Bank Rate and the amount are taken on the day the bank had every paper.
+        cites: [in_rbi_319_15_days, in_rbi_321_compensation]
+    steps:
+      - id: foreign_death_cert
+        kind: acquire
+        actor: family
+        text: Get the foreign death certificate certified in the country that issued it, for example by apostille or by an Indian bank's branch there.
+        when: death_abroad = yes
+        documents: [death_cert_certified_abroad]
+        cites: [in_rbi_324_foreign_death, in_rbi_324_apostille, in_rbi_324_overseas_branch]
+      - id: nominee_route
+        kind: submit
+        actor: family
+        text: The nominee claims with the Annex V form, the death certificate and their own identity document.
+        when: nominee_or_survivor = yes
+        documents: [annex_v, death_cert, death_cert_certified_abroad, claimant_ovd]
+        must_not_be_asked: [Succession certificate, Letter of administration, Probate of the will, Bond of indemnity, Surety]
+        clocks: [settle_15]
+        cites: [in_rbi_284, in_rbi_286_claim_form, in_rbi_286_ovd, in_rbi_286_no_legal_docs]
+      - id: no_nominee_within
+        kind: submit
+        actor: family
+        text: Claim under the simplified procedure with Annex VI, the Annex VII indemnity, Annex VIII from heirs who are not claiming, and a legal heir certificate or an Annex IX declaration.
+        when: "@simplified"
+        documents: [annex_vi, death_cert, death_cert_certified_abroad, claimant_ovd, annex_vii, annex_viii]
+        one_of: [[legal_heir_cert, annex_ix]]
+        must_not_be_asked: [Surety from anyone else, Succession certificate]
+        clocks: [settle_15]
+        cites: [in_rbi_287_simplified, in_rbi_288_claim_form, in_rbi_288_indemnity, in_rbi_288_disclaimer,
+                in_rbi_288_heirship, in_rbi_288_death_cert, in_rbi_288_ovd, in_rbi_289_no_surety,
+                in_rbi_threshold, in_rbi_ucb_threshold]
+      - id: choose_above_basis
+        kind: decide
+        actor: family
+        text: Above the threshold, choose between a succession certificate from a court, and a legal heir certificate or sworn affidavit with an indemnity.
+        when: "@above"
+        decides: above_basis
+        cites: [in_rbi_290_above]
+      - id: no_nominee_above_sc
+        kind: submit
+        actor: family
+        text: Claim with Annex VI, the death certificate, your identity document and the succession certificate.
+        when: "@above and above_basis = succession_certificate"
+        documents: [annex_vi, death_cert, death_cert_certified_abroad, claimant_ovd, succession_cert]
+        clocks: [settle_15]
+        after: [choose_above_basis]
+        cites: [in_rbi_290_above]
+      - id: no_nominee_above_heirship
+        kind: submit
+        actor: family
+        text: Claim with Annex VI, the indemnity, the no-objection letters and a legal heir certificate or a sworn Annex IX affidavit; the bank may also ask for a surety.
+        when: "@above and above_basis = heirship_document"
+        documents: [annex_vi, death_cert, death_cert_certified_abroad, claimant_ovd, annex_vii, annex_viii]
+        one_of: [[legal_heir_cert, annex_ix_affidavit]]
+        clocks: [settle_15]
+        after: [choose_above_basis]
+        cites: [in_rbi_290_above, in_rbi_annex_vii_surety_note]
+      - id: will_handoff
+        kind: handoff
+        actor: professional
+        text: There is a will, so the bank settles on probate or letters of administration, or may act on an undisputed will at its discretion. A lawyer should prepare this.
+        when: nominee_or_survivor = no and has_will = yes and dispute = no
+        cites: [in_rbi_291_will, in_rbi_292_will_discretion]
+      - id: dispute_handoff
+        kind: handoff
+        actor: professional
+        text: The heirs disagree, so the bank will settle only on probate, letters of administration, a succession certificate or a court order. A lawyer should take this on.
+        when: nominee_or_survivor = no and dispute = yes
+        cites: [in_rbi_293_dispute]
+      - id: acknowledge
+        kind: wait
+        actor: institution
+        text: The bank acknowledges the claim at any branch, lists anything missing, and confirms in writing once it has every paper. The 15-day clock starts then.
+        clocks: [settle_15]
+        cites: [in_rbi_317_acknowledge]
+      - id: settle
+        kind: wait
+        actor: institution
+        text: The bank pays within 15 calendar days of having every paper.
+        clocks: [settle_15]
+        after: [acknowledge]
+        cites: [in_rbi_319_15_days]
+      - id: chase_late
+        kind: follow_up
+        actor: family
+        text: If the bank is late, ask in writing for the reasons and for compensation of at least the Bank Rate plus 4% a year for the days of delay.
+        clocks: [settle_15]
+        after: [settle]
+        cites: [in_rbi_321_reasons, in_rbi_321_compensation]
+      - id: fd_no_penalty
+        kind: info
+        actor: agent
+        text: A fixed deposit can be closed early on the depositor's death without any penalty.
+        when: has_term_deposit = yes
+        cites: [in_rbi_296_fd_premature]
+      - id: credits_after
+        kind: info
+        actor: agent
+        text: After the account is settled, any money that arrives for him is sent back to the sender, and the bank tells you.
+        cites: [in_rbi_295_credit_after]
+    compiled_from: [in_rbi_threshold, in_rbi_ucb_threshold, in_rbi_284, in_rbi_286_no_legal_docs, in_rbi_287_simplified,
+                    in_rbi_288_claim_form, in_rbi_289_no_surety, in_rbi_290_above, in_rbi_291_will, in_rbi_293_dispute,
+                    in_rbi_317_acknowledge, in_rbi_319_15_days, in_rbi_321_compensation, in_rbi_324_foreign_death]
+
+  # ===============================================================================================
+  - key: IN/locker
+    title: A bank locker (RBI rules)
+    jurisdiction: IN
+    institution_kind: bank
+    holding_kinds: [locker]
+    level: gold
+    verified_on: 2026-10-14
+    conditions:
+      simplified: locker_nominee = no and has_will = no and dispute = no
+    variables:
+      - name: locker_nominee
+        type: tri
+        question: Was a nominee registered for the locker, or was it hired jointly with someone who is still alive?
+        derive: holding_nominee
+        cites: [in_rbi_299_locker_nominee, in_rbi_309_locker_simplified]
+      - name: has_will
+        type: tri
+        question: Did he leave a will?
+        derive: situation_will
+        cites: [in_rbi_310_locker_will]
+      - name: dispute
+        type: tri
+        question: Does anyone in the family disagree about who should receive what is in the locker?
+        derive: situation_dispute
+        cites: [in_rbi_312_locker_dispute]
+      - name: non_claimant_heirs
+        type: number
+        question: Apart from the person claiming, how many other legal heirs are there?
+        derive: heirs_not_claiming
+        cites: [in_rbi_309_locker_disclaimer]
+      - name: heirship_proof
+        type: choice
+        options: [legal_heir_cert, annex_ix_affidavit]
+        question: Do you already have a legal heir certificate, or should someone independent who knows the family swear an affidavit before a notary instead?
+        derive: paper_choice:legal_heir_cert
+        cites: [in_rbi_309_locker_affidavit]
+      - name: death_abroad
+        type: tri
+        derive: death_outside:IN
+        question: Did he die outside India?
+        cites: [in_rbi_324_foreign_death]
+    documents:
+      - id: annex_v
+        name: Claim form for a locker with a nominee (Annex V)
+        form_key: IN/rbi_annex_v
+        signed_by: [nominee]
+        cites: [in_rbi_303_locker_docs]
+      - id: annex_vi
+        name: Claim form for a locker without a nominee (Annex VI)
+        form_key: IN/rbi_annex_vi
+        signed_by: [claimant]
+        cites: [in_rbi_309_locker_docs]
+      - id: annex_viii
+        name: Letter of disclaimer or no objection from heirs who are not claiming (Annex VIII)
+        form_key: IN/rbi_annex_viii
+        certification: [stamp_paper]
+        signed_by: [other_heirs]
+        when: non_claimant_heirs > 0
+        cites: [in_rbi_309_locker_disclaimer, in_rbi_annex_viii_stamped]
+      - id: annex_ix_affidavit
+        name: Affidavit about the legal heirs by an independent person, sworn before a notary (Annex IX)
+        form_key: IN/rbi_annex_ix
+        certification: [stamp_paper, notarised]
+        signed_by: [independent_person]
+        cites: [in_rbi_309_locker_affidavit, in_rbi_annex_ix_stamped]
+      - id: legal_heir_cert
+        name: Legal heir certificate from the revenue authority
+        acquire_plan: IN/legal_heir_certificate
+        cites: [in_rbi_309_locker_affidavit]
+      - id: annex_xii
+        name: Bond of indemnity recording the valuation of the contents (Annex XII)
+        signed_by: [claimant]
+        note: Signed after an independent valuer has valued the contents at the inventory.
+        cites: [in_rbi_313_locker_valuation]
+      - id: death_cert
+        name: Death certificate
+        when: death_abroad = no
+        cites: [in_rbi_303_locker_docs]
+      - id: death_cert_certified_abroad
+        name: Foreign death certificate, certified in the country that issued it
+        certification: [apostille]
+        acquire_plan: IN/foreign_death_certificate
+        when: death_abroad = yes
+        cites: [in_rbi_324_foreign_death, in_rbi_324_apostille]
+      - id: claimant_ovd
+        name: The claimant's identity and address document (an officially valid document)
+        cites: [in_rbi_303_locker_docs, in_rbi_288_ovd]
+    clocks:
+      - id: locker_15
+        short: fixes the locker inventory date
+        label: The bank fixes the inventory date within 15 days of having every paper
+        owner: institution
+        starts_on: complete_set_confirmed
+        length: 15
+        unit: calendar_days
+        compensation: fixed_per_day
+        compensation_params: {per_day: "5000"}
+        cites: [in_rbi_320_locker_15_days, in_rbi_322_locker_compensation]
+    steps:
+      - id: foreign_death_cert
+        kind: acquire
+        actor: family
+        text: Get the foreign death certificate certified in the country that issued it.
+        when: death_abroad = yes
+        documents: [death_cert_certified_abroad]
+        cites: [in_rbi_324_foreign_death, in_rbi_324_apostille]
+      - id: nominee_route
+        kind: submit
+        actor: family
+        text: The nominee claims access with the Annex V form, the death certificate and their identity document.
+        when: locker_nominee = yes
+        documents: [annex_v, death_cert, death_cert_certified_abroad, claimant_ovd]
+        must_not_be_asked: [Succession certificate, Letter of administration, Probate of the will, Bond of indemnity]
+        clocks: [locker_15]
+        cites: [in_rbi_299_locker_nominee, in_rbi_303_locker_docs, in_rbi_306_locker_no_legal]
+      - id: simplified_route
+        kind: submit
+        actor: family
+        text: The heirs claim with Annex VI, the death certificate, their identity documents, Annex VIII from heirs not claiming, and a legal heir certificate or a sworn Annex IX affidavit.
+        when: "@simplified"
+        documents: [annex_vi, death_cert, death_cert_certified_abroad, claimant_ovd, annex_viii]
+        one_of: [[legal_heir_cert, annex_ix_affidavit]]
+        must_not_be_asked: [Succession certificate, Letter of administration, Court order]
+        clocks: [locker_15]
+        cites: [in_rbi_309_locker_simplified, in_rbi_309_locker_docs, in_rbi_309_locker_disclaimer, in_rbi_309_locker_affidavit]
+      - id: will_handoff
+        kind: handoff
+        actor: professional
+        text: There is a will, so the bank releases the locker on probate or letters of administration, or may act on an undisputed will. A lawyer should prepare this.
+        when: locker_nominee = no and has_will = yes and dispute = no
+        cites: [in_rbi_310_locker_will]
+      - id: dispute_handoff
+        kind: handoff
+        actor: professional
+        text: The heirs disagree, so the bank needs probate, a succession certificate, letters of administration or a court order.
+        when: dispute = yes
+        cites: [in_rbi_312_locker_dispute]
+      - id: fix_inventory_date
+        kind: wait
+        actor: institution
+        text: Within 15 days of having every paper, the bank writes to fix a date to list the contents in front of the claimants and two independent witnesses.
+        clocks: [locker_15]
+        cites: [in_rbi_320_locker_15_days, in_rbi_305_inventory]
+      - id: valuation_indemnity
+        kind: sign
+        actor: family
+        text: An independent valuer values the contents; the claimants sign the Annex XII indemnity recording the value and can then take the contents.
+        when: "@simplified"
+        documents: [annex_xii]
+        after: [fix_inventory_date]
+        cites: [in_rbi_313_locker_valuation]
+      - id: chase_late
+        kind: follow_up
+        actor: family
+        text: If the bank misses the 15 days, it owes ₹5,000 for each day of delay.
+        clocks: [locker_15]
+        after: [fix_inventory_date]
+        cites: [in_rbi_322_locker_compensation]
+    compiled_from: [in_rbi_299_locker_nominee, in_rbi_303_locker_docs, in_rbi_306_locker_no_legal, in_rbi_309_locker_simplified,
+                    in_rbi_310_locker_will, in_rbi_312_locker_dispute, in_rbi_320_locker_15_days, in_rbi_322_locker_compensation]
+
+  # ===============================================================================================
+  - key: IN/demat_transmission
+    title: Shares in a demat account (SEBI transmission framework)
+    jurisdiction: IN
+    institution_kind: depository
+    holding_kinds: [demat]
+    level: gold
+    verified_on: 2026-10-14
+    conditions:
+      sole: joint_holder_survives = no and has_nomination = no and dispute = no
+      qtp: value <= 30000 and claimant_immediate_relative = yes
+    variables:
+      - name: joint_holder_survives
+        type: tri
+        question: Was the demat account held jointly with someone who is still alive?
+        derive: holding_joint_survivor
+        cites: [in_sebi_joint_holder]
+      - name: has_nomination
+        type: tri
+        question: Was a nominee registered on the demat account?
+        derive: holding_nominee
+        cites: [in_sebi_nominee_docs]
+      - name: value
+        type: money
+        unit: INR
+        question: Roughly what were the shares worth at the last closing price?
+        derive: claim_amount
+        cites: [in_sebi_threshold_demat, in_sebi_value_close, in_sebi_threshold_basis_demat]
+      - name: claimant_immediate_relative
+        type: tri
+        question: Is the person claiming his parent, spouse, child or parent-in-law?
+        derive: claimant_relationship_in:spouse,wife,husband,son,daughter,mother,father,mother_in_law,father_in_law
+        cites: [in_sebi_qtp_relatives]
+      - name: dispute
+        type: tri
+        question: Does anyone in the family disagree about who should receive the shares?
+        derive: situation_dispute
+        cites: [in_sebi_dispute]
+      - name: has_court_document
+        type: tri
+        question: Do you have a succession certificate, probate or letters of administration?
+        derive: paper_present:succession_certificate,probate,letters_of_administration
+        cites: [in_sebi_court_docs]
+      - name: non_claimant_heirs
+        type: number
+        question: Apart from the person claiming, how many other legal heirs are there?
+        derive: heirs_not_claiming
+        cites: [in_sebi_simplified_affidavit]
+      - name: heirs_agreement
+        type: choice
+        options: [annexure_5, family_settlement_deed]
+        question: Will the heirs sign a joint affidavit, or do you already have a family settlement deed?
+        cites: [in_sebi_family_settlement]
+      - name: death_abroad
+        type: tri
+        derive: death_outside:IN
+        question: Did he die outside India?
+        cites: [in_sebi_foreign_death]
+    documents:
+      - id: annexure_2
+        name: Transmission request form-cum-undertaking on plain paper (Annexure-2)
+        form_key: IN/sebi_annexure_2
+        signed_by: [claimant]
+        cites: [in_sebi_qtp]
+      - id: annexure_3
+        name: Transmission request form (Annexure-3)
+        form_key: IN/sebi_annexure_3
+        signed_by: [claimant]
+        cites: [in_sebi_request_form, in_sebi_nominee_docs]
+      - id: annexure_4
+        name: Notarised indemnity bond (Annexure-4)
+        form_key: IN/sebi_annexure_4
+        certification: [stamp_paper, notarised]
+        signed_by: [claimant]
+        when: has_court_document = no
+        cites: [in_sebi_simplified_indemnity, in_sebi_stamp_paper, in_sebi_court_docs]
+      - id: annexure_5
+        name: Notarised affidavit-cum-no-objection from all legal heirs (Annexure-5)
+        form_key: IN/sebi_annexure_5
+        certification: [stamp_paper, notarised]
+        signed_by: [claimant, other_heirs]
+        when: has_court_document = no
+        cites: [in_sebi_simplified_affidavit, in_sebi_stamp_paper, in_sebi_court_docs]
+      - id: family_settlement_deed
+        name: Family settlement deed signed by all heirs and attested by a notary, gazetted officer or court
+        certification: [notarised]
+        signed_by: [claimant, other_heirs]
+        cites: [in_sebi_family_settlement]
+      - id: cml_claimant
+        name: Latest client master list of the claimant's own demat account
+        cites: [in_sebi_common_docs, in_sebi_nominee_docs]
+      - id: death_cert
+        name: Verifiable death certificate (original, attested copy, or one with a QR code)
+        when: death_abroad = no
+        cites: [in_sebi_common_docs, in_sebi_verifiable_death_cert]
+      - id: death_cert_certified_abroad
+        name: Foreign death certificate, certified in the country that issued it, with an English translation if needed
+        certification: [apostille]
+        acquire_plan: IN/foreign_death_certificate
+        when: death_abroad = yes
+        cites: [in_sebi_foreign_death, in_sebi_translation]
+      - id: relationship_proof
+        name: A document showing the claimant's relationship to him
+        cites: [in_sebi_qtp]
+      - id: legal_heir_cert
+        name: Legal heirship certificate from a revenue authority not below a Tehsildar
+        acquire_plan: IN/legal_heir_certificate
+        cites: [in_sebi_above_threshold]
+      - id: succession_cert
+        name: Succession certificate, letters of administration or court decree
+        cites: [in_sebi_above_threshold]
+      - id: will_copy
+        name: Copy of the will, with a notarised indemnity from those receiving the shares
+        cites: [in_sebi_above_threshold]
+    clocks:
+      - id: transmit_21
+        short: moves the shares
+        label: The transmission is done within 21 days of every paper being received
+        owner: institution
+        starts_on: complete_set_confirmed
+        length: 21
+        unit: calendar_days
+        notes: SEBI states no compensation formula; a late entity must give reasons in writing and SEBI may act.
+        cites: [in_sebi_21_days, in_sebi_reasons]
+    steps:
+      - id: foreign_death_cert
+        kind: acquire
+        actor: family
+        text: Get the foreign death certificate certified in the country that issued it, with a self-certified English translation if it is not in English.
+        when: death_abroad = yes
+        documents: [death_cert_certified_abroad]
+        cites: [in_sebi_foreign_death, in_sebi_translation]
+      - id: joint_holder_route
+        kind: submit
+        actor: family
+        text: The surviving joint holder sends only the death certificate.
+        when: joint_holder_survives = yes
+        documents: [death_cert, death_cert_certified_abroad]
+        must_not_be_asked: [KYC documents, Indemnity, Undertaking]
+        clocks: [transmit_21]
+        cites: [in_sebi_joint_holder]
+      - id: nominee_route
+        kind: submit
+        actor: family
+        text: The nominee sends the Annexure-3 request, their client master list and the death certificate.
+        when: joint_holder_survives = no and has_nomination = yes
+        documents: [annexure_3, cml_claimant, death_cert, death_cert_certified_abroad]
+        clocks: [transmit_21]
+        cites: [in_sebi_nominee_docs, in_sebi_nominee_trustee]
+      - id: qtp_route
+        kind: submit
+        actor: family
+        text: For a small holding claimed by a close relative, send the Annexure-2 form-cum-undertaking on plain paper with proof of relationship.
+        when: "@sole and @qtp"
+        documents: [annexure_2, cml_claimant, death_cert, death_cert_certified_abroad, relationship_proof]
+        clocks: [transmit_21]
+        cites: [in_sebi_qtp, in_sebi_qtp_relatives, in_sebi_threshold_demat]
+      - id: simplified_route
+        kind: submit
+        actor: family
+        text: Send the Annexure-3 request, your client master list, the death certificate, the Annexure-4 indemnity and the Annexure-5 affidavit from all heirs (or a family settlement deed).
+        when: "@sole and value <= 3000000 and not @qtp"
+        documents: [annexure_3, cml_claimant, death_cert, death_cert_certified_abroad, annexure_4]
+        one_of: [[annexure_5, family_settlement_deed]]
+        clocks: [transmit_21]
+        cites: [in_sebi_request_form, in_sebi_common_docs, in_sebi_simplified_indemnity, in_sebi_simplified_affidavit,
+                in_sebi_family_settlement, in_sebi_threshold_demat, in_sebi_court_docs]
+      - id: above_route
+        kind: submit
+        actor: family
+        text: Above ₹30 lakh, add the heirs' Annexure-5 affidavit and a will with an indemnity, a legal heirship certificate with an indemnity, or a court document.
+        when: "@sole and value > 3000000"
+        documents: [annexure_3, cml_claimant, death_cert, death_cert_certified_abroad, annexure_5]
+        one_of: [[legal_heir_cert, succession_cert, will_copy]]
+        clocks: [transmit_21]
+        cites: [in_sebi_above_threshold, in_sebi_threshold_demat]
+      - id: dispute_handoff
+        kind: handoff
+        actor: professional
+        text: The heirs disagree. The SEBI framework does not apply to disputes, so this has to be settled through the courts.
+        when: dispute = yes
+        cites: [in_sebi_dispute]
+      - id: stamp_paper_info
+        kind: info
+        actor: agent
+        text: The indemnity and the affidavit are signed on non-judicial stamp paper of the value your state requires, before a notary.
+        when: "@sole and not @qtp"
+        cites: [in_sebi_stamp_paper]
+      - id: acknowledge
+        kind: wait
+        actor: institution
+        text: The depository participant or registrar acknowledges the claim, lists anything missing, and confirms when it has every paper.
+        clocks: [transmit_21]
+        cites: [in_sebi_acknowledge, in_sebi_confirm_all]
+      - id: transmit
+        kind: wait
+        actor: institution
+        text: The shares are moved to the claimant's demat account within 21 days of every paper being received.
+        clocks: [transmit_21]
+        after: [acknowledge]
+        cites: [in_sebi_21_days]
+      - id: chase_late
+        kind: follow_up
+        actor: family
+        text: If it takes longer than 21 days or is refused, ask for the reasons in writing.
+        clocks: [transmit_21]
+        after: [transmit]
+        cites: [in_sebi_reasons]
+    compiled_from: [in_sebi_threshold_demat, in_sebi_common_docs, in_sebi_request_form, in_sebi_simplified_indemnity,
+                    in_sebi_simplified_affidavit, in_sebi_stamp_paper, in_sebi_21_days, in_sebi_qtp, in_sebi_dispute]
+
+  # ===============================================================================================
+  - key: IN/physical_shares
+    title: Shares held as paper certificates (SEBI transmission framework)
+    jurisdiction: IN
+    institution_kind: company
+    holding_kinds: [shares_physical]
+    level: gold
+    verified_on: 2026-10-14
+    conditions:
+      sole: joint_holder_survives = no and has_nomination = no and dispute = no
+      qtp: value <= 10000 and claimant_immediate_relative = yes
+    variables:
+      - name: joint_holder_survives
+        type: tri
+        question: Were the share certificates held jointly with someone who is still alive?
+        derive: holding_joint_survivor
+        cites: [in_sebi_joint_holder]
+      - name: has_nomination
+        type: tri
+        question: Was a nominee registered with the company for these shares?
+        derive: holding_nominee
+        cites: [in_sebi_nominee_docs]
+      - name: value
+        type: money
+        unit: INR
+        question: Roughly what are the shares worth at the last closing price?
+        derive: claim_amount
+        cites: [in_sebi_threshold_physical, in_sebi_value_close, in_sebi_threshold_basis_physical]
+      - name: claimant_immediate_relative
+        type: tri
+        question: Is the person claiming his parent, spouse, child or parent-in-law?
+        derive: claimant_relationship_in:spouse,wife,husband,son,daughter,mother,father,mother_in_law,father_in_law
+        cites: [in_sebi_qtp_relatives]
+      - name: dispute
+        type: tri
+        question: Does anyone in the family disagree about who should receive the shares?
+        derive: situation_dispute
+        cites: [in_sebi_dispute]
+      - name: has_court_document
+        type: tri
+        question: Do you have a succession certificate, probate or letters of administration?
+        derive: paper_present:succession_certificate,probate,letters_of_administration
+        cites: [in_sebi_court_docs]
+      - name: has_original_certificates
+        type: tri
+        question: Do you have the original share certificates?
+        derive: paper_present:share_certificate
+        cites: [in_sebi_physical_original]
+      - name: claimant_has_demat
+        type: tri
+        question: Does the person claiming have a demat account of their own?
+        cites: [in_sebi_physical_to_demat]
+      - name: death_abroad
+        type: tri
+        derive: death_outside:IN
+        question: Did he die outside India?
+        cites: [in_sebi_foreign_death]
+    documents:
+      - id: original_certificates
+        name: The original share certificates
+        certification: [original]
+        cites: [in_sebi_physical_original]
+      - id: annexure_2
+        name: Transmission request form-cum-undertaking on plain paper (Annexure-2)
+        form_key: IN/sebi_annexure_2
+        signed_by: [claimant]
+        cites: [in_sebi_qtp]
+      - id: annexure_3
+        name: Transmission request form (Annexure-3)
+        form_key: IN/sebi_annexure_3
+        signed_by: [claimant]
+        cites: [in_sebi_request_form]
+      - id: annexure_4
+        name: Notarised indemnity bond (Annexure-4)
+        form_key: IN/sebi_annexure_4
+        certification: [stamp_paper, notarised]
+        signed_by: [claimant]
+        when: has_court_document = no
+        cites: [in_sebi_simplified_indemnity, in_sebi_stamp_paper]
+      - id: annexure_5
+        name: Notarised affidavit-cum-no-objection from all legal heirs (Annexure-5)
+        form_key: IN/sebi_annexure_5
+        certification: [stamp_paper, notarised]
+        signed_by: [claimant, other_heirs]
+        when: has_court_document = no
+        cites: [in_sebi_simplified_affidavit, in_sebi_stamp_paper]
+      - id: family_settlement_deed
+        name: Family settlement deed signed by all heirs and attested by a notary, gazetted officer or court
+        certification: [notarised]
+        cites: [in_sebi_family_settlement]
+      - id: cml_claimant
+        name: Latest client master list of the claimant's own demat account
+        cites: [in_sebi_common_docs, in_sebi_physical_to_demat]
+      - id: death_cert
+        name: Verifiable death certificate
+        when: death_abroad = no
+        cites: [in_sebi_common_docs, in_sebi_verifiable_death_cert]
+      - id: death_cert_certified_abroad
+        name: Foreign death certificate, certified in the country that issued it
+        certification: [apostille]
+        acquire_plan: IN/foreign_death_certificate
+        when: death_abroad = yes
+        cites: [in_sebi_foreign_death]
+      - id: relationship_proof
+        name: A document showing the claimant's relationship to him
+        cites: [in_sebi_qtp]
+      - id: legal_heir_cert
+        name: Legal heirship certificate from a revenue authority not below a Tehsildar
+        acquire_plan: IN/legal_heir_certificate
+        cites: [in_sebi_above_threshold]
+      - id: succession_cert
+        name: Succession certificate, letters of administration or court decree
+        cites: [in_sebi_above_threshold]
+    clocks:
+      - id: transmit_21
+        short: moves the shares
+        label: The transmission is done within 21 days of every paper being received
+        owner: institution
+        starts_on: complete_set_confirmed
+        length: 21
+        unit: calendar_days
+        cites: [in_sebi_21_days, in_sebi_reasons]
+    steps:
+      - id: open_demat
+        kind: acquire
+        actor: family
+        text: The claimant needs a demat account of their own, because paper shares are converted and credited to it.
+        when: claimant_has_demat = no
+        cites: [in_sebi_physical_to_demat]
+      - id: joint_holder_route
+        kind: submit
+        actor: family
+        text: The surviving joint holder sends only the death certificate.
+        when: joint_holder_survives = yes
+        documents: [death_cert, death_cert_certified_abroad]
+        must_not_be_asked: [KYC documents, Indemnity, Undertaking]
+        clocks: [transmit_21]
+        cites: [in_sebi_joint_holder]
+      - id: nominee_route
+        kind: submit
+        actor: family
+        text: The nominee sends the Annexure-3 request, their client master list, the death certificate and the original certificates.
+        when: joint_holder_survives = no and has_nomination = yes
+        documents: [annexure_3, cml_claimant, death_cert, death_cert_certified_abroad, original_certificates]
+        clocks: [transmit_21]
+        cites: [in_sebi_nominee_docs, in_sebi_physical_original]
+      - id: qtp_route
+        kind: submit
+        actor: family
+        text: For a holding worth up to ₹10,000 claimed by a close relative, send Annexure-2 on plain paper with proof of relationship and the original certificates.
+        when: "@sole and @qtp"
+        documents: [annexure_2, cml_claimant, death_cert, death_cert_certified_abroad, relationship_proof, original_certificates]
+        clocks: [transmit_21]
+        cites: [in_sebi_qtp, in_sebi_qtp_relatives, in_sebi_threshold_physical]
+      - id: simplified_route
+        kind: submit
+        actor: family
+        text: Send the Annexure-3 request, the original certificates, your client master list, the death certificate, the Annexure-4 indemnity and the heirs' Annexure-5 affidavit.
+        when: "@sole and value <= 1000000 and not @qtp"
+        documents: [annexure_3, cml_claimant, death_cert, death_cert_certified_abroad, original_certificates, annexure_4]
+        one_of: [[annexure_5, family_settlement_deed]]
+        clocks: [transmit_21]
+        cites: [in_sebi_request_form, in_sebi_simplified_indemnity, in_sebi_simplified_affidavit, in_sebi_threshold_physical,
+                in_sebi_physical_original]
+      - id: above_route
+        kind: submit
+        actor: family
+        text: Above ₹10 lakh (or a higher limit the company sets), add the heirs' Annexure-5 affidavit and a legal heirship certificate with an indemnity, or a court document.
+        when: "@sole and value > 1000000"
+        documents: [annexure_3, cml_claimant, death_cert, death_cert_certified_abroad, original_certificates, annexure_5]
+        one_of: [[legal_heir_cert, succession_cert]]
+        clocks: [transmit_21]
+        cites: [in_sebi_above_threshold, in_sebi_physical_enhance]
+      - id: dispute_handoff
+        kind: handoff
+        actor: professional
+        text: The heirs disagree. The SEBI framework does not apply to disputes, so this has to be settled through the courts.
+        when: dispute = yes
+        cites: [in_sebi_dispute]
+      - id: find_certificates
+        kind: ask
+        actor: family
+        text: Look for the original share certificates; the claim needs them.
+        when: has_original_certificates = no
+        cites: [in_sebi_physical_original]
+      - id: transmit
+        kind: wait
+        actor: institution
+        text: The registrar converts the shares and credits them to the claimant's demat account within 21 days of every paper being received.
+        clocks: [transmit_21]
+        cites: [in_sebi_21_days, in_sebi_physical_to_demat, in_sebi_confirm_all]
+      - id: chase_late
+        kind: follow_up
+        actor: family
+        text: If it takes longer than 21 days or is refused, ask for the reasons in writing.
+        clocks: [transmit_21]
+        after: [transmit]
+        cites: [in_sebi_reasons]
+    compiled_from: [in_sebi_threshold_physical, in_sebi_physical_original, in_sebi_physical_to_demat, in_sebi_21_days]
+
+  # ===============================================================================================
+  - key: IN/mutual_fund
+    title: Mutual fund units (SEBI transmission framework)
+    jurisdiction: IN
+    institution_kind: fund_house
+    holding_kinds: [mutual_fund]
+    level: gold
+    verified_on: 2026-10-14
+    conditions:
+      sole: fund_known = yes and has_nomination = no and dispute = no
+      qtp: value <= 10000 and claimant_immediate_relative = yes
+    variables:
+      - name: fund_known
+        type: tri
+        question: Do you know which fund house the SIP was paid to?
+        derive: holding_institution_known
+        cites: [in_sebi_applies_amc]
+      - name: has_nomination
+        type: tri
+        question: Was a nominee registered for the fund?
+        derive: holding_nominee
+        cites: [in_sebi_nominee_docs]
+      - name: value
+        type: money
+        unit: INR
+        question: Roughly what are the units worth at the last NAV?
+        derive: claim_amount
+        cites: [in_sebi_value_nav, in_sebi_threshold_basis_physical]
+      - name: claimant_immediate_relative
+        type: tri
+        question: Is the person claiming his parent, spouse, child or parent-in-law?
+        derive: claimant_relationship_in:spouse,wife,husband,son,daughter,mother,father,mother_in_law,father_in_law
+        cites: [in_sebi_qtp_relatives]
+      - name: dispute
+        type: tri
+        question: Does anyone in the family disagree about who should receive the units?
+        derive: situation_dispute
+        cites: [in_sebi_dispute]
+      - name: has_court_document
+        type: tri
+        question: Do you have a succession certificate, probate or letters of administration?
+        derive: paper_present:succession_certificate,probate,letters_of_administration
+        cites: [in_sebi_court_docs]
+    documents:
+      - id: soa
+        name: Copy of the statement of account for the units
+        cites: [in_sebi_common_docs]
+      - id: annexure_2
+        name: Transmission request form-cum-undertaking on plain paper (Annexure-2)
+        form_key: IN/sebi_annexure_2
+        signed_by: [claimant]
+        cites: [in_sebi_qtp]
+      - id: annexure_3
+        name: Transmission request form (Annexure-3)
+        form_key: IN/sebi_annexure_3
+        signed_by: [claimant]
+        cites: [in_sebi_request_form, in_sebi_nominee_docs]
+      - id: annexure_4
+        name: Notarised indemnity bond (Annexure-4)
+        form_key: IN/sebi_annexure_4
+        certification: [stamp_paper, notarised]
+        signed_by: [claimant]
+        when: has_court_document = no
+        cites: [in_sebi_simplified_indemnity, in_sebi_stamp_paper]
+      - id: annexure_5
+        name: Notarised affidavit-cum-no-objection from all legal heirs (Annexure-5)
+        form_key: IN/sebi_annexure_5
+        certification: [stamp_paper, notarised]
+        signed_by: [claimant, other_heirs]
+        when: has_court_document = no
+        cites: [in_sebi_simplified_affidavit, in_sebi_stamp_paper]
+      - id: death_cert
+        name: Verifiable death certificate
+        cites: [in_sebi_common_docs, in_sebi_verifiable_death_cert]
+      - id: relationship_proof
+        name: A document showing the claimant's relationship to him
+        cites: [in_sebi_qtp]
+      - id: legal_heir_cert
+        name: Legal heirship certificate from a revenue authority not below a Tehsildar
+        acquire_plan: IN/legal_heir_certificate
+        cites: [in_sebi_above_threshold]
+      - id: succession_cert
+        name: Succession certificate, letters of administration or court decree
+        cites: [in_sebi_above_threshold]
+    clocks:
+      - id: transmit_21
+        short: moves the units
+        label: The units are transmitted within 21 days of every paper being received
+        owner: institution
+        starts_on: complete_set_confirmed
+        length: 21
+        unit: calendar_days
+        cites: [in_sebi_21_days, in_sebi_reasons]
+    steps:
+      - id: find_fund
+        kind: ask
+        actor: family
+        text: Find out which fund house received the SIP, for example from a consolidated account statement.
+        when: fund_known = no
+        cites: [in_sebi_applies_amc]
+      - id: nominee_route
+        kind: submit
+        actor: family
+        text: The nominee sends the Annexure-3 request, the death certificate and a copy of the statement of account to the fund house.
+        when: fund_known = yes and has_nomination = yes
+        documents: [annexure_3, death_cert, soa]
+        clocks: [transmit_21]
+        cites: [in_sebi_nominee_docs, in_sebi_applies_amc]
+      - id: qtp_route
+        kind: submit
+        actor: family
+        text: For units worth up to ₹10,000 claimed by a close relative, send Annexure-2 on plain paper with proof of relationship.
+        when: "@sole and @qtp"
+        documents: [annexure_2, death_cert, soa, relationship_proof]
+        clocks: [transmit_21]
+        cites: [in_sebi_qtp, in_sebi_qtp_relatives, in_sebi_threshold_physical, in_sebi_threshold_basis_physical]
+      - id: simplified_route
+        kind: submit
+        actor: family
+        text: Send the Annexure-3 request, the death certificate, the statement of account, the Annexure-4 indemnity and the heirs' Annexure-5 affidavit to the fund house.
+        when: "@sole and value <= 1000000 and not @qtp"
+        documents: [annexure_3, death_cert, soa, annexure_4, annexure_5]
+        clocks: [transmit_21]
+        cites: [in_sebi_request_form, in_sebi_simplified_indemnity, in_sebi_simplified_affidavit,
+                in_sebi_threshold_physical, in_sebi_threshold_basis_physical]
+      - id: above_route
+        kind: submit
+        actor: family
+        text: Above ₹10 lakh in one fund house, add the heirs' Annexure-5 affidavit and a legal heirship certificate with an indemnity, or a court document.
+        when: "@sole and value > 1000000"
+        documents: [annexure_3, death_cert, soa, annexure_5]
+        one_of: [[legal_heir_cert, succession_cert]]
+        clocks: [transmit_21]
+        cites: [in_sebi_above_threshold, in_sebi_threshold_basis_physical]
+      - id: dispute_handoff
+        kind: handoff
+        actor: professional
+        text: The heirs disagree. The SEBI framework does not apply to disputes, so this has to be settled through the courts.
+        when: dispute = yes
+        cites: [in_sebi_dispute]
+      - id: transmit
+        kind: wait
+        actor: institution
+        text: The fund house transmits the units within 21 days of every paper being received.
+        clocks: [transmit_21]
+        cites: [in_sebi_21_days, in_sebi_confirm_all]
+    compiled_from: [in_sebi_applies_amc, in_sebi_value_nav, in_sebi_threshold_basis_physical, in_sebi_threshold_physical]
+
+  # ===============================================================================================
+  - key: IN/life_insurance_claim
+    title: A life insurance death claim (IRDAI rules)
+    jurisdiction: IN
+    institution_kind: insurer
+    holding_kinds: [life_policy]
+    level: gold
+    verified_on: 2026-10-14
+    variables:
+      - name: investigation
+        type: tri
+        question: Has the insurer said it is investigating the claim?
+        derive: claim_flag:investigation
+        cites: [in_irdai_15_days, in_irdai_45_days]
+      - name: nominee_named
+        type: tri
+        question: Is a nominee named on the policy?
+        derive: holding_nominee
+        cites: [in_bsl_documents]
+    documents:
+      - id: claim_form
+        name: The insurer's death claim form
+        signed_by: [nominee]
+        cites: [in_bsl_documents]
+      - id: death_cert
+        name: Death certificate
+        cites: [in_bsl_documents]
+      - id: policy_document
+        name: The policy document
+        cites: [in_bsl_documents]
+      - id: nominee_id
+        name: The nominee's identity proof
+        cites: [in_bsl_documents]
+      - id: cancelled_cheque
+        name: A cancelled cheque for the account to be paid into
+        cites: [in_bsl_documents]
+    clocks:
+      - id: settle_15
+        short: decides the policy claim
+        label: The insurer settles within 15 days of being told of the claim
+        owner: institution
+        starts_on: claim_intimated
+        length: 15
+        unit: calendar_days
+        compensation: rate_per_year_from_start
+        compensation_params: {base_rate: in_bank_rate, base_rate_on: clock_start, spread_pct: "2"}
+        notes: Once late, interest at the bank rate plus 2% runs from the date of intimation till payment. The circular does not say on which day the bank rate is taken; the tracker uses the rate on the day of intimation and says so.
+        when: investigation != yes
+        cites: [in_irdai_15_days, in_irdai_interest]
+      - id: settle_45
+        short: decides the policy claim
+        label: With an investigation, the insurer settles within 45 days of being told
+        owner: institution
+        starts_on: claim_intimated
+        length: 45
+        unit: calendar_days
+        compensation: rate_per_year_from_start
+        compensation_params: {base_rate: in_bank_rate, base_rate_on: clock_start, spread_pct: "2"}
+        when: investigation = yes
+        cites: [in_irdai_45_days, in_irdai_interest]
+    steps:
+      - id: claim
+        kind: submit
+        actor: family
+        text: The nominee sends the claim form, the death certificate, the policy, their identity proof and a cancelled cheque.
+        documents: [claim_form, death_cert, policy_document, nominee_id, cancelled_cheque]
+        clocks: [settle_15]
+        cites: [in_bsl_documents, in_irdai_15_days]
+      - id: no_rejection_for_delay
+        kind: info
+        actor: agent
+        text: The insurer may not reject or close the claim because papers or the intimation came late.
+        cites: [in_irdai_no_rejection_delay]
+      - id: decision
+        kind: wait
+        actor: institution
+        text: The insurer settles within 15 days of being told, or 45 days if the claim needs investigating.
+        clocks: [settle_15, settle_45]
+        after: [claim]
+        cites: [in_irdai_15_days, in_irdai_45_days]
+      - id: chase_late
+        kind: follow_up
+        actor: family
+        text: If the insurer is late, it owes interest at the bank rate plus 2% from the day it was told until it pays.
+        clocks: [settle_15, settle_45]
+        after: [decision]
+        cites: [in_irdai_interest]
+    compiled_from: [in_irdai_15_days, in_irdai_45_days, in_irdai_interest, in_irdai_no_rejection_delay, in_bsl_documents]
+    notes: The documents come from Bharat Suraksha Life's own page; another insurer's list is researched when needed.
+
+  # ===============================================================================================
+  - key: IN/pmjjby_claim
+    title: PMJJBY life cover through a bank account
+    jurisdiction: IN
+    institution_kind: government
+    holding_kinds: [government_cover]
+    level: gold
+    verified_on: 2026-10-14
+    variables:
+      - name: member_paid_premium
+        type: tri
+        question: Was the PMJJBY premium of ₹436 debited from his account this year?
+        derive: lead_evidence:pmjjby
+        cites: [in_pmjjby_premium]
+      - name: within_age
+        type: tri
+        derive: pmjjby_age_ok
+        question: Did he join before 50 and was he under 55 when he died?
+        cites: [in_pmjjby_age]
+    documents:
+      - id: bank_claim_form
+        name: The PMJJBY claim form from the bank branch, signed by the nominee
+        signed_by: [nominee]
+        cites: [in_pmjjby_claim_30_days, in_sahyadri_pmjjby_branch]
+      - id: death_cert
+        name: Death certificate
+        cites: [in_pmjjby_claim_30_days]
+    clocks:
+      - id: bank_7
+        short: claim reaches the insurer
+        ends_on: forwarded_to_insurer
+        label: The bank sends the completed claim to the insurer within 7 days
+        owner: institution
+        starts_on: claim_lodged
+        length: 7
+        unit: calendar_days
+        cites: [in_pmjjby_bank_7_days]
+      - id: insurer_7
+        short: pays the claim
+        label: The insurer approves and pays within 7 days after that
+        owner: institution
+        starts_on: forwarded_to_insurer
+        length: 7
+        unit: calendar_days
+        cites: [in_pmjjby_insurer_7_days]
+      - id: claim_30
+        short: "claim, preferably by now"
+        ends_on: claim_lodged
+        label: Claim preferably within 30 days of the death
+        owner: family
+        starts_on: death
+        length: 30
+        unit: calendar_days
+        notes: A preference, not a cut-off; later claims are made the same way.
+        cites: [in_pmjjby_claim_30_days]
+    steps:
+      - id: claim
+        kind: submit
+        actor: family
+        text: The nominee claims ₹2 lakh at the bank branch where the account is held, preferably within 30 days of the death.
+        when: member_paid_premium = yes and within_age = yes
+        documents: [bank_claim_form, death_cert]
+        clocks: [claim_30, bank_7]
+        cites: [in_pmjjby_cover, in_pmjjby_claim_30_days, in_sahyadri_pmjjby_branch]
+      - id: not_covered
+        kind: handoff
+        actor: agent
+        text: The cover was not in force, so there is nothing to claim under PMJJBY.
+        when: member_paid_premium = no or within_age = no
+        cites: [in_pmjjby_premium, in_pmjjby_age]
+      - id: forward
+        kind: wait
+        actor: institution
+        text: The bank forwards the claim to the insurer within 7 days, and the insurer pays within 7 days after that.
+        clocks: [bank_7, insurer_7]
+        after: [claim]
+        cites: [in_pmjjby_bank_7_days, in_pmjjby_insurer_7_days]
+    compiled_from: [in_pmjjby_cover, in_pmjjby_premium, in_pmjjby_age, in_pmjjby_claim_30_days, in_pmjjby_bank_7_days,
+                    in_pmjjby_insurer_7_days]
+
+  # ===============================================================================================
+  - key: IN/pmsby
+    title: PMSBY accident cover through a bank account
+    jurisdiction: IN
+    institution_kind: government
+    holding_kinds: [accident_cover]
+    level: gold
+    verified_on: 2026-10-14
+    variables:
+      - name: accidental_death
+        type: tri
+        question: Was his death caused by an accident?
+        derive: situation_cause:accident
+        cites: [in_pmsby_accident_only]
+      - name: member_paid_premium
+        type: tri
+        question: Was the PMSBY premium of ₹20 debited from his account this year?
+        derive: lead_evidence:pmsby
+        cites: [in_pmsby_premium]
+    documents:
+      - id: bank_claim_form
+        name: The PMSBY claim form from the bank branch, signed by the nominee
+        signed_by: [nominee]
+        cites: [in_pmsby_accident_only, in_sahyadri_pmjjby_branch]
+      - id: death_cert
+        name: Death certificate
+        cites: [in_pmsby_accident_only]
+    clocks: []
+    steps:
+      - id: claim
+        kind: submit
+        actor: family
+        text: The nominee claims at the bank branch where the account is held.
+        when: accidental_death = yes and member_paid_premium = yes
+        documents: [bank_claim_form, death_cert]
+        cites: [in_pmsby_accident_only, in_sahyadri_pmjjby_branch]
+      - id: not_covered
+        kind: handoff
+        actor: agent
+        text: PMSBY pays only for accidental death or disability, so there is nothing to claim here.
+        when: accidental_death = no or member_paid_premium = no
+        cites: [in_pmsby_accident_only]
+    compiled_from: [in_pmsby_accident_only, in_pmsby_premium]
+
+  # ===============================================================================================
+  - key: IN/foreign_death_certificate
+    authority: in_certifying_authority_abroad
+    title: Getting a death certificate from abroad accepted in India
+    jurisdiction: IN
+    institution_kind: government
+    holding_kinds: []
+    level: gold
+    verified_on: 2026-10-14
+    variables:
+      - name: issuing_in_english
+        type: tri
+        derive: paper_language_is:death_certificate:en
+        question: Is the death certificate in English?
+        cites: [in_sebi_translation]
+      - name: certification_mode
+        type: choice
+        options: [apostille, indian_bank_branch, notary, consulate]
+        question: The certificate can be certified by apostille, by an Indian bank's branch in that country, by a notary or court there, or by the Indian embassy or consulate. Which is easiest for you?
+        cites: [in_rbi_324_foreign_death, in_rbi_324_apostille, in_rbi_324_overseas_branch, in_rbi_324_notary, in_rbi_324_consular]
+      - name: issuing_country
+        type: text
+        derive: death_country
+        cites: [in_rbi_324_foreign_death]
+    documents:
+      - id: foreign_death_cert
+        name: The death certificate issued abroad
+        certification: [original]
+        cites: [in_rbi_324_foreign_death]
+      - id: english_translation
+        name: A self-certified English translation
+        certification: [translation]
+        when: issuing_in_english = no
+        cites: [in_sebi_translation]
+    clocks: []
+    steps:
+      - id: choose_mode
+        kind: decide
+        actor: family
+        text: Choose how to certify the certificate in the country that issued it.
+        decides: certification_mode
+        cites: [in_rbi_324_foreign_death, in_sebi_foreign_death]
+      - id: apostille
+        kind: certify
+        actor: family
+        text: Get an apostille on the death certificate from the competent authority of the issuing country.
+        when: certification_mode = apostille
+        documents: [foreign_death_cert]
+        after: [choose_mode]
+        cites: [in_rbi_324_apostille]
+      - id: bank_branch
+        kind: certify
+        actor: family
+        text: Ask an authorised official at an Indian scheduled commercial bank's branch in that country to certify it.
+        when: certification_mode = indian_bank_branch
+        documents: [foreign_death_cert]
+        after: [choose_mode]
+        cites: [in_rbi_324_overseas_branch]
+      - id: notary
+        kind: certify
+        actor: family
+        text: Have it certified by a court magistrate, judge or notary public in that country.
+        when: certification_mode = notary
+        documents: [foreign_death_cert]
+        after: [choose_mode]
+        cites: [in_rbi_324_notary]
+      - id: consulate
+        kind: certify
+        actor: family
+        text: Have it consularised by the Indian embassy or consulate in that country.
+        when: certification_mode = consulate
+        documents: [foreign_death_cert]
+        after: [choose_mode]
+        cites: [in_rbi_324_consular]
+      - id: translate
+        kind: acquire
+        actor: family
+        text: Add a self-certified English translation, because the certificate is not in English.
+        when: issuing_in_english = no
+        documents: [english_translation]
+        cites: [in_sebi_translation]
+      - id: use_it
+        kind: submit
+        actor: family
+        text: Use the certified certificate in every Indian claim in place of an Indian death certificate.
+        documents: [foreign_death_cert, english_translation]
+        cites: [in_rbi_324_foreign_death, in_sebi_foreign_death]
+    compiled_from: [in_rbi_324_foreign_death, in_rbi_324_apostille, in_sebi_foreign_death, in_sebi_translation]
+
+  # ===============================================================================================
+  - key: IN/legal_heir_certificate
+    authority: in_revenue_office
+    title: A legal heir certificate from the revenue authority
+    jurisdiction: IN
+    institution_kind: government
+    holding_kinds: []
+    level: sourced
+    unverified: true
+    verified_on: 2026-10-14
+    variables:
+      - name: state
+        type: text
+        derive: deceased_state
+        cites: [in_sebi_lhc_authority]
+    documents:
+      - id: legal_heir_cert
+        name: Legal heir certificate
+        cites: [in_sebi_lhc_authority, in_rbi_288_heirship]
+    clocks: []
+    steps:
+      - id: ask_tehsil
+        kind: follow_up
+        actor: family
+        text: Ask the revenue office for the area (the Tehsildar or equivalent) how to apply for a legal heir certificate. How to apply differs by state and has not been researched yet.
+        cites: [in_sebi_lhc_authority]
+      - id: apply
+        kind: submit
+        actor: family
+        text: Apply to the revenue authority as it directs.
+        documents: [legal_heir_cert]
+        after: [ask_tehsil]
+    notes: SEBI says who may issue the certificate; how to apply varies by state and is researched on demand.
+
+  # ===============================================================================================
+  - key: IN/chit_fund@in_periyar_chits
+    title: A chit fund membership at Periyar Chits
+    jurisdiction: IN
+    institution_kind: chit_fund
+    holding_kinds: [chit_fund]
+    level: dual_verified
+    verified_on: 2026-10-14
+    variables:
+      - name: bid_taken
+        type: tri
+        question: Had he already received the chit amount by bidding?
+        cites: [in_periyar_chits_heirs, in_periyar_chits_after_bid]
+      - name: continue_chit
+        type: choice
+        options: [continue, refund]
+        question: Would the family like to keep paying into the chit, or take back what he paid in, less the foreman's commission?
+        cites: [in_periyar_chits_heirs]
+    documents:
+      - id: death_cert
+        name: Copy of the death certificate
+        cites: [in_periyar_chits_documents]
+      - id: chit_passbook
+        name: His chit passbook
+        cites: [in_periyar_chits_documents]
+      - id: request_letter
+        name: Letter telling Periyar Chits of the death and the family's choice
+        cites: [in_periyar_chits_heirs]
+    clocks: []
+    steps:
+      - id: choose
+        kind: decide
+        actor: family
+        text: Decide whether to continue the chit or receive what he paid in, less the foreman's commission.
+        when: bid_taken = no
+        decides: continue_chit
+        cites: [in_periyar_chits_heirs]
+      - id: tell_branch
+        kind: submit
+        actor: family
+        text: Tell the Periyar Chits branch of the death, with the certificate, his passbook and the family's choice.
+        when: bid_taken = no
+        documents: [death_cert, chit_passbook, request_letter]
+        after: [choose]
+        cites: [in_periyar_chits_heirs, in_periyar_chits_documents]
+      - id: statement_after_bid
+        kind: handoff
+        actor: institution
+        text: He had already received the chit amount, so the remaining subscriptions are recovered from the estate. Ask Periyar Chits for a statement.
+        when: bid_taken = yes
+        documents: [death_cert, chit_passbook]
+        cites: [in_periyar_chits_after_bid, in_periyar_chits_documents]
+    notes: From Periyar Chits' own page (a fictional institution in the demo).
+
+  # ===============================================================================================
+  - key: IN/family_pension
+    title: A family pension after a state government pensioner dies
+    jurisdiction: IN
+    institution_kind: pension
+    holding_kinds: [family_pension, pension]
+    level: draft
+    unverified: true
+    verified_on: 2026-10-14
+    variables:
+      - name: pension_credit_after_settlement
+        type: tri
+        derive: credits_after_settlement:pension
+        cites: [in_rbi_295_credit_after]
+    documents:
+      - id: death_cert
+        name: Death certificate
+    clocks: []
+    steps:
+      - id: credit_returned
+        kind: info
+        actor: institution
+        text: Pension paid into his account after the account was settled is sent back to the treasury by the bank, which tells you.
+        when: pension_credit_after_settlement = yes
+        cites: [in_rbi_295_credit_after]
+      - id: ask_office
+        kind: follow_up
+        actor: family
+        text: Write to the pension office asking how the widow applies for the family pension, and how pension paid for the days after the death is adjusted. No official source for this state has been checked yet.
+      - id: apply
+        kind: submit
+        actor: family
+        text: Apply for the family pension as the pension office directs.
+        documents: [death_cert]
+        after: [ask_office]
+    notes: Unverified. Only the bank's duty to return credits that arrive after settlement is sourced; the pension office's rules are asked for in writing.

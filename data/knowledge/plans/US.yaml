@@ -1,0 +1,317 @@
+# Procedure plans for the United States (federal) and Texas.
+plans:
+  # ===============================================================================================
+  - key: US/social_security
+    title: Social Security after a death
+    jurisdiction: US
+    institution_kind: government
+    holding_kinds: [social_security]
+    level: gold
+    verified_on: 2026-10-14
+    variables:
+      - name: benefit_for_month_of_death
+        type: tri
+        derive: credits_after_death:social_security
+        question: Did a Social Security payment arrive after he died?
+        cites: [us_ssa_month_of_death]
+      - name: spouse_lived_with
+        type: tri
+        question: Was his wife living with him when he died?
+        derive: spouse_same_household
+        cites: [us_ssa_255_who]
+      - name: funeral_home_reported
+        type: tri
+        question: Did the funeral home report the death to Social Security?
+        cites: [us_ssa_funeral_home]
+    documents:
+      - id: death_cert
+        name: Death certificate
+        cites: [us_ssa_255]
+    clocks: []
+    steps:
+      - id: report
+        kind: notify
+        actor: family
+        text: A funeral home usually reports the death to Social Security; if it did not, report it yourself.
+        when: funeral_home_reported != yes
+        cites: [us_ssa_funeral_home]
+      - id: return_payment
+        kind: submit
+        actor: family
+        done_on: payment_returned
+        text: Social Security is not paid for the month he died, so the payment that arrived for that month must go back to the government; the bank may return it from the account.
+        when: benefit_for_month_of_death = yes
+        cites: [us_ssa_month_of_death, us_ssa_return, us_missionriver_treasury]
+      - id: lump_sum
+        kind: submit
+        actor: family
+        done_on: lump_sum_applied
+        text: Ask Social Security for the $255 lump-sum death payment, which goes to a spouse who was living with him, or a spouse or child eligible for survivor benefits.
+        when: spouse_lived_with = yes
+        documents: [death_cert]
+        cites: [us_ssa_255, us_ssa_255_who]
+      - id: survivors
+        kind: submit
+        actor: family
+        done_on: survivors_applied
+        text: Ask about survivor benefits, which may be paid to a spouse, divorced spouse, child or dependent parent of someone who worked and paid Social Security taxes.
+        documents: [death_cert]
+        cites: [us_ssa_survivors_who]
+    compiled_from: [us_ssa_month_of_death, us_ssa_return, us_ssa_255, us_ssa_255_who, us_ssa_funeral_home, us_ssa_survivors_who]
+
+  # ===============================================================================================
+  - key: US/life_policy_claim@us_lone_star_life
+    title: Life insurance at Lone Star Life
+    jurisdiction: US-TX
+    institution_kind: insurer
+    holding_kinds: [life_policy]
+    language: en
+    level: dual_verified
+    verified_on: 2026-10-14
+    variables:
+      - name: beneficiary_named
+        type: tri
+        question: Is a beneficiary named on the policy?
+        derive: holding_nominee
+        cites: [us_lonestar_claim]
+      - name: prefers_spanish
+        type: tri
+        derive: claimant_language:es
+        cites: [us_lonestar_spanish]
+    documents:
+      - id: claimant_statement
+        name: Lone Star Life claimant statement (English or Spanish)
+        form_key: US/lonestar_claimant_statement
+        signed_by: [beneficiary]
+        cites: [us_lonestar_claim, us_lonestar_spanish]
+      - id: certified_death_cert
+        name: Certified copy of the death certificate
+        certification: [certified_copy]
+        cites: [us_lonestar_claim]
+    clocks:
+      - id: decide_30
+        short: decides the claim
+        label: Lone Star Life aims to decide within 30 days of the completed claimant statement
+        owner: institution
+        starts_on: papers_received
+        length: 30
+        unit: calendar_days
+        notes: The insurer's own stated aim.
+        cites: [us_lonestar_30_days]
+    steps:
+      - id: claim
+        kind: submit
+        actor: family
+        text: The beneficiary sends the claimant statement and a certified copy of the death certificate; the forms come in Spanish too.
+        when: beneficiary_named = yes
+        documents: [claimant_statement, certified_death_cert]
+        clocks: [decide_30]
+        cites: [us_lonestar_claim, us_lonestar_spanish]
+      - id: no_beneficiary
+        kind: handoff
+        actor: institution
+        text: No beneficiary is named, so ask Lone Star Life how it pays the estate.
+        when: beneficiary_named = no
+        cites: [us_lonestar_claim]
+      - id: decision
+        kind: wait
+        actor: institution
+        text: The insurer aims to decide within 30 days of receiving the completed statement.
+        clocks: [decide_30]
+        after: [claim]
+        cites: [us_lonestar_30_days]
+    compiled_from: [us_lonestar_claim, us_lonestar_30_days, us_lonestar_spanish]
+
+  # ===============================================================================================
+  - key: US/naic_locator
+    title: Searching for lost life policies (NAIC Life Insurance Policy Locator)
+    jurisdiction: US
+    institution_kind: regulator
+    holding_kinds: [life_policy]
+    level: sourced
+    verified_on: 2026-10-14
+    variables: []
+    documents:
+      - id: request
+        name: A request through the NAIC locator's secure portal
+        cites: [us_naic_locator]
+    clocks: []
+    steps:
+      - id: search
+        kind: submit
+        actor: family
+        text: Submit a free request through the NAIC Life Insurance Policy Locator's secure portal.
+        documents: [request]
+        cites: [us_naic_locator, us_naic_free]
+    compiled_from: [us_naic_locator, us_naic_free]
+    notes: The article does not describe what happens after a match, so the plan says only how to make the request.
+
+  # ===============================================================================================
+  - key: US-TX/small_estate_affidavit
+    authority: us_tx_probate_court
+    title: Texas small estate affidavit
+    jurisdiction: US-TX
+    institution_kind: court
+    holding_kinds: [savings, current]
+    level: gold
+    verified_on: 2026-10-14
+    conditions:
+      eligible: has_will = no and petition_pending = no and estate_value <= 75000
+    variables:
+      - name: has_will
+        type: tri
+        question: Did he leave a will?
+        derive: situation_will
+        cites: [us_tx_sea_intestate]
+      - name: petition_pending
+        type: tri
+        question: Has anyone asked a court to appoint an executor or administrator?
+        cites: [us_tx_sea_no_petition]
+      - name: estate_value
+        type: money
+        unit: USD
+        question: Not counting the home and exempt property, roughly what is everything he owned worth?
+        derive: estate_value_excluding:property
+        cites: [us_tx_sea_75000]
+    documents:
+      - id: affidavit
+        name: Small estate affidavit, sworn to by two disinterested witnesses, with the family facts showing who the heirs are
+        certification: [notarised]
+        signed_by: [claimant, witness]
+        cites: [us_tx_sea_witnesses, us_tx_sea_heirship_facts]
+      - id: certified_copy
+        name: Copy of the approved affidavit certified by the court clerk
+        certification: [certified_copy]
+        cites: [us_tx_sea_certified_copy]
+    clocks:
+      - id: wait_30
+        short: affidavit can be filed
+        kind: wait
+        label: The affidavit can be filed once 30 days have passed since the death
+        owner: family
+        starts_on: death
+        length: 30
+        unit: calendar_days
+        cites: [us_tx_sea_30_days]
+    steps:
+      - id: wait_month
+        kind: wait
+        actor: family
+        text: Wait until 30 days have passed since the death.
+        clocks: [wait_30]
+        cites: [us_tx_sea_30_days]
+      - id: prepare
+        kind: fill
+        actor: agent
+        text: Prepare the affidavit with the family facts that show who the heirs are, for two disinterested witnesses to swear to.
+        when: "@eligible"
+        documents: [affidavit]
+        cites: [us_tx_sea_witnesses, us_tx_sea_heirship_facts]
+      - id: file
+        kind: submit
+        actor: family
+        text: File the affidavit with the court; the judge may approve it if it meets the law's requirements.
+        when: "@eligible"
+        documents: [affidavit]
+        clocks: [wait_30]
+        after: [wait_month, prepare]
+        cites: [us_tx_sea_judge, us_tx_sea_30_days, us_tx_sea_no_petition, us_tx_sea_75000, us_tx_sea_intestate]
+      - id: give_banks
+        kind: notify
+        actor: family
+        text: Give each bank a copy of the approved affidavit certified by the court clerk; a bank that pays on it is released.
+        when: "@eligible"
+        documents: [certified_copy]
+        after: [file]
+        cites: [us_tx_sea_certified_copy, us_tx_sea_release]
+      - id: probate_handoff
+        kind: handoff
+        actor: professional
+        text: A will, a court case already started, or an estate above $75,000 rules out the affidavit; a probate lawyer should advise.
+        when: has_will = yes or petition_pending = yes or estate_value > 75000
+        cites: [us_tx_sea_intestate, us_tx_sea_no_petition, us_tx_sea_75000]
+    compiled_from: [us_tx_sea_30_days, us_tx_sea_no_petition, us_tx_sea_75000, us_tx_sea_intestate, us_tx_sea_witnesses,
+                    us_tx_sea_judge, us_tx_sea_certified_copy, us_tx_sea_release]
+
+  # ===============================================================================================
+  - key: US/deposit@us_mission_river_bank
+    title: Accounts at Mission River Bank
+    jurisdiction: US-TX
+    institution_kind: bank
+    holding_kinds: [savings, current]
+    level: dual_verified
+    verified_on: 2026-10-14
+    variables:
+      - name: personal_representative
+        type: tri
+        question: Has a court appointed an executor or administrator?
+        cites: [us_missionriver_sea]
+      - name: federal_payment_after_death
+        type: tri
+        derive: credits_after_death:social_security
+        cites: [us_missionriver_treasury]
+    documents:
+      - id: certified_death_cert
+        name: Certified copy of the death certificate
+        certification: [certified_copy]
+        cites: [us_missionriver_death_cert]
+      - id: approved_affidavit
+        name: Small estate affidavit approved by a Texas court
+        acquire_plan: US-TX/small_estate_affidavit
+        cites: [us_missionriver_sea]
+    clocks: []
+    steps:
+      - id: with_affidavit
+        kind: submit
+        actor: family
+        text: Bring the certified death certificate and the court-approved small estate affidavit.
+        when: personal_representative = no
+        documents: [certified_death_cert, approved_affidavit]
+        cites: [us_missionriver_death_cert, us_missionriver_sea]
+      - id: with_representative
+        kind: handoff
+        actor: professional
+        text: A court has appointed a representative, who deals with the bank directly.
+        when: personal_representative = yes
+        cites: [us_missionriver_sea]
+      - id: federal_return
+        kind: info
+        actor: institution
+        text: Federal benefit payments received after the death may be returned to the Treasury from the account.
+        when: federal_payment_after_death = yes
+        cites: [us_missionriver_treasury]
+    compiled_from: [us_missionriver_death_cert, us_missionriver_sea, us_missionriver_treasury]
+
+  # ===============================================================================================
+  - key: US/employer_benefits@us_riverwalk_logistics
+    title: Pay and benefits from Riverwalk Logistics
+    jurisdiction: US-TX
+    institution_kind: employer
+    holding_kinds: [salary, employer_benefit]
+    level: dual_verified
+    verified_on: 2026-10-14
+    variables:
+      - name: beneficiaries_named
+        type: tri
+        question: Did he name beneficiaries on his 401(k) and group life forms?
+        cites: [us_riverwalk_direct]
+    documents:
+      - id: death_cert
+        name: Death certificate
+        cites: [us_riverwalk_benefits]
+    clocks: []
+    steps:
+      - id: contact_hr
+        kind: submit
+        actor: family
+        text: Contact Human Resources about the final paycheck, the 401(k) account and the group life insurance.
+        documents: [death_cert]
+        cites: [us_riverwalk_benefits]
+      - id: direct_payment
+        kind: wait
+        actor: institution
+        text: Named beneficiaries are paid directly by the 401(k) plan administrator and the insurer.
+        when: beneficiaries_named = yes
+        after: [contact_hr]
+        cites: [us_riverwalk_direct]
+    compiled_from: [us_riverwalk_benefits, us_riverwalk_direct]

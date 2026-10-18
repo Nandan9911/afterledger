@@ -1,0 +1,641 @@
+# Procedure plans for Japan. Step texts are written in English with the Japanese terms the family
+# will see on papers; the explainer renders them in the family's language.
+plans:
+  # ===============================================================================================
+  - key: JP/heir_information_certificate
+    authority: jp_legal_affairs_bureau
+    title: The statutory heir information certificate (法定相続情報一覧図の写し)
+    jurisdiction: JP
+    institution_kind: government
+    holding_kinds: []
+    language: ja
+    level: gold
+    verified_on: 2026-10-14
+    variables:
+      - name: koseki_complete
+        type: tri
+        question: Do you have his family register certificates (戸籍謄本) from birth to death, and those of every heir?
+        derive: paper_present:koseki_bundle
+        cites: [jp_heir_cert_apply]
+    documents:
+      - id: koseki_bundle
+        name: Family register certificates from his birth to his death, and the heirs' current certificates (戸除籍謄本等の束)
+        cites: [jp_heir_cert_apply]
+      - id: heir_chart
+        name: The chart of the statutory heirs (法定相続情報一覧図), drawn up by the family
+        form_key: JP/heir_chart
+        cites: [jp_heir_cert_apply]
+      - id: certified_chart
+        name: Certified copies of the chart, issued free (法定相続情報一覧図の写し)
+        cites: [jp_heir_cert_free, jp_heir_cert_replaces]
+    clocks: []
+    steps:
+      - id: gather_koseki
+        kind: acquire
+        actor: family
+        text: Collect his family register certificates from birth to death and each heir's current certificate.
+        when: koseki_complete = no
+        documents: [koseki_bundle]
+        cites: [jp_heir_cert_apply]
+      - id: draw_chart
+        kind: fill
+        actor: agent
+        text: Draw up the chart of the statutory heirs from the certificates, for the family to check and sign.
+        documents: [heir_chart]
+        after: [gather_koseki]
+        cites: [jp_heir_cert_apply, jp_civil_887_children, jp_civil_890_spouse]
+      - id: submit_registry
+        kind: submit
+        actor: family
+        text: Hand the chart and the bundle of certificates to the Legal Affairs Bureau (登記所).
+        documents: [heir_chart, koseki_bundle]
+        after: [draw_chart]
+        cites: [jp_heir_cert_apply]
+      - id: receive_copies
+        kind: wait
+        actor: authority
+        text: The bureau issues certified copies of the chart free of charge; ask for one copy per institution.
+        documents: [certified_chart]
+        after: [submit_registry]
+        cites: [jp_heir_cert_free]
+      - id: use_copies
+        kind: info
+        actor: agent
+        text: The certified chart can be used in place of the bundle of family register certificates.
+        cites: [jp_heir_cert_replaces]
+    compiled_from: [jp_heir_cert_free, jp_heir_cert_replaces, jp_heir_cert_apply]
+
+  # ===============================================================================================
+  - key: JP/renunciation_decision
+    authority: jp_family_court
+    title: Accepting or renouncing the inheritance (相続の承認・放棄)
+    jurisdiction: JP
+    institution_kind: court
+    holding_kinds: [card_loan, loan]
+    language: ja
+    level: gold
+    verified_on: 2026-10-14
+    variables:
+      - name: debts_known
+        type: tri
+        question: Do you know all his debts, such as card loans?
+        derive: debts_have_balance_certificates
+        cites: [jp_civil_896_debts, jp_naniwa_card_balance]
+      - name: inheritance_choice
+        type: choice
+        options: [accept, renounce, extend]
+        question: Will each heir accept the inheritance, renounce it, or ask the family court for more time to decide?
+        cites: [jp_civil_915_3_months, jp_renounce_extension]
+      - name: applicants
+        type: number
+        derive: heirs_renouncing
+        cites: [jp_renounce_fee]
+    documents:
+      - id: balance_certificates
+        name: Balance certificates for his bank accounts and loans (残高証明書)
+        cites: [jp_naniwa_balance_cert, jp_naniwa_card_balance]
+      - id: renunciation_application
+        name: Application to renounce the inheritance (相続放棄申述書), one per heir renouncing
+        certification: [stamp_paper]
+        note: ¥800 in revenue stamps for each person applying.
+        cites: [jp_renounce_court, jp_renounce_fee]
+      - id: extension_application
+        name: Application to extend the period for deciding (期間伸長の申立書)
+        cites: [jp_renounce_extension]
+      - id: acceptance_notice
+        name: The family court's notice accepting the renunciation (受理通知書)
+        cites: [jp_naniwa_card_renounce]
+    clocks:
+      - id: decide_3m
+        short: deadline to accept or renounce the inheritance
+        short_local: 相続放棄・限定承認の期限
+        ends_on: decision_made
+        label: Each heir decides within three months of learning the inheritance opened for them
+        owner: family
+        starts_on: learned_of_death
+        length: 3
+        unit: months
+        notes: Counted from when each heir learned of the death and that they are an heir; the family court can extend it on application.
+        cites: [jp_renounce_3_months, jp_civil_915_3_months]
+    steps:
+      - id: hold_estate
+        kind: info
+        actor: agent
+        text: Until you decide, do not spend, transfer or close his money or property; using it can count as accepting the inheritance, debts included.
+        clocks: [decide_3m]
+        cites: [jp_civil_921_disposal, jp_civil_896_debts]
+      - id: get_balances
+        kind: acquire
+        actor: family
+        text: Ask each bank and the card company for balance certificates so the family can compare what he owned with what he owed.
+        documents: [balance_certificates]
+        clocks: [decide_3m]
+        cites: [jp_naniwa_balance_cert, jp_naniwa_card_balance]
+      - id: decide
+        kind: decide
+        actor: family
+        text: Each heir decides whether to accept, renounce, or ask the family court for more time.
+        decides: inheritance_choice
+        clocks: [decide_3m]
+        after: [get_balances]
+        cites: [jp_civil_915_3_months, jp_civil_896_debts, jp_civil_939_effect]
+      - id: file_renunciation
+        kind: submit
+        actor: family
+        text: File the renunciation at the family court for his last address, with ¥800 in revenue stamps per person, before the deadline.
+        when: inheritance_choice = renounce
+        documents: [renunciation_application]
+        clocks: [decide_3m]
+        after: [decide]
+        cites: [jp_renounce_court, jp_renounce_fee, jp_renounce_3_months]
+      - id: ask_extension
+        kind: submit
+        actor: family
+        text: Apply to the family court to extend the three-month period.
+        when: inheritance_choice = extend
+        documents: [extension_application]
+        clocks: [decide_3m]
+        after: [decide]
+        cites: [jp_renounce_extension, jp_civil_915_3_months]
+      - id: accept
+        kind: handoff
+        actor: agent
+        text: The heirs accept the inheritance and go on with each institution's procedure; his debts pass to them with it.
+        when: inheritance_choice = accept
+        after: [decide]
+        cites: [jp_civil_896_debts]
+      - id: tell_creditors
+        kind: notify
+        actor: family
+        text: Send a copy of the court's acceptance notice to the card company.
+        when: inheritance_choice = renounce
+        documents: [acceptance_notice]
+        after: [file_renunciation]
+        cites: [jp_naniwa_card_renounce]
+      - id: effect
+        kind: info
+        actor: agent
+        text: An heir who renounces is treated as never having been an heir, so the next heirs in line may need to decide too.
+        when: inheritance_choice = renounce
+        cites: [jp_civil_939_effect]
+    compiled_from: [jp_renounce_3_months, jp_renounce_court, jp_renounce_fee, jp_renounce_extension, jp_civil_915_3_months,
+                    jp_civil_896_debts, jp_civil_921_disposal, jp_civil_939_effect]
+
+  # ===============================================================================================
+  - key: JP/bank_inheritance@jp_naniwa_bank
+    title: Inheritance procedure at Naniwa Bank (浪速銀行 相続手続)
+    jurisdiction: JP
+    institution_kind: bank
+    holding_kinds: [savings, current, fixed_deposit]
+    language: ja
+    level: dual_verified
+    verified_on: 2026-10-14
+    variables:
+      - name: inheritance_choice
+        type: choice
+        options: [accept, renounce, extend]
+        question: Have the heirs decided to accept the inheritance?
+        derive: plan_answer:JP/renunciation_decision:inheritance_choice
+        cites: [jp_civil_921_disposal]
+      - name: has_heir_chart
+        type: tri
+        question: Do you have the certified chart of the statutory heirs (法定相続情報一覧図の写し)?
+        derive: paper_present:certified_heir_chart
+        cites: [jp_naniwa_documents]
+    documents:
+      - id: request_form
+        name: Naniwa Bank's inheritance request form (相続手続依頼書), signed and sealed by every heir
+        form_key: JP/naniwa_irai
+        signed_by: [claimant, other_heirs]
+        note: Every heir signs and stamps it with their registered seal (実印).
+        cites: [jp_naniwa_documents, jp_naniwa_seal]
+      - id: certified_chart
+        name: Certified copy of the chart of statutory heirs (法定相続情報一覧図の写し)
+        acquire_plan: JP/heir_information_certificate
+        cites: [jp_naniwa_documents]
+      - id: koseki_bundle
+        name: His family register certificates from birth to death (出生から死亡までの戸籍謄本)
+        cites: [jp_naniwa_documents]
+      - id: seal_certificates
+        name: Seal registration certificates of every heir (相続人全員の印鑑証明書)
+        cites: [jp_naniwa_documents]
+      - id: passbook_and_card
+        name: His passbook and cash card (通帳とキャッシュカード)
+        cites: [jp_naniwa_documents]
+      - id: balance_certificate
+        name: Balance certificate (残高証明書)
+        cites: [jp_naniwa_balance_cert]
+    clocks:
+      - id: complete_2w
+        short: completes the inheritance procedure
+        label: Naniwa Bank completes the procedure about two weeks after it has every paper
+        owner: institution
+        starts_on: complete_set_confirmed
+        length: 14
+        unit: calendar_days
+        notes: The bank's own stated aim ("about two weeks"), not a legal deadline; no compensation applies.
+        cites: [jp_naniwa_two_weeks]
+    steps:
+      - id: balance_first
+        kind: acquire
+        actor: family
+        text: Any one heir can ask for a balance certificate now, without starting the procedure.
+        documents: [balance_certificate]
+        cites: [jp_naniwa_balance_cert]
+      - id: wait_for_decision
+        kind: info
+        actor: agent
+        text: Start the transfer only after the heirs have decided to accept; taking the money first can count as accepting his debts too.
+        when: inheritance_choice != accept
+        cites: [jp_civil_921_disposal]
+      - id: submit
+        kind: submit
+        actor: family
+        text: Hand in the request form signed and sealed by every heir, the certified heir chart (or the full family registers), every heir's seal certificate, and his passbook and cash card.
+        when: inheritance_choice = accept
+        documents: [request_form, seal_certificates, passbook_and_card]
+        one_of: [[certified_chart, koseki_bundle]]
+        clocks: [complete_2w]
+        cites: [jp_naniwa_documents, jp_naniwa_seal]
+      - id: complete
+        kind: wait
+        actor: institution
+        text: The bank completes the procedure about two weeks after it has every paper.
+        clocks: [complete_2w]
+        after: [submit]
+        cites: [jp_naniwa_two_weeks]
+    compiled_from: [jp_naniwa_documents, jp_naniwa_seal, jp_naniwa_balance_cert, jp_naniwa_two_weeks]
+
+  # ===============================================================================================
+  - key: JP/bank_inheritance@jp_yodogawa_shinkin
+    title: Inheritance procedure at Yodogawa Shinkin (淀川信用金庫 相続手続)
+    jurisdiction: JP
+    institution_kind: bank
+    holding_kinds: [savings, current, fixed_deposit]
+    language: ja
+    level: dual_verified
+    verified_on: 2026-10-14
+    variables:
+      - name: inheritance_choice
+        type: choice
+        options: [accept, renounce, extend]
+        question: Have the heirs decided to accept the inheritance?
+        derive: plan_answer:JP/renunciation_decision:inheritance_choice
+        cites: [jp_civil_921_disposal]
+    documents:
+      - id: notice_form
+        name: Yodogawa Shinkin's inheritance notice (相続届)
+        form_key: JP/yodogawa_todoke
+        signed_by: [claimant, other_heirs]
+        cites: [jp_yodogawa_documents]
+      - id: certified_chart
+        name: Certified copy of the chart of statutory heirs (法定相続情報一覧図の写し)
+        acquire_plan: JP/heir_information_certificate
+        cites: [jp_yodogawa_documents]
+      - id: seal_certificates
+        name: Seal registration certificates of every heir (相続人全員の印鑑証明書)
+        cites: [jp_yodogawa_documents]
+    clocks: []
+    steps:
+      - id: call_branch
+        kind: notify
+        actor: family
+        text: Contact the branch before starting; it will explain the next steps.
+        cites: [jp_yodogawa_contact]
+      - id: wait_for_decision
+        kind: info
+        actor: agent
+        text: Start the transfer only after the heirs have decided to accept.
+        when: inheritance_choice != accept
+        cites: [jp_civil_921_disposal]
+      - id: submit
+        kind: submit
+        actor: family
+        text: Hand in the inheritance notice, the certified heir chart and every heir's seal certificate.
+        when: inheritance_choice = accept
+        documents: [notice_form, certified_chart, seal_certificates]
+        after: [call_branch]
+        cites: [jp_yodogawa_documents]
+    compiled_from: [jp_yodogawa_documents, jp_yodogawa_contact]
+
+  # ===============================================================================================
+  - key: JP/bank_inheritance@jp_toto_bank
+    title: Inheritance procedure at Toto Bank (東都銀行 相続手続)
+    jurisdiction: JP
+    institution_kind: bank
+    holding_kinds: [savings, current, fixed_deposit]
+    language: ja
+    level: dual_verified
+    verified_on: 2026-10-14
+    variables:
+      - name: heirs_abroad
+        type: tri
+        question: Does any heir live outside Japan?
+        derive: heirs_living_outside:JP
+        cites: [jp_toto_foreign_signature]
+      - name: succession_law_settled
+        type: tri
+        question: Has a lawyer confirmed which country's succession law applies?
+        derive: jurisdiction_not_contested
+        cites: [jp_national_law, eu_650_art21_1]
+    documents:
+      - id: request_form
+        name: Toto Bank's inheritance request form (相続手続依頼書)
+        signed_by: [claimant, other_heirs]
+        cites: [jp_toto_foreign_signature]
+      - id: certified_chart
+        name: Certified chart of statutory heirs, or the full set of family registers
+        acquire_plan: JP/heir_information_certificate
+        cites: [jp_toto_foreign_signature]
+      - id: seal_certificates
+        name: Seal registration certificates of heirs living in Japan (印鑑証明書)
+        cites: [jp_toto_foreign_signature]
+      - id: signature_certificates
+        name: Signature certificates from a Japanese embassy or consulate for heirs living abroad (サイン証明書)
+        when: heirs_abroad = yes
+        cites: [jp_toto_foreign_signature]
+    clocks: []
+    steps:
+      - id: law_first
+        kind: handoff
+        actor: professional
+        text: Which country's law decides who inherits is contested, so a lawyer should confirm it before the bank pays anyone.
+        when: succession_law_settled = no
+        cites: [jp_national_law, eu_650_art21_1]
+      - id: get_signature_cert
+        kind: acquire
+        actor: family
+        text: Heirs living abroad get a signature certificate from a Japanese embassy or consulate instead of a seal certificate.
+        when: heirs_abroad = yes
+        documents: [signature_certificates]
+        cites: [jp_toto_foreign_signature]
+      - id: submit
+        kind: submit
+        actor: family
+        text: Hand in the request form, the heir chart or family registers, and the seal or signature certificates.
+        when: succession_law_settled = yes
+        documents: [request_form, certified_chart, seal_certificates, signature_certificates]
+        cites: [jp_toto_foreign_signature]
+    compiled_from: [jp_toto_foreign_signature]
+
+  # ===============================================================================================
+  - key: JP/life_insurance_claim@jp_minato_seimei
+    title: Death benefit claim at Minato Seimei (ミナト生命 死亡保険金)
+    jurisdiction: JP
+    institution_kind: insurer
+    holding_kinds: [life_policy]
+    language: ja
+    level: dual_verified
+    verified_on: 2026-10-14
+    variables:
+      - name: beneficiary_named
+        type: tri
+        question: Is a beneficiary (受取人) named on the policy?
+        derive: holding_nominee
+        cites: [jp_minato_documents]
+    documents:
+      - id: claim_form
+        name: Minato Seimei's claim form (請求書)
+        form_key: JP/minato_seikyu
+        signed_by: [beneficiary]
+        cites: [jp_minato_documents]
+      - id: death_report
+        name: Medical certificate of death or post-mortem report (死亡診断書または死体検案書)
+        cites: [jp_minato_documents]
+      - id: beneficiary_id
+        name: The beneficiary's identity document (本人確認書類)
+        cites: [jp_minato_documents]
+    clocks:
+      - id: pay_5bd
+        short: pays the claim
+        label: Minato Seimei pays within five business days of receiving the papers
+        owner: institution
+        starts_on: papers_received
+        length: 5
+        unit: business_days
+        holidays: JP
+        notes: Counted from the day after the papers arrive.
+        cites: [jp_minato_5_days]
+    steps:
+      - id: claim
+        kind: submit
+        actor: family
+        text: The beneficiary sends the claim form, the medical certificate of death and their identity document.
+        when: beneficiary_named = yes
+        documents: [claim_form, death_report, beneficiary_id]
+        clocks: [pay_5bd]
+        cites: [jp_minato_documents]
+      - id: no_beneficiary
+        kind: handoff
+        actor: institution
+        text: No beneficiary is named, so ask Minato Seimei who it will pay and what it needs.
+        when: beneficiary_named = no
+        cites: [jp_minato_documents]
+      - id: pay
+        kind: wait
+        actor: institution
+        text: Minato Seimei pays within five business days of receiving the papers.
+        clocks: [pay_5bd]
+        after: [claim]
+        cites: [jp_minato_5_days]
+    compiled_from: [jp_minato_documents, jp_minato_5_days]
+
+  # ===============================================================================================
+  - key: JP/life_insurance_inquiry
+    title: Finding life policies he may have held (生命保険契約照会制度)
+    jurisdiction: JP
+    institution_kind: other
+    holding_kinds: [life_policy]
+    language: ja
+    level: sourced
+    verified_on: 2026-10-14
+    variables:
+      - name: applicant_is_heir
+        type: tri
+        derive: viewer_is_heir
+        question: Are you one of his statutory heirs?
+        cites: [jp_liaj_heirs]
+    documents:
+      - id: inquiry
+        name: The inquiry to the Life Insurance Association of Japan
+        cites: [jp_liaj_inquiry, jp_liaj_fee]
+      - id: death_cert
+        name: Proof of his death
+        cites: [jp_liaj_inquiry]
+    clocks:
+      - id: answer_2w
+        short: answers the policy search
+        ends_on: inquiry_answered
+        label: The answer takes about two weeks
+        owner: institution
+        starts_on: inquiry_sent
+        length: 14
+        unit: calendar_days
+        notes: An approximate time from a professional source, not a legal deadline.
+        cites: [jp_liaj_2_weeks]
+    steps:
+      - id: send
+        kind: submit
+        actor: family
+        text: An heir sends the inquiry with the ¥3,000 fee.
+        when: applicant_is_heir = yes
+        documents: [inquiry, death_cert]
+        clocks: [answer_2w]
+        cites: [jp_liaj_inquiry, jp_liaj_heirs, jp_liaj_fee]
+      - id: answer
+        kind: wait
+        actor: institution
+        text: The answer comes in about two weeks and says only whether a policy exists with him as policyholder or insured; each insurer found is then claimed from directly.
+        clocks: [answer_2w]
+        after: [send]
+        cites: [jp_liaj_answer, jp_liaj_2_weeks]
+    compiled_from: [jp_liaj_inquiry, jp_liaj_heirs, jp_liaj_fee, jp_liaj_answer, jp_liaj_2_weeks]
+
+  # ===============================================================================================
+  - key: JP/card_debt@jp_naniwa_card
+    title: A card loan at Naniwa Card (ナニワカード カードローン)
+    jurisdiction: JP
+    institution_kind: bank
+    holding_kinds: [card_loan, credit_card]
+    language: ja
+    level: dual_verified
+    verified_on: 2026-10-14
+    variables:
+      - name: inheritance_choice
+        type: choice
+        options: [accept, renounce, extend]
+        question: Have the heirs decided whether to accept or renounce the inheritance?
+        derive: plan_answer:JP/renunciation_decision:inheritance_choice
+        cites: [jp_civil_896_debts]
+    documents:
+      - id: balance_certificate
+        name: Card loan balance certificate (カードローン残高証明書)
+        cites: [jp_naniwa_card_balance]
+      - id: acceptance_notice
+        name: Copy of the family court's notice accepting the renunciation (受理通知書の写し)
+        cites: [jp_naniwa_card_renounce]
+    clocks: []
+    steps:
+      - id: tell_card
+        kind: notify
+        actor: family
+        text: Tell Naniwa Card of the death; it sends a balance certificate for the card loan.
+        documents: [balance_certificate]
+        cites: [jp_naniwa_card_balance]
+      - id: send_notice
+        kind: submit
+        actor: family
+        text: If the heirs renounce, send a copy of the family court's acceptance notice.
+        when: inheritance_choice = renounce
+        documents: [acceptance_notice]
+        after: [tell_card]
+        cites: [jp_naniwa_card_renounce]
+      - id: repay
+        kind: handoff
+        actor: family
+        text: The heirs accepted the inheritance, so the card loan is repaid from it.
+        when: inheritance_choice = accept
+        after: [tell_card]
+        cites: [jp_civil_896_debts]
+    compiled_from: [jp_naniwa_card_balance, jp_naniwa_card_renounce, jp_civil_896_debts]
+
+  # ===============================================================================================
+  - key: JP/public_pension@jp_nenkin
+    title: His public pension (未支給年金の請求)
+    jurisdiction: JP
+    institution_kind: pension
+    holding_kinds: [family_pension, pension]
+    language: ja
+    level: gold
+    verified_on: 2026-10-15
+    variables:
+      - name: shared_household
+        type: tri
+        question: Did his wife (or whoever claims) share his household when he died?
+        derive: spouse_same_household
+        cites: [jp_pension_unpaid_family, jp_pension_unpaid_order]
+      - name: my_number_held
+        type: tri
+        question: Was his My Number (マイナンバー) registered with the Japan Pension Service?
+        cites: [jp_pension_report_my_number]
+    documents:
+      - id: claim_form
+        name: Pensioner's death report and claim for unpaid pension (年金受給権者死亡届（報告書）兼 未支給年金・未支払給付金請求書)
+        signed_by: [claimant]
+        cites: [jp_pension_unpaid_form]
+      - id: pension_certificate
+        name: His pension certificate (年金証書)
+        cites: [jp_pension_certificate]
+      - id: koseki
+        name: A family register certificate (戸籍謄本) issued after the death
+        cites: [jp_pension_papers_after_death]
+      - id: heir_chart_copy
+        name: A certified copy of the heir information chart (法定相続情報一覧図の写し), if the family has one
+        cites: [jp_pension_heir_chart]
+      - id: resident_records
+        name: Resident records showing the shared household (住民票), issued after the death
+        cites: [jp_pension_papers_after_death]
+    clocks:
+      - id: report_10
+        short: death report
+        short_local: 年金受給権者死亡届の期限
+        label: Report the death within 10 days (14 days for the National Pension), when a report is needed
+        owner: family
+        starts_on: death
+        ends_on: death_reported
+        length: 10
+        unit: calendar_days
+        when: my_number_held = no          # with his My Number on file, no report is needed
+        cites: [jp_pension_report_10_days]
+    steps:
+      - id: my_number
+        kind: info
+        actor: agent
+        text: When the Japan Pension Service holds his My Number, no separate death report is needed; the pension still owed is claimed all the same.
+        cites: [jp_pension_report_my_number]
+      - id: report_death
+        kind: notify
+        actor: family
+        done_on: death_reported
+        text: Report the death to a pension office within 10 days (14 days for the National Pension), with his pension certificate.
+        when: my_number_held = no
+        documents: [pension_certificate]
+        clocks: [report_10]
+        cites: [jp_pension_report_10_days, jp_pension_certificate]
+      - id: gather
+        kind: acquire
+        actor: family
+        text: Get a family register certificate, or use a certified copy of the heir chart, and the resident records, all issued after the death.
+        one_of: [[koseki, heir_chart_copy]]
+        documents: [resident_records]
+        cites: [jp_pension_heir_chart, jp_pension_papers_after_death]
+      - id: claim
+        kind: submit
+        actor: family
+        text: The family member first in line who shared his household, his wife before anyone else, claims the pension owed up to the month he died, sending the form and the papers to a pension office by post.
+        when: shared_household = yes
+        documents: [claim_form, pension_certificate, resident_records]
+        one_of: [[koseki, heir_chart_copy]]
+        after: [gather]
+        cites: [jp_pension_unpaid_family, jp_pension_unpaid_order, jp_pension_unpaid_first, jp_pension_unpaid_form, jp_pension_submit_post]
+      - id: not_shared
+        kind: handoff
+        actor: institution
+        text: Unpaid pension goes only to family who shared his household, so ask a pension office what applies.
+        when: shared_household = no
+        cites: [jp_pension_unpaid_family]
+      - id: pay_back
+        kind: info
+        actor: agent
+        text: Pension paid for the time after his death, because the death was reported late, has to be paid back.
+        cites: [jp_pension_return_overpaid]
+      - id: tax
+        kind: info
+        actor: agent
+        text: The unpaid pension counts as occasional income of whoever receives it and may need a tax return.
+        after: [claim]
+        cites: [jp_pension_unpaid_tax]
+    compiled_from: [jp_pension_unpaid_family, jp_pension_unpaid_order, jp_pension_unpaid_first, jp_pension_unpaid_form,
+                    jp_pension_certificate, jp_pension_heir_chart, jp_pension_papers_after_death, jp_pension_submit_post,
+                    jp_pension_unpaid_tax, jp_pension_report_my_number, jp_pension_report_10_days,
+                    jp_pension_return_overpaid]

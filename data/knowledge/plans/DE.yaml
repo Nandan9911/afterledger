@@ -1,0 +1,55 @@
+# Procedure plans for Germany.
+plans:
+  - key: DE/bank_inheritance@de_isarbank
+    title: Accounts at Isarbank München
+    jurisdiction: DE
+    institution_kind: bank
+    holding_kinds: [savings, current]
+    language: de
+    level: dual_verified
+    verified_on: 2026-10-14
+    contested: [eu_650_art21_1, jp_national_law]
+    variables:
+      - name: succession_law_settled
+        type: tri
+        question: Has a lawyer confirmed which country's succession law applies?
+        derive: jurisdiction_not_contested
+        cites: [eu_650_art21_1, eu_650_art21_2, jp_national_law]
+      - name: has_notarial_will
+        type: tri
+        question: Did he leave a notarial will that has been opened by the probate court?
+        cites: [de_isarbank_will]
+    documents:
+      - id: death_cert
+        name: Death certificate (Sterbeurkunde)
+        cites: [de_isarbank_documents]
+      - id: erbschein
+        name: Certificate of inheritance (Erbschein) or European Certificate of Succession
+        cites: [de_isarbank_erbschein]
+      - id: opened_will
+        name: Opened notarial will with the court's opening record
+        cites: [de_isarbank_will]
+    clocks: []
+    steps:
+      - id: law_first
+        kind: handoff
+        actor: professional
+        text: German and Japanese rules point to different succession laws, so a lawyer should confirm which applies before anyone applies for an Erbschein.
+        when: succession_law_settled = no
+        cites: [eu_650_art21_1, eu_650_art21_2, jp_national_law]
+      - id: with_certificate
+        kind: submit
+        actor: family
+        text: Send the death certificate and the certificate of inheritance or European Certificate of Succession.
+        when: succession_law_settled = yes and has_notarial_will = no
+        documents: [death_cert, erbschein]
+        cites: [de_isarbank_documents, de_isarbank_erbschein]
+      - id: with_will
+        kind: submit
+        actor: family
+        text: Send the death certificate and the opened notarial will, which can replace the certificate of inheritance.
+        when: succession_law_settled = yes and has_notarial_will = yes
+        documents: [death_cert, opened_will]
+        cites: [de_isarbank_documents, de_isarbank_will]
+    compiled_from: [de_isarbank_erbschein, de_isarbank_will, de_isarbank_documents, eu_650_art21_1, jp_national_law]
+    notes: The succession law is contested between the EU Succession Regulation (habitual residence) and Japan's Act on General Rules (nationality); both versions are shown.

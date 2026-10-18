@@ -1,0 +1,91 @@
+# Deadline and compensation vectors, each worked out by hand from the rule it comes from. The evaluation
+# runs them through the plan runtime (domain/plan_runtime.py) and every one must match exactly.
+# Holiday calendars come from the `holidays` package; the vectors that cross a holiday name it.
+due:
+  - id: rbi_15_calendar
+    rule: RBI deposits, para 319 - 15 calendar days from the day every paper was received
+    started: 2026-09-24
+    length: 15
+    unit: calendar_days
+    expect: 2026-10-09
+  - id: irdai_15_calendar
+    rule: IRDAI death claims - 15 days from intimation when no investigation is needed
+    started: 2026-10-06
+    length: 15
+    unit: calendar_days
+    expect: 2026-10-21
+  - id: jp_three_months
+    rule: Japan Civil Code art. 915 - three months to accept or renounce
+    started: 2026-09-07
+    length: 3
+    unit: months
+    expect: 2026-12-07
+  - id: months_end_of_month
+    rule: A month clock that starts on the 30th ends on the last day of a shorter month
+    started: 2026-11-30
+    length: 3
+    unit: months
+    expect: 2027-02-28
+  - id: months_leap_year
+    rule: The same clock in a leap year ends on 29 February
+    started: 2027-11-30
+    length: 3
+    unit: months
+    expect: 2028-02-29
+  - id: gb_business_days_christmas
+    rule: 10 working days in England across Christmas, Boxing Day (moved to Monday 28 December) and New Year
+    started: 2026-12-18
+    length: 10
+    unit: business_days
+    holidays: GB-ENG
+    expect: 2027-01-06
+  - id: us_business_days_thanksgiving
+    rule: 10 business days in the United States across Thanksgiving
+    started: 2026-11-20
+    length: 10
+    unit: business_days
+    holidays: US
+    expect: 2026-12-07
+  - id: in_business_days_dussehra
+    rule: 5 working days in India across Dussehra (20 October 2026)
+    started: 2026-10-16
+    length: 5
+    unit: business_days
+    holidays: IN
+    expect: 2026-10-26
+compensation:
+  - id: rbi_delay_5_days
+    rule: RBI para 321 - Bank Rate (5.50% on the day every paper arrived) plus 4% a year on the amount, for the days late
+    formula: rate_per_year_on_amount
+    amount: "641870.00"
+    due: 2026-10-09
+    paid_on: 2026-10-14
+    params: {base_rate_pct: "5.50", spread_pct: "4"}
+    expect: "835.31"
+    per_day: "167.06"
+  - id: irdai_interest_from_intimation
+    rule: IRDAI - once late, bank rate plus 2% from intimation until payment
+    formula: rate_per_year_from_start
+    amount: "500000.00"
+    start: 2026-10-06
+    due: 2026-10-21
+    paid_on: 2026-10-31
+    params: {base_rate_pct: "5.50", spread_pct: "2"}
+    expect: "2568.49"
+  - id: irdai_on_time
+    rule: IRDAI - nothing is owed when the insurer pays on time
+    formula: rate_per_year_from_start
+    amount: "500000.00"
+    start: 2026-10-06
+    due: 2026-10-21
+    paid_on: 2026-10-20
+    params: {base_rate_pct: "5.50", spread_pct: "2"}
+    expect: "0.00"
+  - id: rbi_locker_per_day
+    rule: RBI lockers - Rs 5,000 for each day of delay
+    formula: fixed_per_day
+    amount: "0"
+    due: 2026-10-10
+    paid_on: 2026-10-14
+    params: {per_day: "5000"}
+    expect: "20000.00"
