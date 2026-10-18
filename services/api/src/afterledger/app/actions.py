@@ -38,6 +38,15 @@ class Conflict(Exception):
     pass
 
 
+# Uploads taken in at the same time on one server: each holds its files in memory while its pages are drawn and
+# stored, so a crowd of large uploads waits its turn instead of running the server out of memory.
+UPLOADS_AT_ONCE = 3
+
+
+def _uploads(deps: Any) -> asyncio.Semaphore:
+    return deps.extras.setdefault("uploads", asyncio.Semaphore(UPLOADS_AT_ONCE))
+
+
 def case_lock(deps: Any, case_id: str) -> asyncio.Lock:
     locks = deps.extras.setdefault("case_locks", {})
     lock = locks.get(case_id)
@@ -69,8 +78,11 @@ async def require_case(deps: Any, case_id: str) -> Any:
 
 def register_handlers(deps: Any) -> None:
     async def after_papers(payload: dict) -> None:
+        # reading first, without holding the case (it takes minutes for a long statement, and writes only each
+        # paper's own records); then what the papers lead to, which changes the case, under its lock
+        await pipeline.read_papers(deps, payload["case_id"], payload["paper_ids"])
         async with case_lock(deps, payload["case_id"]):
-            await pipeline.after_papers(deps, payload["case_id"], payload["paper_ids"])
+            await pipeline.after_reading(deps, payload["case_id"])
             await followup.plan_today(deps, payload["case_id"])
 
     async def prepare_pack(payload: dict) -> None:
@@ -143,14 +155,18 @@ async def upload(deps: Any, case_id: str, files: list[tuple[str, bytes, str]], *
     runs in the background and the screens hear about every step."""
     await require_case(deps, case_id)
     made = []
-    async with case_lock(deps, case_id):
+    # a new paper is records of its own: it is added at once, even while the case is busy with an earlier one
+    async with _uploads(deps):
         groups = [files] if together else [[f] for f in files]
         for group in groups:
             made.append(await papers.add_upload(deps, case_id, group, uploaded_by=by, title=title))
-        case = await deps.cases.get_case(case_id)
-        if case.stage == "intake":
-            case.stage = "papers"
-            await deps.cases.put_case(case)
+    case = await deps.cases.get_case(case_id)
+    if case.stage == "intake":                   # the first paper: nothing else is working on the case yet
+        async with case_lock(deps, case_id):
+            case = await deps.cases.get_case(case_id)
+            if case.stage == "intake":
+                case.stage = "papers"
+                await deps.cases.put_case(case)
     for p in made:
         await deps.activity(case_id, "reading", f"Added {p.title}; reading it now.", kind="step")
     deps.changed(case_id, "papers")

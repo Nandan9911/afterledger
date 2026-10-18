@@ -124,8 +124,9 @@ async def test_a_long_paper_is_read_in_parts_and_its_rows_numbered_through(monke
     paper = SimpleNamespace(id="pp", title="A year of statements", pages=list(reversed(pages)))
     deps = SimpleNamespace(models=SimpleNamespace(mode="scripted"), activity=activity)
     case = SimpleNamespace(id="c1", demo_key=None)
-    a, b = await reading._read_in_parts(deps, case, paper, lines, {}, {"fields": []}, None)
+    a, b, gaps = await reading._read_in_parts(deps, case, paper, lines, {}, {"fields": []}, None)
 
+    assert gaps == []
     assert sorted(c for c in calls if c[0] == "reader_a") == [("reader_a", 1, 6), ("reader_a", 7, 12),
                                                                 ("reader_a", 13, 18), ("reader_a", 19, 20)]
     assert [c for c in calls if c[0] == "reader_b"] == [("reader_b", 1, 6)]
@@ -135,6 +136,180 @@ async def test_a_long_paper_is_read_in_parts_and_its_rows_numbered_through(monke
     assert found == {"account_holder": "A HOLDER", "closing_balance": "20"}
     assert [f.field for f in b.fields] == ["account_holder"] and b.rows == []
     assert any("20 pages" in n and "4 parts" in n for n in notes)
+
+
+def test_a_dense_statement_is_read_a_page_at_a_time_and_a_sparse_one_six_pages_at_a_time() -> None:
+    """Live on 19 October 2026 a real bank statement (about 200 text lines a page) was read six pages to a request:
+    70,000 tokens in, every request ran past its deadline, and the statement could not be read."""
+    from types import SimpleNamespace
+    pages = [SimpleNamespace(id=f"p{n}") for n in range(1, 9)]
+    assert [len(x) for x in reading.split_pages(pages, {p.id: 20 for p in pages})] == [6, 2]
+    assert [len(x) for x in reading.split_pages(pages, {p.id: 210 for p in pages})] == [1] * 8
+    mixed = {"p1": 100, "p2": 30, "p3": 20, "p4": 200, "p5": 10}
+    assert [[p.id for p in x] for x in reading.split_pages(pages[:5], mixed)] == [["p1", "p2"], ["p3"], ["p4"], ["p5"]]
+    assert reading.LONG_PAPER_LINES > 556            # the longest demo paper is still read in one request
+
+
+async def test_a_part_goes_under_short_line_ids_and_comes_back_with_the_real_ones(monkeypatch: pytest.MonkeyPatch) -> None:
+    from types import SimpleNamespace
+
+    from afterledger.agents.schemas import FieldReading, ReaderOut, RowReading
+
+    packs: list[dict] = []
+
+    async def fake_call_agent(deps: Any, name: str, pack: dict, case_id: str | None = None, images: Any = None) -> Any:
+        if name == "reader_b":
+            return ReaderOut(fields=[FieldReading(field="account_holder", value="A HOLDER")])
+        packs.append(pack)
+        ids = [ln["id"] for ln in pack["lines"]]
+        page = pack["part"]["pages"][0]
+        return ReaderOut(fields=[FieldReading(field="closing_balance", value=str(page), line_ids=[ids[-1]])],
+                         rows=[RowReading(row=1, date="01-01-26", narration=f"PAGE {page}", amount="1.00",
+                                          direction="debit", page=page, line_ids=[ids[0], ids[-1]])])
+
+    async def no_stage(*a: Any, **k: Any) -> None:
+        return None
+
+    notes: list[str] = []
+
+    async def activity(case_id: str, module: str, text: str, **k: Any) -> None:
+        notes.append(text)
+
+    monkeypatch.setattr(reading, "call_agent", fake_call_agent)
+    monkeypatch.setattr(reading, "set_stage", no_stage)
+    pages = [SimpleNamespace(id=f"p{n}", number=n, width=1, height=1, image=None) for n in range(1, 4)]
+    lines = [SimpleNamespace(id=f"real-{n}-{k}", text="x", page_id=f"p{n}", box=(0.12345, 0.5, 0.9, 0.51))
+             for n in range(1, 4) for k in range(200)]
+    paper = SimpleNamespace(id="pp", title="A dense statement", pages=pages)
+    deps = SimpleNamespace(models=SimpleNamespace(mode="scripted"), activity=activity)
+    a, b, gaps = await reading._read_in_parts(deps, SimpleNamespace(id="c1", demo_key=None), paper, lines, {},
+                                              {"fields": []}, None)
+    assert gaps == [] and [f.field for f in b.fields] == ["account_holder"]   # page 1, also read from its image
+    assert len(packs) == 3 and all(len(p["lines"]) == 200 for p in packs)
+    assert packs[0]["lines"][0] == {"id": "L1", "text": "x", "page": 1, "box": [0.123, 0.5, 0.9, 0.51]}
+    assert [r.line_ids for r in a.rows] == [[f"real-{n}-0", f"real-{n}-199"] for n in range(1, 4)]
+    assert [r.row for r in a.rows] == [1, 2, 3]
+    assert {f.field: f.line_ids for f in a.fields} == {"closing_balance": ["real-3-199"]}
+    assert any("3 parts" in n and "the first page also from its image" in n for n in notes)
+
+
+def _paper_of(n_pages: int, lines_per_page: int) -> tuple[Any, list]:
+    from types import SimpleNamespace
+    pages = [SimpleNamespace(id=f"p{n}", number=n, width=1, height=1, image=None) for n in range(1, n_pages + 1)]
+    lines = [SimpleNamespace(id=f"l{n}-{k}", text="x", page_id=f"p{n}", box=(0, 0, 1, 1))
+             for n in range(1, n_pages + 1) for k in range(lines_per_page)]
+    return SimpleNamespace(id="pp", title="A statement", pages=pages), lines
+
+
+def _reader_failing_on(bad: set[int], calls: list | None = None) -> Any:
+    """A reader A that reads one row a page, and fails on any part that holds a page in `bad`."""
+    from afterledger.agents.schemas import ReaderOut, RowReading
+
+    async def fake_call_agent(deps: Any, name: str, pack: dict, case_id: str | None = None, images: Any = None) -> Any:
+        if name == "reader_b":
+            return ReaderOut()
+        first, last = pack["part"]["pages"]
+        if calls is not None:
+            calls.append((first, last))
+        if bad & set(range(first, last + 1)):
+            raise TimeoutError(f"pages {first}-{last}: no answer")
+        return ReaderOut(rows=[RowReading(row=k + 1, date="01-01-26", narration=f"PAGE {p}", amount="1.00",
+                                          direction="debit", page=p) for k, p in enumerate(range(first, last + 1))])
+    return fake_call_agent
+
+
+async def test_a_part_that_fails_is_read_again_in_halves_and_only_an_unreadable_page_is_left_out(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    """Live on 19 October 2026 one part that could not be read failed a 90-page statement whole."""
+    from types import SimpleNamespace
+
+    async def no_stage(*a: Any, **k: Any) -> None:
+        return None
+
+    notes: list[str] = []
+
+    async def activity(case_id: str, module: str, text: str, **k: Any) -> None:
+        notes.append(text)
+
+    calls: list[tuple[int, int]] = []
+    monkeypatch.setattr(reading, "call_agent", _reader_failing_on({9}, calls))
+    monkeypatch.setattr(reading, "set_stage", no_stage)
+    paper, lines = _paper_of(12, 20)                           # two parts of six pages
+    deps = SimpleNamespace(models=SimpleNamespace(mode="scripted"), activity=activity)
+    a, _b, gaps = await reading._read_in_parts(deps, SimpleNamespace(id="c1", demo_key=None), paper, lines, {},
+                                               {"fields": []}, None)
+    assert gaps == [9]
+    assert [r.narration for r in a.rows] == [f"PAGE {p}" for p in (1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12)]
+    assert [r.row for r in a.rows] == list(range(1, 12))
+    assert sorted(calls) == [(1, 6), (7, 7), (7, 9), (7, 12), (8, 8), (8, 9), (9, 9), (10, 12)]
+    assert any(n.startswith("Page 9 of") and "could not be read" in n for n in notes)
+
+
+async def test_a_paper_mostly_unreadable_is_not_called_read(monkeypatch: pytest.MonkeyPatch) -> None:
+    from types import SimpleNamespace
+
+    async def no_stage(*a: Any, **k: Any) -> None:
+        return None
+
+    monkeypatch.setattr(reading, "call_agent", _reader_failing_on(set(range(1, 8))))
+    monkeypatch.setattr(reading, "set_stage", no_stage)
+    paper, lines = _paper_of(12, 20)
+    deps = SimpleNamespace(models=SimpleNamespace(mode="scripted"), activity=None)
+    with pytest.raises(reading.ReadingFailed, match="7 of 12 pages"):
+        await reading._read_in_parts(deps, SimpleNamespace(id="c1", demo_key=None), paper, lines, {},
+                                     {"fields": []}, None)
+
+
+async def test_a_reading_stopped_from_outside_stops_every_part_and_a_failed_image_reading_stops_none(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    import asyncio
+    from types import SimpleNamespace
+
+    from afterledger.agents.schemas import ReaderOut, RowReading
+
+    finished: list[int] = []
+
+    async def slow_reader(deps: Any, name: str, pack: dict, case_id: str | None = None, images: Any = None) -> Any:
+        if name == "reader_b":
+            raise RuntimeError("the page images could not be read")
+        await asyncio.sleep(0.2)
+        finished.append(pack["part"]["pages"][0])
+        return ReaderOut(rows=[RowReading(row=1, date="01-01-26", narration="x", amount="1.00", direction="debit")])
+
+    async def no_stage(*a: Any, **k: Any) -> None:
+        return None
+
+    async def activity(*a: Any, **k: Any) -> None:
+        return None
+
+    monkeypatch.setattr(reading, "call_agent", slow_reader)
+    monkeypatch.setattr(reading, "set_stage", no_stage)
+    paper, lines = _paper_of(6, 200)                           # six dense pages: six parts
+    deps = SimpleNamespace(models=SimpleNamespace(mode="scripted"), activity=activity)
+    case = SimpleNamespace(id="c1", demo_key=None)
+    task = asyncio.ensure_future(reading._read_in_parts(deps, case, paper, lines, {}, {"fields": []}, None))
+    await asyncio.sleep(0.05)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    await asyncio.sleep(0.3)
+    assert finished == []                                      # no part read on after the stop
+    a, b, gaps = await reading._read_in_parts(deps, case, paper, lines, {}, {"fields": []}, None)
+    assert len(a.rows) == 6 and b.fields == [] and gaps == []  # the text reading stands alone
+
+
+def test_the_statement_reader_gets_the_time_its_long_answers_take(tmp_path: Path) -> None:
+    """Live, the statement reader's requests had 90 s and Gemini cut them off (504 DEADLINE_EXCEEDED)."""
+    from afterledger.agents.runner import SLOW_READERS
+    from afterledger.agents.specs import AGENTS
+    from afterledger.runtime import build_deps
+    assert "reader_a" in SLOW_READERS                       # the agent's own limit is doubled too
+    deps = build_deps(offline_settings(tmp_path, llm="gemini", project="test-project", llm_hedge_after_s=20,
+                                       llm_hedge_interactive_s=0, llm_http_timeout_s=90))
+    for name in ("reader_a", "reader_b"):                  # the longest answers: five minutes a request
+        reader = deps.models.model_for(AGENTS[name])
+        assert reader.http_timeout_s == 300 and reader.inner.hedge_after_s == 120
+    assert deps.models.model_for(AGENTS["reader_c"]).inner.hedge_after_s == 40
 
 
 def test_visitors_see_only_the_samples_and_their_own_cases(tmp_path: Path) -> None:
@@ -185,3 +360,169 @@ def test_the_operator_can_clear_the_site_before_a_demonstration(tmp_path: Path, 
         assert c.portal.call(c.deps.knowledge.get, "challenges", "ch_1") is None
     finally:
         gen.close()
+
+
+# ---- the server under load: limits that keep it answering everything else -------------------------------------
+
+async def test_reading_requests_are_limited_across_the_whole_server(monkeypatch: pytest.MonkeyPatch) -> None:
+    import asyncio
+    from types import SimpleNamespace
+
+    from afterledger.agents.schemas import ReaderOut
+
+    now = {"in": 0, "most": 0}
+
+    async def counting_reader(deps: Any, name: str, pack: dict, case_id: str | None = None, images: Any = None) -> Any:
+        now["in"] += 1
+        now["most"] = max(now["most"], now["in"])
+        await asyncio.sleep(0.02)
+        now["in"] -= 1
+        return ReaderOut()
+
+    async def nothing(*a: Any, **k: Any) -> None:
+        return None
+
+    monkeypatch.setattr(reading, "call_agent", counting_reader)
+    monkeypatch.setattr(reading, "set_stage", nothing)
+    monkeypatch.setattr(reading, "READ_CALLS_AT_ONCE", 3)
+    deps = SimpleNamespace(models=SimpleNamespace(mode="scripted"), activity=nothing, extras={})
+    case = SimpleNamespace(id="c1", demo_key=None)
+    two_papers = [_paper_of(8, 200), _paper_of(8, 200)]       # sixteen parts and two image readings at once
+    await asyncio.gather(*(reading._read_in_parts(deps, case, paper, lines, {}, {"fields": []}, None)
+                           for paper, lines in two_papers))
+    assert now["most"] == 3
+
+
+async def test_questions_wait_their_turn_and_leave_memory_once_stored(tmp_path: Path,
+                                                                      monkeypatch: pytest.MonkeyPatch) -> None:
+    import asyncio
+
+    from afterledger.modules import challenge
+    from afterledger.runtime import build_deps
+
+    deps = build_deps(offline_settings(tmp_path))
+    started: list[str] = []
+
+    async def research(deps: Any, run: Any) -> None:
+        started.append(run.id)
+        await asyncio.sleep(0.1)
+        run.status = "done"
+
+    monkeypatch.setattr(challenge, "_challenge", research)
+    monkeypatch.setattr(challenge, "RESEARCH_AT_ONCE", 1)
+    monkeypatch.setattr(challenge, "KEEP_FINISHED_S", 0.05)
+    first = challenge.launch(deps, country="FR", question="Une assurance-vie ?")
+    second = challenge.launch(deps, country="DE", question="Ein Sparbuch?")
+    await asyncio.sleep(0.03)
+    assert started == [first.id] and [e["stage"] for e in second.events] == ["waiting"]
+    await asyncio.sleep(0.5)
+    assert started == [first.id, second.id]
+    assert challenge.running_run(deps, first.id) is None                  # out of memory once stored...
+    assert (await challenge.get_challenge(deps, first.id))["status"] == "done"   # ...and still there to open
+
+
+async def test_the_live_web_keeps_a_bounded_number_of_pages_in_memory(monkeypatch: pytest.MonkeyPatch) -> None:
+    from afterledger.adapters.gcp import web
+    from afterledger.ports import PageSnapshot
+
+    class NoSnapshots:
+        async def fetch(self, url: str) -> None:
+            return None
+
+    pages = web.LivePages(snapshots=NoSnapshots())
+
+    async def fetched(url: str) -> tuple[PageSnapshot, bool]:
+        return PageSnapshot(url=url, title="t", text="x" * 4_000), False
+
+    monkeypatch.setattr(pages, "_get", fetched)
+    monkeypatch.setattr(web, "_CACHE_PAGES", 3)
+    monkeypatch.setattr(web, "_CACHE_CHARS", 10_000)
+    for n in range(6):
+        await pages.fetch_live(f"https://www.example.gov/{n}")
+    assert list(pages._cache) == ["https://www.example.gov/4", "https://www.example.gov/5"]
+    monkeypatch.setattr(web, "_CACHE_CHARS", 100_000)
+    for n in range(6):
+        await pages.fetch_live(f"https://www.example.gov/{n}")
+    assert len(pages._cache) == 3
+
+
+def test_an_upload_too_big_for_the_server_is_refused_with_what_to_do(tmp_path: Path) -> None:
+    import pymupdf
+    doc = pymupdf.open()
+    for _ in range(201):
+        doc.new_page()
+    long_pdf = doc.tobytes()
+    gen = api_client(tmp_path)
+    c = next(gen)
+    try:
+        case_id = c.post("/v1/cases", json={"lang": "en"}).json()["case"]["id"]
+        r = c.post(f"/v1/cases/{case_id}/papers", files=[("files", ("year.pdf", long_pdf, "application/pdf"))])
+        assert r.status_code == 413 and "201 pages" in r.json()["detail"] and "in parts" in r.json()["detail"]
+        r = c.post(f"/v1/cases/{case_id}/papers", files=[("files", ("broken.pdf", b"not a pdf", "application/pdf"))])
+        assert r.status_code == 415
+        many = [("files", (f"p{n}.png", b"x", "image/png")) for n in range(21)]
+        assert c.post(f"/v1/cases/{case_id}/papers", files=many).status_code == 413
+    finally:
+        gen.close()
+
+
+async def test_reading_leaves_the_case_free_for_the_family_and_the_rest_holds_it(tmp_path: Path,
+                                                                                  monkeypatch: pytest.MonkeyPatch) -> None:
+    """Live, every reply, answer and upload on a case waited while its statement was being read (minutes)."""
+    from afterledger.app import actions
+    from afterledger.modules import pipeline
+    from afterledger.runtime import build_deps
+
+    deps = build_deps(offline_settings(tmp_path))
+    actions.register_handlers(deps)
+    held: dict[str, bool] = {}
+
+    async def read_papers(deps_: Any, case_id: str, paper_ids: list[str]) -> None:
+        held["reading"] = actions.case_lock(deps, case_id).locked()
+
+    async def after_reading(deps_: Any, case_id: str) -> None:
+        held["after"] = actions.case_lock(deps, case_id).locked()
+
+    async def nothing(*a: Any, **k: Any) -> None:
+        return None
+
+    monkeypatch.setattr(pipeline, "read_papers", read_papers)
+    monkeypatch.setattr(pipeline, "after_reading", after_reading)
+    monkeypatch.setattr(actions.followup, "plan_today", nothing)
+    await deps.tasks._handlers["after_papers"]({"case_id": "c1", "paper_ids": ["p1"]})
+    assert held == {"reading": False, "after": True}
+
+
+async def test_a_paper_is_read_once_even_when_its_job_comes_twice(monkeypatch: pytest.MonkeyPatch) -> None:
+    import asyncio
+    from types import SimpleNamespace
+
+    from afterledger.modules import pipeline
+
+    papers = {"p1": SimpleNamespace(status="queued"), "p2": SimpleNamespace(status="read")}
+    reads: list[str] = []
+
+    async def slow_read(deps: Any, case_id: str, paper_id: str) -> None:
+        reads.append(paper_id)
+        await asyncio.sleep(0.05)
+        papers[paper_id].status = "read"
+
+    async def get(case_id: str, collection: str, paper_id: str) -> Any:
+        return papers.get(paper_id)
+
+    monkeypatch.setattr(pipeline, "_read", slow_read)
+    deps = SimpleNamespace(extras={}, cases=SimpleNamespace(get=get))
+    await asyncio.gather(pipeline.read_papers(deps, "c1", ["p1", "p2"]), pipeline.read_papers(deps, "c1", ["p1"]))
+    assert reads == ["p1"] and deps.extras["papers_being_read"] == {}
+
+
+def test_each_model_and_endpoint_keeps_one_client(tmp_path: Path) -> None:
+    """Every call used to make its own Gemini client: a new connection, and a new sign-in, each time."""
+    from afterledger.agents.specs import AGENTS
+    from afterledger.runtime import build_deps
+    models = build_deps(offline_settings(tmp_path, llm="gemini", project="test-project")).models
+    us = models._live("gemini-3.8-flash", AGENTS["reader_a"], "us")
+    assert models._live("gemini-3.8-flash", AGENTS["investigator"], "us") is us
+    assert models._live("gemini-3.8-flash", AGENTS["reader_a"], None) is not us
+    one, two = models.model_for(AGENTS["listener"]), models.model_for(AGENTS["listener"])
+    assert one is not two and one.inner.chain[0][1] is two.inner.chain[0][1]

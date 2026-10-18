@@ -70,6 +70,9 @@ from .common import get_deps, queue_events
 # Where sign-in is required, every /{case_id} route is open only to the case's own account (and the admin)
 router = APIRouter(prefix="/v1/cases", tags=["cases"], dependencies=[Depends(case_access)])
 MAX_UPLOAD = 25 * 1024 * 1024
+MAX_UPLOAD_TOTAL = 60 * 1024 * 1024    # every file of one upload together: each is held in memory while it is added
+MAX_FILES = 20
+MAX_PAGES = 200                        # a PDF's pages (a year of a dense bank statement is about 90)
 ALLOWED = {"application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"}
 
 
@@ -160,20 +163,43 @@ async def papers(case_id: str, deps: Deps = Depends(get_deps)) -> PapersView:
     return await papers_view.papers(deps, case_id)
 
 
+def _pdf_pages(data: bytes) -> int | None:
+    """How many pages a PDF has, or None when it is not one that can be opened."""
+    import pymupdf
+    try:
+        with pymupdf.open(stream=data, filetype="pdf") as doc:
+            return doc.page_count
+    except Exception:
+        return None
+
+
 @router.post("/{case_id}/papers", response_model=list[Paper])
 async def upload(case_id: str, files: list[UploadFile] = File(...), by: str | None = Form(None),
                  title: str | None = Form(None), together: bool = Form(False),
                  deps: Deps = Depends(get_deps)) -> list[Paper]:
     got = []
+    total = 0
+    if len(files) > MAX_FILES:
+        raise HTTPException(413, f"At most {MAX_FILES} files can be added at once.")
     for f in files:
         data = await f.read()
         if len(data) > MAX_UPLOAD:
             raise HTTPException(413, f"{f.filename} is larger than 25 MB.")
+        total += len(data)
+        if total > MAX_UPLOAD_TOTAL:
+            raise HTTPException(413, "These files are larger than 60 MB together; add them a few at a time.")
         mime = (f.content_type or "").lower()
         if (f.filename or "").lower().endswith((".heic", ".heif")) and mime not in ALLOWED:
             mime = "image/heic"           # a browser on Windows often sends a phone's HEIC photo with no type
         if mime not in ALLOWED and not (f.filename or "").lower().endswith(".pdf"):
             raise HTTPException(415, f"{f.filename}: only PDFs and photos (JPEG, PNG, WebP, HEIC) can be read.")
+        if mime == "application/pdf" or (f.filename or "").lower().endswith(".pdf"):
+            pages = _pdf_pages(data)
+            if pages is None:
+                raise HTTPException(415, f"{f.filename} could not be opened as a PDF.")
+            if pages > MAX_PAGES:
+                raise HTTPException(413, f"{f.filename} has {pages} pages; at most {MAX_PAGES} can be read at once. "
+                                    "Add it in parts.")
         got.append((f.filename or "upload", data, mime or "application/pdf"))
     if not got:
         raise HTTPException(400, "No files were sent.")

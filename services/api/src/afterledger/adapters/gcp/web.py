@@ -13,6 +13,7 @@ import hashlib
 import logging
 import re
 import time
+from collections import OrderedDict
 from datetime import UTC, datetime
 from html.parser import HTMLParser
 from typing import Any
@@ -31,6 +32,10 @@ _MAX_BYTES = 8_000_000
 _MAX_REDIRECTS = 5
 _TTL = 6 * 3600
 _FAILED_TTL = 300         # a page that could not be read is tried again after five minutes, not taken as gone for hours
+# Pages kept in memory, at most: until 19 October 2026 every page ever read stayed until the server restarted
+# (research reads about sixty pages a question, some of them long PDFs)
+_CACHE_PAGES = 400
+_CACHE_CHARS = 30_000_000
 _BUSY = {408, 425, 429, 500, 502, 503, 504}
 
 # Official sources that do not sit under a government domain
@@ -207,7 +212,7 @@ class LivePages:
         self.client = client or httpx.AsyncClient(follow_redirects=False, timeout=httpx.Timeout(20.0),
                                                   headers={"User-Agent": USER_AGENT})
         self.retry_after = retry_after
-        self._cache: dict[str, tuple[float, PageSnapshot | None]] = {}
+        self._cache: OrderedDict[str, tuple[float, PageSnapshot | None]] = OrderedDict()
         self._completed: dict[str, httpx.AsyncClient | None] = {}   # host -> client that completes its chain
 
     async def fetch(self, url: str) -> PageSnapshot | None:
@@ -223,6 +228,7 @@ class LivePages:
             return snap                    # an invented institution's page exists only in the demo's snapshots
         hit = self._cache.get(url)
         if hit and time.time() - hit[0] < (_TTL if hit[1] is not None else _FAILED_TTL):
+            self._cache.move_to_end(url)
             return hit[1]
         page, busy = await self._get(url)
         if page is None and busy:
@@ -232,8 +238,19 @@ class LivePages:
             page, _ = await self._get(url)
         if page is None and snap is not None:
             page = snap                    # unreachable now: the dated snapshot, which says when it was taken
-        self._cache[url] = (time.time(), page)
+        self._remember(url, page)
         return page
+
+    def _remember(self, url: str, page: PageSnapshot | None) -> None:
+        now = time.time()
+        self._cache.pop(url, None)
+        self._cache[url] = (now, page)
+        for key in [k for k, (at, p) in self._cache.items() if now - at >= (_TTL if p is not None else _FAILED_TTL)]:
+            del self._cache[key]
+        size = sum(len(p.text) for _, p in self._cache.values() if p is not None)
+        while len(self._cache) > 1 and (len(self._cache) > _CACHE_PAGES or size > _CACHE_CHARS):
+            _, (_, oldest) = self._cache.popitem(last=False)
+            size -= len(oldest.text) if oldest is not None else 0
 
     async def _fetch(self, url: str) -> httpx.Response | None:
         """GET with each hop checked as a public http(s) address, at most five redirects, and a size cap that is

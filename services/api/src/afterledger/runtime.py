@@ -47,7 +47,11 @@ class ActivityHub:
         return q
 
     def forget(self, case_id: str, q: asyncio.Queue) -> None:
-        self._listeners[case_id].discard(q)
+        listeners = self._listeners.get(case_id)
+        if listeners is not None:
+            listeners.discard(q)
+            if not listeners:
+                del self._listeners[case_id]
 
     def send(self, case_id: str, payload: dict) -> None:
         for q in list(self._listeners.get(case_id, ())):

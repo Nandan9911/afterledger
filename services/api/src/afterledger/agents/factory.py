@@ -28,6 +28,13 @@ _THINKING = {"low": "LOW", "medium": "MEDIUM", "high": "HIGH"}
 
 # Modules whose answers a person waits for as they type or speak: their slow calls are hedged sooner
 INTERACTIVE = {"intake", "conversation"}
+# Agents that write out a paper's rows, the longest answers: a request may take this long before it is given up
+# (the 90 s every request had cut them off live on 19 October 2026), and a second endpoint is asked only after
+# LONG_ANSWER_HEDGE_S (with 40 s nearly every part was sent twice, for nothing). Each try of the agent has ten
+# minutes (runner: SLOW_READERS doubles AL_AGENT_TIMEOUT_S), and a part that still fails is read again in halves.
+LONG_ANSWERS = {"reader_a", "reader_b"}
+LONG_ANSWER_DEADLINE_S = 300.0
+LONG_ANSWER_HEDGE_S = 120.0
 
 
 def _slow(spec: AgentSpec) -> bool:
@@ -42,6 +49,7 @@ class ModelProvider:
         self.settings = deps.settings
         self.calls = 0
         self.fallbacks = 0          # replay calls that had no cassette and were answered by the offline oracle
+        self._gemini: dict[tuple[str, str], Any] = {}
 
     @property
     def mode(self) -> str:
@@ -60,8 +68,15 @@ class ModelProvider:
         """The live model for one agent's tier, on the main endpoint or another one (the spec is for tests that stand
         a scripted model in its place)."""
         from google.adk.models import Gemini
-        return Gemini(model=model_id, retry_options=types.HttpRetryOptions(attempts=3, initial_delay=1.0),
-                      client_kwargs={"location": location} if location else None)
+        # one model object for each model and endpoint, kept: its client and open connections serve every call
+        # (until 19 October 2026 each call made its own, with a new connection and sign-in each time)
+        key = (model_id, location or "")
+        model = self._gemini.get(key)
+        if model is None:
+            model = self._gemini[key] = Gemini(
+                model=model_id, retry_options=types.HttpRetryOptions(attempts=3, initial_delay=1.0),
+                client_kwargs={"location": location} if location else None)
+        return model
 
     def _base(self, spec: AgentSpec):
         if self.mode == "scripted":
@@ -83,6 +98,8 @@ class ModelProvider:
         # one route or several, the same wrapper: a slow or overloaded endpoint gives way to the same model on the
         # next one, a passed deadline everywhere is a retry, and an overload everywhere moves down a tier
         hedge = float(self.settings.llm_hedge_after_s or 0) * (2 if _slow(spec) else 1)
+        if hedge and spec.name in LONG_ANSWERS:     # a long answer is not a stuck one: asking a second endpoint
+            hedge = max(hedge, LONG_ANSWER_HEDGE_S)  # early only doubles the work
         quick = float(self.settings.llm_hedge_interactive_s or 0)
         if hedge and quick and spec.module in INTERACTIVE:
             hedge = min(hedge, quick)
@@ -98,6 +115,8 @@ class ModelProvider:
         timeout = None
         if self.mode == "gemini":             # a live request is never left hanging: one stuck connection is retried
             timeout = float(self.settings.llm_http_timeout_s) * (2 if _slow(spec) else 1)
+            if spec.name in LONG_ANSWERS:
+                timeout = max(timeout, LONG_ANSWER_DEADLINE_S)
         return MeteredLlm(model=base.model, agent=spec.name, inner=base, meter=self.deps.meter, http_timeout_s=timeout)
 
     def _fell_back(self, agent: str, key: str) -> None:

@@ -194,6 +194,24 @@ imported into Firestore and Cloud Storage at first start. Logs are one JSON obje
 reads their severity. See [runbooks/deploy-gcp.md](runbooks/deploy-gcp.md), and
 [runbooks/live-run.md](runbooks/live-run.md) for a live run on a computer.
 
+### Load on the one instance
+
+Work runs side by side wherever it can, with a limit at each level so a busy case never starves the others, and
+nothing held in memory grows without bound (changed on 19 October 2026, after a live test with real statements):
+
+| What | Side by side | Limit (where) |
+|---|---|---|
+| A long or dense paper | its parts, each at most 6 pages and 140 text lines (a dense statement page is about 200 lines, so it goes alone) | 10 parts of one paper (`PARTS_AT_ONCE`), 16 reading requests on the server (`READ_CALLS_AT_ONCE`, `modules/reading.py`) |
+| The papers of one upload | read together, outside the case's lock: the family can talk, answer and add papers meanwhile | a paper is read once at a time, however often its job is delivered (`modules/pipeline.py`) |
+| A part that fails | read again in halves, down to single pages; a page that still fails is named on the paper's card and left out, and its neighbours are checked across the gap; more than half missing fails the paper | reader A and B: 5 minutes a request, a second endpoint after 2, 10 minutes a try, one more try (`agents/factory.py`, `agents/runner.py`) |
+| Questions about a country | two researchers each, several searches at once | 3 questions on the server (`RESEARCH_AT_ONCE`); the next says it is waiting. A finished one leaves memory 15 minutes after it is stored |
+| Uploads | each file's pages drawn and stored | 3 uploads taken in at once; 25 MB a file, 60 MB and 20 files an upload, 200 pages a PDF (`app/routers/cases.py`) |
+| Pages read from the web | cached for six hours | at most 400 pages and 30 million characters, oldest out first (`adapters/gcp/web.py`) |
+| Gemini clients | one per model and endpoint, kept with its open connections | (`agents/factory.py`) |
+
+Background jobs come from Cloud Tasks, four at a time. Measured during the live test: memory peaked at 29% of 2 GiB
+and CPU at 10%; the time went to waiting for Gemini.
+
 ### Growing beyond one instance
 
 The boundaries are already where a larger deployment needs them:

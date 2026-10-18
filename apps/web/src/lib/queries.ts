@@ -430,6 +430,18 @@ export function useStartChallenge() {
   });
 }
 
+/** The questions the signed-in account asked, newest first, running ones included (the public site lists nobody
+ * else's). Refreshed every few seconds while one is still researching. */
+export function useMyQuestions() {
+  const who = useAuth((s) => s.user?.id ?? null);
+  return useQuery({
+    queryKey: ['challenges', who],
+    queryFn: () => unwrap(api().GET('/v1/challenges')),
+    enabled: who !== null,
+    refetchInterval: (q) => (q.state.data?.some((c) => c.status === 'running') ? 5000 : false),
+  });
+}
+
 export function useChallenge(runId: string, live: boolean) {
   return useQuery({
     queryKey: ['challenge', runId],

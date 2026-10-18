@@ -3,6 +3,7 @@ and plans; answers and approvals flow back into planning. Every step is idempote
 can be re-run after any change without duplicating anything."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -13,8 +14,36 @@ log = logging.getLogger(__name__)
 
 
 async def after_papers(deps: Any, case_id: str, paper_ids: list[str]) -> None:
-    for pid in paper_ids:
-        await _read(deps, case_id, pid)
+    await read_papers(deps, case_id, paper_ids)
+    await after_reading(deps, case_id)
+
+
+async def read_papers(deps: Any, case_id: str, paper_ids: list[str]) -> None:
+    """The papers added together, read side by side (until 19 October 2026 one after another: a second statement
+    waited for the first). Reading writes only each paper's own records, so it needs no hold on the case: the
+    family can talk, answer and add papers meanwhile. _read never raises, so one paper's failure leaves the others
+    alone."""
+    await asyncio.gather(*(_read_once(deps, case_id, pid) for pid in paper_ids))
+
+
+async def _read_once(deps: Any, case_id: str, paper_id: str) -> None:
+    """A paper is read once at a time: a job delivered twice (Cloud Tasks retries one that ran past its deadline)
+    waits for the reading under way, and a paper read already is not read again."""
+    locks = deps.extras.setdefault("papers_being_read", {})
+    lock = locks.setdefault(paper_id, asyncio.Lock())
+    try:
+        async with lock:
+            paper = await deps.cases.get(case_id, "papers", paper_id)
+            if paper is None or paper.status in ("read", "needs_check"):
+                return
+            await _read(deps, case_id, paper_id)
+    finally:
+        if not lock.locked():
+            locks.pop(paper_id, None)
+
+
+async def after_reading(deps: Any, case_id: str) -> None:
+    """What the papers lead to, across the case: who and what they name, what they point to, the claims and plans."""
     await people.resolve_institutions(deps, case_id)
     await people.resolve_people(deps, case_id)
     await discovery.discover(deps, case_id)
@@ -36,7 +65,7 @@ async def _read(deps: Any, case_id: str, paper_id: str) -> None:
             return
         except Exception as e:
             passing = type(e).__name__ in ("ModelTimeout", "ReadError", "TransportError", "ConnectError",
-                                           "RemoteProtocolError", "ServerError", "TimeoutError")
+                                           "RemoteProtocolError", "ServerError", "TimeoutError", "NodeTimeoutError")
             if passing and attempt == 1:
                 log.warning("reading %s/%s failed (%s); trying once more", case_id, paper_id, e)
                 continue

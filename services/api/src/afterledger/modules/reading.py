@@ -9,6 +9,8 @@ and only values that still need a person become questions for the family (checkp
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import logging
 import re
 import unicodedata
 from datetime import date
@@ -25,13 +27,29 @@ from ..domain.money import format_amount
 from .common import case_block, open_checkpoint, pack_key, screen_outside
 
 MODULE = "reading"
+log = logging.getLogger(__name__)
 
 # A long paper (a year of bank statements runs to 90 pages) is read in parts side by side: one request for all of it
 # exceeds what a model takes in (1,048,576 tokens), and would take minutes even where it fits. Its rows are read from
 # the text layer part by part and checked by the running balance; its first pages are also read from their images.
-PART_PAGES = 6            # pages per reading request
+# A part is sized by its text, not only its pages: on 19 October 2026 a real bank statement's six-page parts (about
+# 1,250 text lines, 70,000 tokens in and 55,000 out with the model's thinking) ran past every deadline, and the
+# statement could not be read. A dense statement page has about 200 lines (each table cell is one); a sparse one 20.
+PART_PAGES = 6            # pages per reading request, at most
+PART_LINES = 140          # text lines per reading request, at most (a page always goes whole)
 LONG_PAPER_PAGES = 12     # papers longer than this are read in parts (every demo paper is shorter)
-PARTS_AT_ONCE = 6         # parts read at the same time
+LONG_PAPER_LINES = 600    # and papers with more text lines than this (the longest demo paper has 556)
+PARTS_AT_ONCE = 10        # parts of one paper read at the same time
+READ_CALLS_AT_ONCE = 16   # reading requests at the same time on one server, every paper and case together: the
+                          # papers of an upload are read side by side, and several cases can be reading at once
+
+
+def _read_calls(deps: Any) -> Any:
+    """The server-wide limit on reading requests (no limit for a stand-in deps without extras, in tests)."""
+    extras = getattr(deps, "extras", None)
+    if extras is None:
+        return contextlib.nullcontext()
+    return extras.setdefault("read_calls", asyncio.Semaphore(READ_CALLS_AT_ONCE))
 SCREEN_CHARS = 200_000    # how much of a paper's text is screened for planted instructions
 DATE_ORDER = {"US": "MDY", "JP": "JP_ERA"}
 
@@ -202,8 +220,9 @@ async def read_paper(deps: Any, case_id: str, paper_id: str) -> Paper:
 
     # 3. two independent readings ------------------------------------------------------------------
     await set_stage(deps, paper, "reading", "Reading every value twice, by different methods")
-    if len(paper.pages) > LONG_PAPER_PAGES:
-        a, b = await _read_in_parts(deps, case, paper, all_lines, base, schema, fixture)
+    gaps: list[int] = []
+    if len(paper.pages) > LONG_PAPER_PAGES or len(all_lines) > LONG_PAPER_LINES:
+        a, b, gaps = await _read_in_parts(deps, case, paper, all_lines, base, schema, fixture)
     else:
         line_pack = [{"id": ln.id, "text": ln.text,
                       "page": next((p.number for p in paper.pages if p.id == ln.page_id), 1),
@@ -212,8 +231,12 @@ async def read_paper(deps: Any, case_id: str, paper_id: str) -> Paper:
         pack_b = {"key": pack_key("reader_b", case, fixture or paper.id), **base, "schema": schema,
                   "pages": [{"id": p.id, "number": p.number, "width": p.width, "height": p.height} for p in paper.pages]}
         images = await page_images(deps, paper)
-        a, b = await asyncio.gather(call_agent(deps, "reader_a", pack_a, case_id=case_id),
-                                    call_agent(deps, "reader_b", pack_b, case_id=case_id, images=images))
+
+        async def limited(*args: Any, **kwargs: Any) -> Any:
+            async with _read_calls(deps):
+                return await call_agent(*args, **kwargs)
+        a, b = await asyncio.gather(limited(deps, "reader_a", pack_a, case_id=case_id),
+                                    limited(deps, "reader_b", pack_b, case_id=case_id, images=images))
 
     # 4. compare fields ------------------------------------------------------------------------------
     a_f = {f.field: f for f in a.fields}
@@ -286,10 +309,12 @@ async def read_paper(deps: Any, case_id: str, paper_id: str) -> Paper:
         await deps.cases.put_many(case_id, "transactions", txns)
     paper.values_total = len(values) + len(row_values)
     paper.values_to_check = len(to_check)
-    paper.status = "needs_check" if to_check else "read"
+    paper.status = "needs_check" if to_check or gaps else "read"
     paper.stage = (f"{len(to_check)} value{'s' if len(to_check) != 1 else ''} to check" if to_check
                    else "Read twice, matched")
     paper.summary = _summary(paper, values, txns)
+    if gaps:                                 # on the paper's card: what is missing, and what to do
+        paper.summary = f"{_pages_text(gaps).capitalize()} could not be read; add them again. {paper.summary}"
     await deps.cases.put(case_id, "papers", paper)
     await _facts_from(deps, case, paper, values)
     for rv in to_check:
@@ -302,63 +327,176 @@ async def read_paper(deps: Any, case_id: str, paper_id: str) -> Paper:
     return paper
 
 
+def split_pages(pages: list, lines_on: dict[str, int]) -> list[list]:
+    """Consecutive pages in parts of at most PART_PAGES pages and PART_LINES text lines; a page is never split."""
+    parts: list[list] = []
+    part: list = []
+    n = 0
+    for page in pages:
+        k = lines_on.get(page.id, 0)
+        if part and (len(part) >= PART_PAGES or n + k > PART_LINES):
+            parts.append(part)
+            part, n = [], 0
+        part.append(page)
+        n += k
+    if part:
+        parts.append(part)
+    return parts
+
+
+def _restore_ids(out: Any, short: dict[str, str]) -> Any:
+    """A part's lines go to the reader under short ids (L1, L2...: fewer tokens in and out); its answer gets the real
+    line ids back, for the evidence boxes."""
+    def real(ids: list[str]) -> list[str]:
+        return [short.get(x, x) for x in ids]
+    return out.model_copy(update={
+        "fields": [f.model_copy(update={"line_ids": real(f.line_ids)}) for f in out.fields],
+        "rows": [r.model_copy(update={"line_ids": real(r.line_ids)}) for r in out.rows]})
+
+
+def _keep_fields(found: dict[str, Any], fields: list) -> None:
+    """Values read part by part: a closing balance is printed last, so a later part's wins; everything else is
+    printed at the top, so the first reading of it stays."""
+    for f in fields:
+        if f.value is not None and (f.field not in found or "closing" in f.field or "balance" in f.field):
+            found[f.field] = f
+
+
+class ReadingFailed(RuntimeError):
+    """Too much of a paper could not be read to call it read."""
+
+
 async def _read_in_parts(deps: Any, case: Any, paper: Paper, all_lines: list[OcrLine], base: dict, schema: dict,
-                         fixture: str | None) -> tuple[Any, Any]:
-    """A long paper, read PART_PAGES pages at a time, PARTS_AT_ONCE parts side by side. Every part is read from its
-    text layer (reader A); the first part is also read from its page images (reader B), for the values printed at
-    the top, and every row is checked against the running balance. Returns the two readings as for a short paper."""
+                         fixture: str | None) -> tuple[Any, Any, list[int]]:
+    """A long or dense paper, read in parts of a few pages (split_pages), PARTS_AT_ONCE parts side by side: every
+    part from its text layer (reader A), and the first part also from its page images (reader B), for the values
+    printed at the top; every row is then checked against the running balance.
+
+    A part that cannot be read (after its own second try) is split in two and each half read again, down to single
+    pages; a page that still cannot be read is left out and named, and its neighbours' rows are checked across the
+    gap. Only when more than half the pages cannot be read is the paper not read. Returns the two readings as for a
+    short paper, and the numbers of the pages left out."""
     from ..agents.schemas import ReaderOut
     pages = sorted(paper.pages, key=lambda p: p.number)
-    parts = [pages[i:i + PART_PAGES] for i in range(0, len(pages), PART_PAGES)]
+    lines_on: dict[str, int] = {}
+    for ln in all_lines:
+        lines_on[ln.page_id] = lines_on.get(ln.page_id, 0) + 1
+    parts = split_pages(pages, lines_on)
     number = {p.id: p.number for p in pages}
     gate = asyncio.Semaphore(PARTS_AT_ONCE)
+    key = fixture or paper.id
     done = 0
+    errors: list[BaseException] = []
 
-    async def one(i: int, part: list) -> tuple[Any, Any]:
-        nonlocal done
+    def about(part: list) -> dict:
+        return {"pages": [part[0].number, part[-1].number], "of_pages": len(pages),
+                "note": "Only these pages of the paper are given. Read the values printed on them, and number "
+                        "their statement rows from 1."}
+
+    async def read_text(part: list) -> Any:
         ids = {p.id for p in part}
-        line_pack = [{"id": ln.id, "text": ln.text, "page": number.get(ln.page_id, 1),
-                      "box": [round(x, 4) for x in ln.box]} for ln in all_lines if ln.page_id in ids]
-        about = {"part": i + 1, "parts": len(parts), "pages": [part[0].number, part[-1].number],
-                 "of_pages": len(pages),
-                 "note": "Only these pages of the paper are given. Read the values printed on them, and number "
-                         "their statement rows from 1."}
-        key = fixture or paper.id
-        async with gate:
-            calls = [call_agent(deps, "reader_a", {"key": pack_key("reader_a", case, key, f"part{i + 1}"), **base,
-                                                   "schema": schema, "lines": line_pack, "part": about},
-                                case_id=case.id)]
-            if i == 0:
-                images = [] if deps.models.mode == "scripted" else \
-                    [(await deps.blobs.get(p.image), deps.blobs.content_type(p.image)) for p in part]
-                calls.append(call_agent(deps, "reader_b", {
-                    "key": pack_key("reader_b", case, key, f"part{i + 1}"), **base, "schema": schema, "part": about,
-                    "pages": [{"id": p.id, "number": p.number, "width": p.width, "height": p.height} for p in part]},
-                    case_id=case.id, images=images))
-            out = await asyncio.gather(*calls)
-        done += 1
-        await set_stage(deps, paper, "reading", f"Reading a long paper: {min(done * PART_PAGES, len(pages))} of "
-                                                f"{len(pages)} pages read")
-        return out[0], (out[1] if len(out) > 1 else None)
+        short: dict[str, str] = {}
+        line_pack = []
+        for ln in all_lines:
+            if ln.page_id in ids:
+                short[f"L{len(short) + 1}"] = ln.id
+                line_pack.append({"id": f"L{len(short)}", "text": ln.text, "page": number.get(ln.page_id, 1),
+                                  "box": [round(x, 3) for x in ln.box]})
+        async with _read_calls(deps):
+            out = await call_agent(deps, "reader_a", {
+                "key": pack_key("reader_a", case, key, f"pages{part[0].number}-{part[-1].number}"), **base,
+                "schema": schema, "lines": line_pack, "part": about(part)}, case_id=case.id)
+        return _restore_ids(out, short)
 
-    results = await asyncio.gather(*[one(i, part) for i, part in enumerate(parts)])
+    async def one(part: list) -> tuple[Any, list[int]]:
+        nonlocal done
+        async with gate:
+            try:
+                out = await read_text(part)
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:           # any failure of a part: smaller parts next, then a named gap
+                errors.append(e)
+                out = None
+        if out is not None:
+            done += len(part)
+            await set_stage(deps, paper, "reading", f"Reading a long paper: {done} of {len(pages)} pages read")
+            return out, []
+        if len(part) > 1:
+            log.warning("reading %s pages %d-%d failed (%s); reading each half", paper.id, part[0].number,
+                        part[-1].number, errors[-1])
+            half = len(part) // 2
+            (first, gap1), (second, gap2) = await asyncio.gather(one(part[:half]), one(part[half:]))
+            fields: dict[str, Any] = {}
+            _keep_fields(fields, first.fields)
+            _keep_fields(fields, second.fields)
+            rows = list(first.rows) + [r.model_copy(update={"row": len(first.rows) + r.row}) for r in second.rows]
+            return ReaderOut(fields=list(fields.values()), rows=rows), gap1 + gap2
+        log.warning("reading %s page %d failed twice (%s); left out", paper.id, part[0].number, errors[-1])
+        done += 1
+        return ReaderOut(), [part[0].number]
+
+    async def read_images() -> Any:
+        """Reader B on the first part's pages. Its failure does not stop the reading: the values at the top then
+        have one reading, and are checked by the family."""
+        first = parts[0]
+        try:
+            images = [] if deps.models.mode == "scripted" else \
+                [(await deps.blobs.get(p.image), deps.blobs.content_type(p.image)) for p in first]
+            async with _read_calls(deps):
+                return await call_agent(deps, "reader_b", {
+                    "key": pack_key("reader_b", case, key, f"pages{first[0].number}-{first[-1].number}"), **base,
+                    "schema": schema, "part": about(first),
+                    "pages": [{"id": p.id, "number": p.number, "width": p.width, "height": p.height} for p in first]},
+                    case_id=case.id, images=images)
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            log.warning("reading %s from its images failed (%s); its text reading stands alone", paper.id, e)
+            return ReaderOut()
+
+    tasks = [asyncio.ensure_future(one(part)) for part in parts]
+    images_task = asyncio.ensure_future(read_images())
+    try:
+        results = await asyncio.gather(*tasks)
+        rb = await images_task
+    except BaseException:
+        for t in [*tasks, images_task]:      # stopped from outside: every part stops with it
+            t.cancel()
+        await asyncio.gather(*tasks, images_task, return_exceptions=True)
+        raise
+    gaps = sorted(n for _, gap in results for n in gap)
+    if gaps and len(gaps) * 2 > len(pages):
+        raise ReadingFailed(f"{len(gaps)} of {len(pages)} pages could not be read") from (errors[-1] if errors else None)
     fields_a: dict[str, Any] = {}
-    fields_b: dict[str, Any] = {}
     rows_a: list = []
-    for ra, rb in results:
+    for ra, _gap in results:
+        _keep_fields(fields_a, ra.fields)
         offset = len(rows_a)
-        for f in ra.fields:                  # a closing balance is printed last; everything else at the top
-            if f.value is not None and (f.field not in fields_a or "closing" in f.field or "balance" in f.field):
-                fields_a[f.field] = f
-        for f in (rb.fields if rb else []):
-            if f.value is not None and f.field not in fields_b:
-                fields_b[f.field] = f
         rows_a += [r.model_copy(update={"row": offset + r.row}) for r in ra.rows]
+    fields_b: dict[str, Any] = {}
+    for f in rb.fields:
+        if f.value is not None and f.field not in fields_b:
+            fields_b[f.field] = f
+    first = "the first page also from its image" if len(parts[0]) == 1 else \
+        f"the first {len(parts[0])} also from their images"
     await deps.activity(case.id, MODULE, f"“{paper.title}” has {len(pages)} pages, so it was read in {len(parts)} "
-                        f"parts side by side: every page from its text, the first {len(parts[0])} also from their "
-                        "images, and every statement line against the running balance.", agent="reader_a",
-                        paper_id=paper.id)
-    return ReaderOut(fields=list(fields_a.values()), rows=rows_a), ReaderOut(fields=list(fields_b.values()), rows=[])
+                        f"parts side by side: every page from its text, {first}, and every statement line against "
+                        "the running balance.", agent="reader_a", paper_id=paper.id)
+    if gaps:
+        await deps.activity(case.id, MODULE, f"{_pages_text(gaps).capitalize()} of “{paper.title}” could not be "
+                            "read, even a page at a time, so their rows are missing; the rows on either side are "
+                            "checked across the gap. Add those pages again, or a clearer copy.", kind="warning",
+                            paper_id=paper.id)
+    return (ReaderOut(fields=list(fields_a.values()), rows=rows_a), ReaderOut(fields=list(fields_b.values()), rows=[]),
+            gaps)
+
+
+def _pages_text(numbers: list[int]) -> str:
+    """'page 7', 'pages 7 and 9', 'pages 7, 9 and 12'."""
+    if len(numbers) == 1:
+        return f"page {numbers[0]}"
+    return "pages " + ", ".join(str(n) for n in numbers[:-1]) + f" and {numbers[-1]}"
 
 
 async def _reconcile_rows(deps: Any, case: Any, paper: Paper, lines: dict[str, OcrLine], rows_a: list, rows_b: list,

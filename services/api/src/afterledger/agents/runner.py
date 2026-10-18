@@ -49,7 +49,9 @@ warnings.filterwarnings("ignore", message=r"\[EXPERIMENTAL\] feature FeatureName
 TRANSIENT = ["TimeoutError", "NodeTimeoutError", "ServerError", "ConnectError", "ConnectTimeout", "ReadTimeout",
              "ReadError", "RemoteProtocolError", "ServiceUnavailable", "DeadlineExceeded", "TransportError",
              "ConnectionError"]
-SLOW_READERS = {"reader_b", "reader_c", "visual_critic", "triage"}       # they look at page images
+# They look at page images, or write out every row of a statement: each gets twice the time (agent and request).
+# reader_a joined on 19 October 2026: its requests had 90 s, and a dense statement's rows take Gemini longer to write.
+SLOW_READERS = {"reader_a", "reader_b", "reader_c", "visual_critic", "triage"}
 
 REASK = ("Your previous answer could not be used: {problem} Answer again: one JSON object that matches your output "
          "schema exactly, every required field present, nothing outside the JSON.")

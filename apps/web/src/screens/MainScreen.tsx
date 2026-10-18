@@ -9,7 +9,7 @@ import { Button, ButtonLink, Chip, Logo, ScrollX, Skeleton, Wordmark } from '@/c
 import { Link } from '@/i18n/navigation';
 import { countryName, longDate } from '@/lib/format';
 import { myCasesSnapshot, onMyCasesChange } from '@/lib/mycases';
-import { useCases, useDeleteCase, useFamilies } from '@/lib/queries';
+import { useCases, useDeleteCase, useFamilies, useMyQuestions } from '@/lib/queries';
 import { useSite } from '@/lib/site';
 import { WhyAfterLedger } from './WhyAfterLedger';
 import { AccountLinks } from '@/components/Account';
@@ -380,6 +380,7 @@ export function MainScreen() {
             <h2 className={h2}>{t('challengeTitle')}</h2>
             <p className="m-0 mt-3.5 max-w-[44em] text-[18px] text-night-soft">{t('challengeText')}</p>
             <ChallengeForm />
+            <MyQuestions />
           </section>
         </main>
 
@@ -396,6 +397,38 @@ export function MainScreen() {
           </div>
         </footer>
       </div>
+    </div>
+  );
+}
+
+/** The questions this account asked: each keeps researching on the server when its page is left. */
+function MyQuestions() {
+  const t = useTranslations('main');
+  const locale = useLocale();
+  const q = useMyQuestions();
+  const rows = q.data ?? [];
+  if (!rows.length) return null;
+  const state = (status: string) =>
+    status === 'running' ? t('questionRunning') : status === 'error' ? t('questionStopped') : t('questionDone');
+  return (
+    <div className="mt-12 border-t border-white/15 pt-8">
+      <h3 className="m-0 text-[22px] font-bold">{t('myQuestions')}</h3>
+      <p className="m-0 mt-2 max-w-[44em] text-[16px] text-night-soft">{t('myQuestionsNote')}</p>
+      <ul className="m-0 mt-5 grid list-none gap-3 p-0">
+        {rows.map((r) => (
+          <li key={r.id}>
+            <Link
+              href={`/challenge/${encodeURIComponent(r.id)}`}
+              className="tap block rounded-[14px] border border-white/20 px-5 py-4 text-[#F2F5F3] no-underline hover:border-white/50"
+            >
+              <span className="block text-[14px] text-night-faint">
+                {[countryName(r.country, locale), state(r.status), longDate(r.started_at, locale)].filter(Boolean).join(' · ')}
+              </span>
+              <span className="mt-1 line-clamp-2 block text-[17px] leading-snug">{r.question}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

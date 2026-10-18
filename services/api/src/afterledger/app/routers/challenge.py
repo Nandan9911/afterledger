@@ -65,14 +65,18 @@ async def list_presets(deps: Deps = Depends(get_deps)) -> list[ChallengePreset]:
 @router.get("", response_model=list[ChallengeRow])
 async def list_challenges(user: User | None = Depends(optional_user),
                           deps: Deps = Depends(get_deps)) -> list[ChallengeRow]:
-    if deps.settings.product:              # on the public site nobody sees the questions others asked
-        return []
-    rows = await challenge.list_challenges(deps)
+    """The questions asked, newest first, running ones included. Where sign-in is required, the signed-in account's
+    own (the admin's too, as with cases; the admin can still open any question by its address). On a public site
+    without accounts, none: nobody sees the questions others asked."""
     if deps.settings.auth_required:
-        mine = {c["id"] for c in await challenge.knowledge(deps).store.list("challenges")
-                if may_see_question(deps, c, user)}
-        rows = [r for r in rows if r["id"] in mine]
-    return [ChallengeRow(**c) for c in rows]
+        if user is None:
+            return []
+        rows = [r for r in await challenge.list_challenges(deps) if r.get("owner_id") == user.id]
+    elif deps.settings.product:
+        return []
+    else:
+        rows = await challenge.list_challenges(deps)
+    return [ChallengeRow(**{k: v for k, v in c.items() if k != "owner_id"}) for c in rows]
 
 
 @router.post("", response_model=ChallengeView)

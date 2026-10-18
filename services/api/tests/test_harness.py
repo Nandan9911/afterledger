@@ -360,8 +360,9 @@ def test_live_requests_carry_a_deadline(tmp_path: Any) -> None:
     from afterledger.runtime import build_deps
     deps = build_deps(offline_settings(tmp_path, llm="gemini", project="test-project", llm_http_timeout_s=90))
     assert deps.models.model_for(AGENTS["listener"]).http_timeout_s == 90
-    assert deps.models.model_for(AGENTS["reader_b"]).http_timeout_s == 180            # it reads page images
     assert deps.models.model_for(AGENTS["reader_c"]).http_timeout_s == 180            # a pro agent
+    for name in ("reader_a", "reader_b"):              # they write out every row of a paper: the longest answers
+        assert deps.models.model_for(AGENTS[name]).http_timeout_s == 300
     offline = build_deps(offline_settings(tmp_path / "offline"))
     assert offline.models.model_for(AGENTS["listener"]).http_timeout_s is None
 

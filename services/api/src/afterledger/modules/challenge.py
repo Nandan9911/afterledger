@@ -28,8 +28,20 @@ COUNTRY_LANG = {"FR": "fr", "DE": "de", "JP": "ja", "EG": "ar", "AE": "ar", "SA"
 FINISHED = "finished"
 
 
+# Each question runs two researchers with several searches, page reads and model calls at once, and holds the pages
+# it read: this many are researched at the same time on one server, and the next waits its turn, saying so.
+RESEARCH_AT_ONCE = 3
+# A finished question is stored; it stays in memory this long for anyone still watching it live, then only the
+# stored copy is kept (until 19 October 2026 every question stayed in memory until the server restarted).
+KEEP_FINISHED_S = 900.0
+
+
 def _running(deps: Any) -> dict[str, ResearchRun]:
     return deps.extras.setdefault("challenge_runs", {})
+
+
+def _research_gate(deps: Any) -> asyncio.Semaphore:
+    return deps.extras.setdefault("research_gate", asyncio.Semaphore(RESEARCH_AT_ONCE))
 
 
 def running_run(deps: Any, run_id: str) -> ResearchRun | None:
@@ -61,8 +73,13 @@ async def start_challenge(deps: Any, *, country: str, question: str, lang: str |
     if listener:
         run.listeners.append(listener)
     stopped: ServiceFailure | None = None
+    gate = _research_gate(deps)
     try:
-        await _challenge(deps, run)
+        if gate.locked():
+            run.log("waiting", f"{RESEARCH_AT_ONCE} other questions are being researched; this one starts as soon "
+                    "as one of them finishes.")
+        async with gate:
+            await _challenge(deps, run)
     except Exception as exc:  # the screen must always learn that the run ended
         log.exception("challenge %s failed", run.id)
         run.status = "error"
@@ -75,6 +92,9 @@ async def start_challenge(deps: Any, *, country: str, question: str, lang: str |
     if stopped is not None:
         raise stopped
     await knowledge(deps).store.put("challenges", run.id, run_view(run))
+    held = _running(deps)
+    asyncio.get_running_loop().call_later(KEEP_FINISHED_S, lambda: held.pop(run.id, None)
+                                          if held.get(run.id) is run else None)
     return run
 
 
@@ -134,14 +154,21 @@ async def clear_challenges(deps: Any) -> int:
     for c in await store.list("challenges"):
         if c.get("id") and await store.delete("challenges", c["id"]):
             gone += 1
+    held = _running(deps)                    # finished ones held in memory too, or the list would show them again
+    for run_id in [k for k, run in held.items() if run.status != "running"]:
+        del held[run_id]
     return gone
 
 
 async def list_challenges(deps: Any) -> list[dict]:
-    items = await knowledge(deps).store.list("challenges")
+    """Every question, newest first: the finished ones, which are stored, and those still running here, which are
+    stored only when they finish (until 19 October a running question was missing from the list)."""
+    items = {c["id"]: c for c in await knowledge(deps).store.list("challenges")}
+    for run in list(_running(deps).values()):
+        items.setdefault(run.id, run_view(run))
     out = [{"id": c["id"], "country": c["need"]["country"], "question": c["need"]["question"],
             "lang": c["need"].get("lang"), "status": c["status"], "started_at": c.get("started_at"),
-            "stored_key": c.get("stored_key")} for c in items]
+            "stored_key": c.get("stored_key"), "owner_id": c.get("owner_id")} for c in items.values()]
     return sorted(out, key=lambda c: c.get("started_at") or "", reverse=True)
 
 

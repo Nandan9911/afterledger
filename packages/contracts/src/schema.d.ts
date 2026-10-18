@@ -1005,7 +1005,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Challenges */
+        /**
+         * List Challenges
+         * @description The questions asked, newest first, running ones included. Where sign-in is required, the signed-in account's
+         *     own (the admin's too, as with cases; the admin can still open any question by its address). On a public site
+         *     without accounts, none: nobody sees the questions others asked.
+         */
         get: operations["list_challenges_v1_challenges_get"];
         put?: never;
         /** Start */

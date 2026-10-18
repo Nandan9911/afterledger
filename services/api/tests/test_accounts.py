@@ -209,3 +209,26 @@ def test_the_public_site_hides_model_use_and_lets_only_the_admin_reset_a_sample(
         assert c.post("/v1/demo/verma/reset", headers=_auth(admin)).status_code == 200
     finally:
         gen.close()
+
+
+def test_each_account_sees_its_own_questions_while_they_run_and_after(tmp_path: Path) -> None:
+    """Live on 19 October 2026 a question was lost once its page was left: the public site listed nobody's."""
+    import json
+    gen, c = _client(tmp_path)
+    try:
+        a, _ = _signup(c, "Asha", "asha@example.org")
+        b, _ = _signup(c, "Ben", "ben@example.org")
+        run = c.post("/v1/challenges", headers=_auth(a), json={
+            "country": "FR", "lang": "fr", "holding_kind": "life_policy",
+            "question": "Mon père est décédé à Lyon en août. Avait-il une assurance-vie ?"}).json()
+        assert [x["id"] for x in c.get("/v1/challenges", headers=_auth(a)).json()] == [run["id"]]   # running
+        with c.stream("GET", f"/v1/challenges/{run['id']}/events", headers=_auth(a)) as s:
+            events = [json.loads(line[5:]) for line in s.iter_lines() if line.startswith("data:")]
+        assert events[-1]["stage"] == "finished"
+        mine = c.get("/v1/challenges", headers=_auth(a)).json()
+        assert [x["id"] for x in mine] == [run["id"]] and mine[0]["status"] != "running"   # and finished
+        assert c.get("/v1/challenges", headers=_auth(b)).json() == []        # nobody else's
+        assert c.get("/v1/challenges").json() == []
+        assert c.get(f"/v1/challenges/{run['id']}", headers=_auth(b)).status_code == 404
+    finally:
+        gen.close()

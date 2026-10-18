@@ -3136,6 +3136,7 @@
      "challenge"
     ],
     "summary": "List Challenges",
+    "description": "The questions asked, newest first, running ones included. Where sign-in is required, the signed-in account's\nown (the admin's too, as with cases; the admin can still open any question by its address). On a public site\nwithout accounts, none: nobody sees the questions others asked.",
     "operationId": "list_challenges_v1_challenges_get",
     "responses": {
      "200": {
