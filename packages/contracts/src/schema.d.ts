@@ -322,7 +322,11 @@ export interface paths {
         get: operations["paper_v1_cases__case_id__papers__paper_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Paper
+         * @description Removes a paper, what was read from it and anything found only in it; the case is worked through again.
+         */
+        delete: operations["delete_paper_v1_cases__case_id__papers__paper_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1544,6 +1548,10 @@ export interface components {
              * @default scripted
              */
             mode: string;
+            /** Working */
+            working: ("reading" | "finding") | null;
+            /** Working Since */
+            working_since: string | null;
         };
         /** CasePlan */
         CasePlan: {
@@ -5756,6 +5764,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaperView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_paper_v1_cases__case_id__papers__paper_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

@@ -105,7 +105,10 @@
     "resetAsk": "Undo every change made to this sample case and bring it back as it was?",
     "resetYes": "Reset it",
     "watch": "Watch it from the first paper",
-    "storyLink": "Read how it started"
+    "storyLink": "Read how it started",
+    "workingReading": "Reading your papers.",
+    "workingFinding": "Working out what your papers point to: accounts, loans, policies and payments to stop.",
+    "workingNote": "Leads, the money map and Today fill in when this is done, usually within a few minutes. You can keep using the case meanwhile."
   },
   "main": {
     "title": "AfterLedger: find what they left behind",
@@ -348,7 +351,15 @@
     "syntheticNote": "A sample document.",
     "nothingHere": "Nothing was read from this page.",
     "caseOf": "{name}'s case",
-    "progress": "Overall progress"
+    "progress": "Overall progress",
+    "remove": "Remove this paper",
+    "removeAsk": "Remove “{title}”, its file and everything read from it? Anything found only in it goes too; your answers stay.",
+    "removeYes": "Remove it",
+    "removeNo": "Keep it",
+    "removing": "Removing…",
+    "removed": "Removed “{title}”. The case is being worked through again without it.",
+    "linesOnPage": "Statement lines on this page: {count}",
+    "linesNote": "Read from the page’s text, each checked against the running balance."
   },
   "money": {
     "title": "Money map",
@@ -889,7 +900,8 @@
     },
     "firstAnswerPending": "Checking one official page for a first answer…",
     "onlyWhen": "Only if {when}.",
-    "showAll": "Show everything now",
+    "showAll": "Show everything",
+    "hideDetails": "Hide the details",
     "compiling": "The plan is compiled once the researchers agree…"
   },
   "desk": {

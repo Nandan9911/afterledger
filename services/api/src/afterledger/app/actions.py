@@ -47,6 +47,24 @@ def _uploads(deps: Any) -> asyncio.Semaphore:
     return deps.extras.setdefault("uploads", asyncio.Semaphore(UPLOADS_AT_ONCE))
 
 
+def _working(deps: Any, case_id: str, job: object, step: str | None) -> None:
+    """What a case's background jobs are doing now, for its header: "reading" while any job reads, else "finding"
+    while any works out what the papers point to, else nothing (two uploads in a row are two jobs)."""
+    jobs = deps.extras.setdefault("case_jobs", {}).setdefault(case_id, {})
+    if step is None:
+        jobs.pop(job, None)
+    else:
+        jobs[job] = {"step": step, "since": jobs.get(job, {}).get("since") or deps.now()}
+    work = deps.extras.setdefault("case_work", {})
+    if jobs:
+        work[case_id] = {"step": "reading" if any(j["step"] == "reading" for j in jobs.values()) else "finding",
+                         "since": min(j["since"] for j in jobs.values())}
+    else:
+        work.pop(case_id, None)
+        deps.extras["case_jobs"].pop(case_id, None)
+    deps.changed(case_id, "work")
+
+
 def case_lock(deps: Any, case_id: str) -> asyncio.Lock:
     locks = deps.extras.setdefault("case_locks", {})
     lock = locks.get(case_id)
@@ -79,11 +97,19 @@ async def require_case(deps: Any, case_id: str) -> Any:
 def register_handlers(deps: Any) -> None:
     async def after_papers(payload: dict) -> None:
         # reading first, without holding the case (it takes minutes for a long statement, and writes only each
-        # paper's own records); then what the papers lead to, which changes the case, under its lock
-        await pipeline.read_papers(deps, payload["case_id"], payload["paper_ids"])
-        async with case_lock(deps, payload["case_id"]):
-            await pipeline.after_reading(deps, payload["case_id"])
-            await followup.plan_today(deps, payload["case_id"])
+        # paper's own records); then what the papers lead to, which changes the case, under its lock. The case's
+        # screens are told which of the two is under way, so they never look finished while it runs.
+        case_id, job = payload["case_id"], object()
+        try:
+            if payload["paper_ids"]:
+                _working(deps, case_id, job, "reading")
+                await pipeline.read_papers(deps, case_id, payload["paper_ids"])
+            async with case_lock(deps, case_id):
+                _working(deps, case_id, job, "finding")
+                await pipeline.after_reading(deps, case_id)
+                await followup.plan_today(deps, case_id)
+        finally:
+            _working(deps, case_id, job, None)
 
     async def prepare_pack(payload: dict) -> None:
         async with case_lock(deps, payload["case_id"]):
@@ -172,6 +198,69 @@ async def upload(deps: Any, case_id: str, files: list[tuple[str, bytes, str]], *
     deps.changed(case_id, "papers")
     await deps.tasks.enqueue("after_papers", {"case_id": case_id, "paper_ids": [p.id for p in made]})
     return made
+
+
+async def delete_paper(deps: Any, case_id: str, paper_id: str) -> dict:
+    """Removes a paper the family added: the paper and its file, everything read from it, and anything found only
+    in it that nobody has acted on yet (an open lead, a holding without a claim). What other papers or the family
+    said stays. The case is then worked through again, as after a new paper, so the money map, the leads and Today
+    follow."""
+    await require_case(deps, case_id)
+    paper = await deps.cases.get(case_id, "papers", paper_id)
+    if paper is None:
+        raise NotFound(f"No paper {paper_id}")
+    if paper.fixture_key:
+        raise Conflict("A sample case's papers stay; reset the sample instead.")
+    if paper.status in ("queued", "reading"):
+        raise Conflict("This paper is still being read. It can be removed as soon as reading finishes.")
+    lock = case_lock(deps, case_id)
+    try:
+        await asyncio.wait_for(lock.acquire(), timeout=5)
+    except TimeoutError:
+        raise Conflict("The case is busy working out what its papers point to. Try again in a minute.") from None
+    try:
+        removed = await _remove_paper(deps, case_id, paper)
+    finally:
+        lock.release()
+    drop = getattr(deps.blobs, "delete_prefix", None)
+    if drop is not None:                     # the original file and its page images
+        await drop(f"cases/{case_id}/papers/{paper_id}/")
+    found = removed["leads"] + removed["holdings"]
+    await deps.activity(case_id, "reading", f"Removed “{paper.title}” and what was read from it"
+                        + (f", with {found} thing{'s' if found != 1 else ''} found only in it" if found else "")
+                        + ". The case is being worked through again without it.", kind="step", paper_id=paper_id)
+    deps.changed(case_id, "papers", "values", "transactions", "leads", "holdings", "checkpoints")
+    await deps.tasks.enqueue("after_papers", {"case_id": case_id, "paper_ids": []})
+    return {"deleted": paper_id, **removed}
+
+
+async def _remove_paper(deps: Any, case_id: str, paper: Any) -> dict:
+    pid = paper.id
+    store = deps.cases
+    txns = [t for t in await store.list(case_id, "transactions") if t.paper_id == pid]
+    tx_ids = {t.id for t in txns}
+    values = [v for v in await store.list(case_id, "values") if v.paper_id == pid]
+    groups = [g for g in await store.list(case_id, "groups") if g.transaction_ids and set(g.transaction_ids) <= tx_ids]
+    group_ids = {g.id for g in groups}
+    leads = [ld for ld in await store.list(case_id, "leads") if ld.status == "open" and (
+        (ld.paper_ids and set(ld.paper_ids) <= {pid}) or (not ld.paper_ids and ld.group_ids and set(ld.group_ids) <= group_ids))]
+    lead_ids = {ld.id for ld in leads}
+    claimed = {h for c in await store.list(case_id, "claims") for h in c.holding_ids}
+    holdings = [h for h in await store.list(case_id, "holdings") if h.id not in claimed and (
+        (h.source == "lead" and h.lead_id in lead_ids)
+        or (h.source == "paper" and h.evidence and all(e.paper_id == pid for e in h.evidence)))]
+    facts = [f for f in await store.list(case_id, "facts") if all(e.paper_id == pid for e in f.evidence)]
+    refs = {f"read_value:{v.id}" for v in values} | {f"lead:{i}" for i in lead_ids}
+    checkpoints = [c for c in await store.list(case_id, "checkpoints")
+                   if c.subject_ref in refs or (c.payload or {}).get("paper_id") == pid]
+    lines = [ln.id for ln in await store.list(case_id, "lines") if ln.paper_id == pid]
+    for collection, ids in (("checkpoints", [c.id for c in checkpoints]), ("facts", [f.id for f in facts]),
+                            ("holdings", [h.id for h in holdings]), ("leads", list(lead_ids)),
+                            ("groups", list(group_ids)), ("values", [v.id for v in values]),
+                            ("transactions", list(tx_ids)), ("lines", lines)):
+        await store.delete_many(case_id, collection, ids)
+    await store.delete(case_id, "papers", pid)
+    return {"rows": len(tx_ids), "values": len(values), "leads": len(leads), "holdings": len(holdings)}
 
 
 # ---------------------------------------------------------------------------------------------

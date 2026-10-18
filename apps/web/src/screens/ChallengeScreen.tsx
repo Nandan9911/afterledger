@@ -7,7 +7,8 @@
  */
 import type { ChallengeView, CiteView } from '@afterledger/contracts';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { ChallengeForm } from '@/components/ChallengeForm';
 import { LanguageSelect } from '@/components/CaseShell';
@@ -393,16 +394,24 @@ function EventLog({ view }: { view: ChallengeView }) {
 export function ChallengeRunScreen({ runId }: { runId: string }) {
   const t = useTranslations('challenge');
   const locale = useLocale();
-  const { events: live, done } = useEventStream<Ev>(
-    `/v1/challenges/${encodeURIComponent(runId)}/events?pace=0.45&lang=${encodeURIComponent(locale)}`,
+  const qc = useQueryClient();
+  // Each step arrives as it happens, with no replay delay (a finished question opens complete at once), and a new
+  // step refreshes the view; the view is also asked for every few seconds while the research runs.
+  const { events: live } = useEventStream<Ev>(
+    `/v1/challenges/${encodeURIComponent(runId)}/events?lang=${encodeURIComponent(locale)}`,
     'step',
   );
-  const finishedLive = live.some((e) => e.stage === 'finished');
-  const q = useChallenge(runId, !finishedLive);
-  const [all, setAll] = useState(false);
+  const q = useChallenge(runId);
+  useEffect(() => {
+    if (!live.length) return;
+    const timer = setTimeout(() => qc.invalidateQueries({ queryKey: ['challenge', runId] }), 400);
+    return () => clearTimeout(timer);
+  }, [live.length, qc, runId]);
+  // everything is shown from the start, for a question just asked and for one opened again; it can be folded away
+  const [details, setDetails] = useState(true);
   const [checks, setChecks] = useState(false);
   const view = q.data;
-  const seen = useMemo(() => new Set((all ? ((view?.events ?? []) as Ev[]) : live).map((e) => e.stage)), [all, live, view]);
+  const seen = useMemo(() => new Set([...((view?.events ?? []) as Ev[]), ...live].map((e) => e.stage)), [live, view]);
   if (q.isError) {
     return (
       <div className="min-h-screen bg-paper">
@@ -413,7 +422,7 @@ export function ChallengeRunScreen({ runId }: { runId: string }) {
       </div>
     );
   }
-  const finished = seen.has('finished') || (done && !!view?.finished);
+  const finished = !!view?.finished || seen.has('finished');
   const need = (view?.need ?? {}) as {
     country?: string;
     question?: string;
@@ -452,43 +461,47 @@ export function ChallengeRunScreen({ runId }: { runId: string }) {
                   {need.question}
                 </blockquote>
                 {translation ? <p className="m-0 mt-2 text-ink-soft">{translation}</p> : null}
-                {!all && !finished ? (
-                  <button
-                    type="button"
-                    onClick={() => setAll(true)}
-                    className="tap mt-3 text-[15px] font-bold text-ledger underline-offset-4 hover:underline"
-                  >
-                    {t('showAll')}
-                  </button>
-                ) : null}
+                <button
+                  type="button"
+                  aria-expanded={details}
+                  aria-controls="research-details"
+                  onClick={() => setDetails((v) => !v)}
+                  className="tap mt-3 text-[15px] font-bold text-ledger underline-offset-4 hover:underline"
+                >
+                  {details ? t('hideDetails') : t('showAll')}
+                </button>
               </div>
               <FirstAnswer view={view} seen={seen.has('first_answer')} planSeen={seen.has('plan') || seen.has('compiler')} />
             </section>
 
-            <Checks view={view} seen={seen} />
+            {details ? (
+              <div id="research-details" className="flex flex-col gap-6">
+                <Checks view={view} seen={seen} />
 
-            {seen.has('plan') || seen.has('compiler') || seen.has('letter') ? (
-              <div className="flex flex-wrap items-start gap-6">
-                <PlanCard view={view} cites={view.cites} />
-                {seen.has('letter') ? <LetterCard view={view} checks={checks} onChecks={() => setChecks((v) => !v)} /> : null}
-              </div>
-            ) : (
-              <div className="flex min-h-32 items-center justify-center rounded-[14px] border border-dashed border-rule-strong bg-sheet">
-                <Spinner label={t('compiling')} />
-              </div>
-            )}
+                {seen.has('plan') || seen.has('compiler') || seen.has('letter') ? (
+                  <div className="flex flex-wrap items-start gap-6">
+                    <PlanCard view={view} cites={view.cites} />
+                    {seen.has('letter') ? <LetterCard view={view} checks={checks} onChecks={() => setChecks((v) => !v)} /> : null}
+                  </div>
+                ) : (
+                  <div className="flex min-h-32 items-center justify-center rounded-[14px] border border-dashed border-rule-strong bg-sheet">
+                    <Spinner label={t('compiling')} />
+                  </div>
+                )}
 
-            {!finished || gaps.length ? (
-              <section className="flex items-start gap-3.5 rounded-[14px] border-[1.5px] border-dotted border-blank bg-sheet px-5 py-4">
-                <span aria-hidden="true" className="mt-1.5 h-3 w-3 shrink-0 animate-pulse-soft rounded-full bg-blank" />
-                <div>
-                  <h2 className="m-0 text-[16px] font-bold">{finished ? t('stillRunning') : t('running')}</h2>
-                  <p className="m-0 mt-1 text-[15px] text-ink-soft">{finished ? t('searchGoesOn') : t('stillRunningText')}</p>
-                </div>
-              </section>
+                {!finished || gaps.length ? (
+                  <section className="flex items-start gap-3.5 rounded-[14px] border-[1.5px] border-dotted border-blank bg-sheet px-5 py-4">
+                    <span aria-hidden="true" className="mt-1.5 h-3 w-3 shrink-0 animate-pulse-soft rounded-full bg-blank" />
+                    <div>
+                      <h2 className="m-0 text-[16px] font-bold">{finished ? t('stillRunning') : t('running')}</h2>
+                      <p className="m-0 mt-1 text-[15px] text-ink-soft">{finished ? t('searchGoesOn') : t('stillRunningText')}</p>
+                    </div>
+                  </section>
+                ) : null}
+
+                {checks ? <EventLog view={view} /> : null}
+              </div>
             ) : null}
-
-            {checks ? <EventLog view={view} /> : null}
           </>
         )}
       </main>

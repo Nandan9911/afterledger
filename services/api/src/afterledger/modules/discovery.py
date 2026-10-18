@@ -279,10 +279,10 @@ async def discover(deps: Any, case_id: str) -> list[Lead]:
         return group_packs
 
     wf = Workflow(name="discovery", edges=[(
-        "START", seed, agent_node(deps, interpreter, parallel_worker=True, max_parallel_workers=8),
+        "START", seed, agent_node(deps, interpreter, parallel_worker=True, max_parallel_workers=12),
         interpretations_to_hypotheses, agent_node(deps, generator), explode,
-        agent_node(deps, investigator, tools=True, parallel_worker=True, max_parallel_workers=6), to_critic,
-        agent_node(deps, critic, parallel_worker=True, max_parallel_workers=6))])
+        agent_node(deps, investigator, tools=True, parallel_worker=True, max_parallel_workers=10), to_critic,
+        agent_node(deps, critic, parallel_worker=True, max_parallel_workers=10))])
     try:
         out = await run_workflow(deps, wf, {"key": pack_key("discovery", case)}, case_id=case_id)
         interps = [as_model("narration_interpreter", x) for x in out.get("discovery@1/narration_interpreter@1") or []]

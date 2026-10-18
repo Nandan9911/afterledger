@@ -332,6 +332,7 @@ export function CaseShell({ caseId, children }: { caseId: string; children: Reac
 
           <main id="main" className="min-w-0 flex-1 px-4 pb-28 pt-5 sm:px-8 lg:px-11 lg:pb-14 lg:pt-8">
             {watching && demoKey ? <WatchBanner demoKey={demoKey} /> : null}
+            {h?.working ? <WorkingBanner step={h.working} /> : null}
             {children}
           </main>
 
@@ -417,5 +418,20 @@ export function LanguageSelect({ compact, dark }: { compact?: boolean; dark?: bo
         ))}
       </select>
     </label>
+  );
+}
+
+/** While the case's background job runs: what it is doing, so a screen never looks finished before it is. The
+ * screens refresh by themselves when it is done. */
+function WorkingBanner({ step }: { step: 'reading' | 'finding' }) {
+  const t = useTranslations('nav');
+  return (
+    <div role="status" className="mb-5 flex items-start gap-3 rounded-[12px] border border-rule bg-sheet px-4 py-3">
+      <span aria-hidden="true" className="mt-1.5 h-2.5 w-2.5 shrink-0 animate-pulse-soft rounded-full bg-ledger" />
+      <p className="m-0 text-[15px]">
+        <span className="font-bold">{step === 'reading' ? t('workingReading') : t('workingFinding')}</span>{' '}
+        <span className="text-ink-soft">{t('workingNote')}</span>
+      </p>
+    </div>
   );
 }

@@ -526,3 +526,115 @@ def test_each_model_and_endpoint_keeps_one_client(tmp_path: Path) -> None:
     assert models._live("gemini-3.8-flash", AGENTS["reader_a"], None) is not us
     one, two = models.model_for(AGENTS["listener"]), models.model_for(AGENTS["listener"])
     assert one is not two and one.inner.chain[0][1] is two.inner.chain[0][1]
+
+
+# ---- removing a paper, and the case saying what it is working on ----------------------------------------------
+
+async def test_removing_a_paper_takes_what_was_found_only_in_it_and_keeps_the_rest(tmp_path: Path,
+                                                                                   monkeypatch: pytest.MonkeyPatch) -> None:
+    from datetime import date as d
+    from decimal import Decimal as D
+
+    from afterledger.app import actions
+    from afterledger.domain import case as m
+    from afterledger.runtime import build_deps
+
+    deps = build_deps(offline_settings(tmp_path))
+    store = deps.cases
+    await store.put_case(m.CaseFile(id="c1", title="A family"))
+    ev = lambda pid: [m.Evidence(kind="paper", ref=pid, paper_id=pid)]          # noqa: E731
+    for pid in ("pp_gone", "pp_kept"):
+        await store.put("c1", "papers", m.Paper(id=pid, case_id="c1", title=pid, status="read", synthetic=False))
+        await store.put_many("c1", "lines", [m.OcrLine(id=f"{pid}-l{n}", case_id="c1", paper_id=pid, page_id=f"{pid}-p1",
+                                                       text="x", box=[0, 0, 1, 1]) for n in range(700)])
+        await store.put("c1", "values", m.ReadValue(id=f"rv_{pid}", case_id="c1", paper_id=pid, field="holder", label="Holder"))
+        await store.put("c1", "transactions", m.Transaction(id=f"tx_{pid}", case_id="c1", paper_id=pid, date=d(2026, 1, 1),
+                                                            narration="NACH LOAN", amount=D("10"), direction="debit"))
+        await store.put("c1", "groups", m.PaymentGroup(id=f"g_{pid}", case_id="c1", key=pid, label="NACH LOAN",
+                                                       direction="debit", count=1, cadence="once", amount_typical=D("10"),
+                                                       amount_stable=True, first=d(2026, 1, 1), last=d(2026, 1, 1),
+                                                       transaction_ids=[f"tx_{pid}"]))
+        await store.put("c1", "facts", m.Fact(id=f"f_{pid}", case_id="c1", subject="holding:h", predicate="balance",
+                                              value="1", evidence=ev(pid)))
+    leads = [m.Lead(id="ld_only", case_id="c1", kind="debt", category="loan", title="A loan", sentence="s",
+                    paper_ids=["pp_gone"], holding_id="h_only"),
+             m.Lead(id="ld_marked", case_id="c1", kind="asset", category="bank", title="An account", sentence="s",
+                    paper_ids=["pp_gone"], status="confirmed"),
+             m.Lead(id="ld_both", case_id="c1", kind="asset", category="bank", title="A fund", sentence="s",
+                    paper_ids=["pp_gone", "pp_kept"])]
+    await store.put_many("c1", "leads", leads)
+    await store.put_many("c1", "holdings", [
+        m.Holding(id="h_only", case_id="c1", kind="loan", label="A loan", source="lead", lead_id="ld_only"),
+        m.Holding(id="h_claimed", case_id="c1", kind="savings", label="Claimed", source="paper", evidence=ev("pp_gone")),
+        m.Holding(id="h_paper", case_id="c1", kind="savings", label="Read", source="paper", evidence=ev("pp_gone"))])
+    await store.put("c1", "claims", m.Claim(id="cl1", case_id="c1", institution_id="in_x", title="t", holding_ids=["h_claimed"]))
+    await store.put_many("c1", "checkpoints", [
+        m.Checkpoint(id="cp_value", case_id="c1", code="C2", kind="value", title="t", question="q",
+                     subject_ref="read_value:rv_pp_gone"),
+        m.Checkpoint(id="cp_lead", case_id="c1", code="C3", kind="lead", title="t", question="q", subject_ref="lead:ld_only"),
+        m.Checkpoint(id="cp_other", case_id="c1", code="C3", kind="lead", title="t", question="q", subject_ref="lead:ld_both")])
+    dropped: list[str] = []
+
+    async def delete_prefix(prefix: str) -> int:
+        dropped.append(prefix)
+        return 1
+
+    monkeypatch.setattr(deps.blobs, "delete_prefix", delete_prefix, raising=False)
+    queued: list[dict] = []
+
+    async def enqueue(kind: str, payload: dict, **k: Any) -> str:
+        queued.append({"kind": kind, **payload})
+        return "t1"
+
+    monkeypatch.setattr(deps.tasks, "enqueue", enqueue)
+    out = await actions.delete_paper(deps, "c1", "pp_gone")
+    assert out == {"deleted": "pp_gone", "rows": 1, "values": 1, "leads": 1, "holdings": 2}
+
+    async def ids(collection: str) -> set[str]:
+        return {x.id for x in await store.list("c1", collection)}
+
+    assert await ids("papers") == {"pp_kept"}
+    assert await ids("leads") == {"ld_marked", "ld_both"}                 # the family acted on one; another paper has one
+    assert await ids("holdings") == {"h_claimed"}                         # a claim was started on it
+    assert await ids("checkpoints") == {"cp_other"}
+    assert await ids("transactions") == {"tx_pp_kept"} and await ids("groups") == {"g_pp_kept"}
+    assert await ids("values") == {"rv_pp_kept"} and await ids("facts") == {"f_pp_kept"}
+    assert len(await ids("lines")) == 700                                 # the other paper's text lines, untouched
+    assert dropped == ["cases/c1/papers/pp_gone/"] and queued == [{"kind": "after_papers", "case_id": "c1", "paper_ids": []}]
+    with pytest.raises(actions.NotFound):
+        await actions.delete_paper(deps, "c1", "pp_gone")
+    reading = m.Paper(id="pp_busy", case_id="c1", title="t", status="reading", synthetic=False)
+    await store.put("c1", "papers", reading)
+    with pytest.raises(actions.Conflict, match="still being read"):
+        await actions.delete_paper(deps, "c1", "pp_busy")
+
+
+async def test_the_case_says_what_its_background_job_is_doing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Live, a statement was read and then nothing showed for four and a half minutes while discovery ran."""
+    from afterledger.app import actions
+    from afterledger.modules import pipeline
+    from afterledger.runtime import build_deps
+
+    deps = build_deps(offline_settings(tmp_path))
+    actions.register_handlers(deps)
+    seen: list[Any] = []
+
+    def work() -> Any:
+        return (deps.extras.get("case_work") or {}).get("c1", {}).get("step")
+
+    async def read_papers(deps_: Any, case_id: str, paper_ids: list[str]) -> None:
+        seen.append(work())
+
+    async def after_reading(deps_: Any, case_id: str) -> None:
+        seen.append(work())
+
+    async def nothing(*a: Any, **k: Any) -> None:
+        return None
+
+    monkeypatch.setattr(pipeline, "read_papers", read_papers)
+    monkeypatch.setattr(pipeline, "after_reading", after_reading)
+    monkeypatch.setattr(actions.followup, "plan_today", nothing)
+    await deps.tasks._handlers["after_papers"]({"case_id": "c1", "paper_ids": ["p1"]})
+    assert seen == ["reading", "finding"] and work() is None
+    await deps.tasks._handlers["after_papers"]({"case_id": "c1", "paper_ids": []})   # after a paper was removed
+    assert seen[2:] == ["finding"] and work() is None

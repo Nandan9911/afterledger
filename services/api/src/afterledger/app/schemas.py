@@ -7,7 +7,7 @@ to OpenAPI and becomes a TypeScript type in packages/contracts.
 """
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
@@ -257,6 +257,10 @@ class CaseHeader(BaseModel):
     today: date
     nav: NavCounts
     mode: str = "scripted"
+    # what the case's background job is doing now: "reading" its new papers, then "finding" what they point to
+    # (people, accounts, loans, policies, payments to stop) and planning; None when nothing is running
+    working: Literal["reading", "finding"] | None = None
+    working_since: datetime | None = None
 
 
 class CaseSummary(BaseModel):

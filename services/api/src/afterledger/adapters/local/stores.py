@@ -136,6 +136,13 @@ class LocalCaseStore:
             if data.pop(record_id, None) is not None:
                 self._flush(case_id, collection)
 
+    async def delete_many(self, case_id: str, collection: str, record_ids: list[str]) -> None:
+        async with self._locks[(case_id, collection)]:
+            data = self._load(case_id, collection)
+            gone = [data.pop(rid, None) for rid in record_ids]
+            if any(g is not None for g in gone):
+                self._flush(case_id, collection)
+
 
 class LocalKnowledgeStore:
     """Read-only base knowledge from data/knowledge (YAML or JSON, one file per collection or a

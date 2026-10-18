@@ -206,6 +206,12 @@ async def upload(case_id: str, files: list[UploadFile] = File(...), by: str | No
     return await actions.upload(deps, case_id, got, by=by, title=title, together=together)
 
 
+@router.delete("/{case_id}/papers/{paper_id}")
+async def delete_paper(case_id: str, paper_id: str, deps: Deps = Depends(get_deps)) -> dict:
+    """Removes a paper, what was read from it and anything found only in it; the case is worked through again."""
+    return await actions.delete_paper(deps, case_id, paper_id)
+
+
 @router.get("/{case_id}/papers/{paper_id}", response_model=PaperView)
 async def paper(case_id: str, paper_id: str, deps: Deps = Depends(get_deps)) -> PaperView:
     await actions.require_case(deps, case_id)

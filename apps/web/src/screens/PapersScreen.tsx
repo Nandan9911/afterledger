@@ -5,7 +5,7 @@
  * asked about (checkpoint C2). Also the empty state (what helps most) and the reading progress.
  */
 import type { Checkpoint, PaperRow, PaperView, ValueView } from '@afterledger/contracts';
-import { Camera, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { Camera, ChevronLeft, ChevronRight, ExternalLink, Trash2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useRef, useState, type ReactNode } from 'react';
@@ -14,8 +14,8 @@ import { useCase } from '@/components/CaseShell';
 import { Button, ErrorNote, h1Class, h2Class, Sheet, Skeleton, Spinner } from '@/components/ui';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { apiUrl } from '@/lib/api';
-import { cls } from '@/lib/format';
-import { useAnswer, useMoney, usePaper, usePapers, useUpload } from '@/lib/queries';
+import { cls, dayMonth } from '@/lib/format';
+import { useAnswer, useDeletePaper, useMoney, usePaper, usePapers, useUpload } from '@/lib/queries';
 
 type Variant = 'primary' | 'secondary' | 'dark';
 
@@ -279,8 +279,11 @@ function PageImage({ view, index, values, focus }: { view: PaperView; index: num
 function Viewer({ caseId, paperId, pageNo, setPage }: { caseId: string; paperId: string; pageNo: number; setPage: (n: number) => void }) {
   const t = useTranslations('papers');
   const tc = useTranslations('common');
+  const locale = useLocale();
   const q = usePaper(caseId, paperId);
+  const remove = useDeletePaper(caseId);
   const [focus, setFocus] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const view = q.data;
   if (q.isError) return <ErrorNote error={q.error} retry={() => q.refetch()} />;
   if (!view || view.paper.id !== paperId) {
@@ -297,7 +300,10 @@ function Viewer({ caseId, paperId, pageNo, setPage }: { caseId: string; paperId:
   const here = page ? view.values.filter((v) => onPage(v, page.id, index === 0)) : view.values;
   const checks = here.filter((v) => v.checkpoint?.status === 'open');
   const rest = here.filter((v) => v.checkpoint?.status !== 'open');
+  // a statement's lines, read from this page (every line is checked against the running balance)
+  const lines = page ? view.rows.filter((r) => r.page_id === page.id) : view.rows;
   const busy = view.paper.status === 'queued' || view.paper.status === 'reading';
+  const removable = !view.paper.synthetic && !view.paper.fixture_key && !busy;
   return (
     <div className="flex min-w-0 flex-[999_1_620px] flex-wrap items-start gap-5">
       <section
@@ -342,8 +348,43 @@ function Viewer({ caseId, paperId, pageNo, setPage }: { caseId: string; paperId:
                 <ExternalLink size={14} aria-hidden="true" />
               </a>
             ) : null}
+            {removable && !confirming ? (
+              <button
+                type="button"
+                onClick={() => setConfirming(true)}
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-rule-strong bg-sheet px-3 font-bold text-pencil"
+              >
+                <Trash2 size={15} aria-hidden="true" />
+                {t('remove')}
+              </button>
+            ) : null}
           </div>
         </div>
+        {removable && confirming ? (
+          <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-pencil bg-sheet px-4 py-3">
+            <p className="m-0 min-w-0 flex-[1_1_260px] text-[15px]">{t('removeAsk', { title: view.paper.title })}</p>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                disabled={remove.isPending}
+                onClick={() =>
+                  remove.mutate(view.paper.id, {
+                    onSuccess: () => {
+                      setConfirming(false);
+                      toast.success(t('removed', { title: view.paper.title }));
+                    },
+                    onError: (e) => toast.error(e.message),
+                  })
+                }
+              >
+                {remove.isPending ? t('removing') : t('removeYes')}
+              </Button>
+              <Button variant="secondary" disabled={remove.isPending} onClick={() => setConfirming(false)}>
+                {t('removeNo')}
+              </Button>
+            </div>
+          </div>
+        ) : null}
         {busy && !pages ? (
           <div className="grid h-72 place-items-center rounded-md bg-sheet">
             <Spinner label={view.paper.stage || tc('working')} />
@@ -367,8 +408,30 @@ function Viewer({ caseId, paperId, pageNo, setPage }: { caseId: string; paperId:
               <ValueItem key={v.value.id} v={v} focused={focus === v.value.id} onFocus={setFocus} />
             ))}
           </ul>
-        ) : !checks.length ? (
+        ) : !checks.length && !lines.length ? (
           <p className="m-0 mt-3 text-ink-soft">{busy ? view.paper.stage || tc('working') : t('nothingHere')}</p>
+        ) : null}
+        {lines.length ? (
+          <section aria-labelledby="page-lines" className="mt-5">
+            <h3 id="page-lines" className="m-0 text-[16px] font-bold">
+              {t('linesOnPage', { count: lines.length })}
+            </h3>
+            <p className="m-0 mt-1 text-[14px] text-ink-faint">{t('linesNote')}</p>
+            <ul className="m-0 mt-2 list-none p-0 text-[14.5px]">
+              {lines.map((r) => (
+                <li key={r.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-x-3 border-t border-rule py-2">
+                  <span className="tabular whitespace-nowrap text-ink-faint">{dayMonth(r.date, locale)}</span>
+                  <span className="min-w-0 break-words" title={r.narration}>
+                    {r.narration}
+                  </span>
+                  <span className={cls('tabular whitespace-nowrap text-end font-bold', r.direction === 'credit' && 'text-ledger')}>
+                    {r.direction === 'credit' ? '+' : '−'}
+                    {r.amount.text}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
         ) : null}
       </aside>
     </div>

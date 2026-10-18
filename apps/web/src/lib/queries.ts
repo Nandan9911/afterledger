@@ -123,6 +123,17 @@ export function usePapers(caseId: string) {
   });
 }
 
+/** Removes a paper the family added, what was read from it and anything found only in it; the case is then
+ * worked through again, and its screens refresh as that goes on. */
+export function useDeletePaper(caseId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (paperId: string) =>
+      unwrap(api().DELETE('/v1/cases/{case_id}/papers/{paper_id}', { params: { path: { case_id: caseId, paper_id: paperId } } })),
+    onSuccess: () => qc.invalidateQueries({ queryKey: c(caseId) }),
+  });
+}
+
 export function usePaper(caseId: string, paperId: string | null | undefined) {
   return useQuery({
     queryKey: [...c(caseId), 'paper', paperId],
@@ -442,11 +453,12 @@ export function useMyQuestions() {
   });
 }
 
-export function useChallenge(runId: string, live: boolean) {
+/** One question's research: asked again every few seconds while it runs, and not once it has finished. */
+export function useChallenge(runId: string) {
   return useQuery({
     queryKey: ['challenge', runId],
     queryFn: () => unwrap(api().GET('/v1/challenges/{run_id}', { params: { path: { run_id: runId } } })),
-    refetchInterval: live ? 1500 : false,
+    refetchInterval: (q) => (q.state.data?.finished ? false : 3000),
   });
 }
 

@@ -105,7 +105,10 @@
     "resetAsk": "このサンプルケースへの変更をすべて取り消して、元の状態に戻しますか？",
     "resetYes": "リセットする",
     "watch": "最初の書類から見る",
-    "storyLink": "始まりを読む"
+    "storyLink": "始まりを読む",
+    "workingReading": "書類を読み取っています。",
+    "workingFinding": "書類が示すものを調べています：口座、ローン、保険、止めるべき支払い。",
+    "workingNote": "終わると手がかり、財産マップ、今日に反映されます（通常は数分以内）。その間もケースは使えます。"
   },
   "main": {
     "title": "AfterLedger：残されたものを見つける",
@@ -348,7 +351,15 @@
     "syntheticNote": "サンプルの書類です。",
     "nothingHere": "このページからは何も読み取っていません。",
     "caseOf": "{name}さんのケース",
-    "progress": "全体の進み具合"
+    "progress": "全体の進み具合",
+    "remove": "この書類を削除",
+    "removeAsk": "「{title}」とそのファイル、読み取った内容をすべて削除しますか？この書類だけから見つかったものも削除されます。あなたの回答は残ります。",
+    "removeYes": "削除する",
+    "removeNo": "残す",
+    "removing": "削除しています…",
+    "removed": "「{title}」を削除しました。この書類なしでケースを見直しています。",
+    "linesOnPage": "このページの明細行：{count}",
+    "linesNote": "ページの文字から読み取り、一行ずつ残高と照合しました。"
   },
   "money": {
     "title": "財産マップ",
@@ -889,7 +900,8 @@
     },
     "firstAnswerPending": "最初の答えのために公式ページを確認しています…",
     "onlyWhen": "{when}の場合のみ。",
-    "showAll": "今すぐすべて表示",
+    "showAll": "すべて表示",
+    "hideDetails": "詳細を隠す",
     "compiling": "調査役の意見が一致すると計画をまとめます…"
   },
   "desk": {

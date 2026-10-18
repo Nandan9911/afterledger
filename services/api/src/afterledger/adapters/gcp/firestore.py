@@ -127,6 +127,21 @@ class FirestoreCaseStore:
             await self._col(case_id, collection).document(_doc_id(record_id)).delete()
             data.pop(record_id, None)
 
+    async def delete_many(self, case_id: str, collection: str, record_ids: list[str]) -> None:
+        """Many records at once, in batches (a long statement's text lines run to tens of thousands)."""
+        if not record_ids:
+            return
+        async with self._locks[(case_id, collection)]:
+            data = await self._load(case_id, collection)
+            col = self._col(case_id, collection)
+            for i in range(0, len(record_ids), _BATCH):
+                batch = self.db.batch()
+                for rid in record_ids[i:i + _BATCH]:
+                    batch.delete(col.document(_doc_id(rid)))
+                await batch.commit()
+            for rid in record_ids:
+                data.pop(rid, None)
+
 
 class FirestoreKnowledgeStore(LocalKnowledgeStore):
     """The knowledge shipped in the image (read only) with an overlay in Firestore, where research results

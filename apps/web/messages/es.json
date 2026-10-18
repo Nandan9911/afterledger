@@ -105,7 +105,10 @@
     "resetAsk": "¿Deshacer todos los cambios hechos en este caso de muestra y dejarlo como estaba?",
     "resetYes": "Restablecer",
     "watch": "Verlo desde el primer documento",
-    "storyLink": "Leer cómo empezó"
+    "storyLink": "Leer cómo empezó",
+    "workingReading": "Leyendo sus papeles.",
+    "workingFinding": "Averiguando a qué apuntan sus papeles: cuentas, préstamos, pólizas y pagos que hay que detener.",
+    "workingNote": "Las pistas, el mapa del dinero y Hoy se completan al terminar, normalmente en pocos minutos. Mientras tanto puede seguir usando el caso."
   },
   "main": {
     "title": "AfterLedger: encuentre lo que dejaron",
@@ -348,7 +351,15 @@
     "syntheticNote": "Un documento de muestra.",
     "nothingHere": "No se leyó nada en esta página.",
     "caseOf": "Caso de {name}",
-    "progress": "Progreso general"
+    "progress": "Progreso general",
+    "remove": "Quitar este papel",
+    "removeAsk": "¿Quitar «{title}», su archivo y todo lo leído en él? También se va lo que solo aparecía en él; sus respuestas se quedan.",
+    "removeYes": "Quitarlo",
+    "removeNo": "Conservarlo",
+    "removing": "Quitando…",
+    "removed": "Se quitó «{title}». El caso se vuelve a trabajar sin él.",
+    "linesOnPage": "Líneas del extracto en esta página: {count}",
+    "linesNote": "Leídas del texto de la página, cada una comprobada con el saldo."
   },
   "money": {
     "title": "Mapa del dinero",
@@ -889,7 +900,8 @@
     },
     "firstAnswerPending": "Revisando una página oficial para una primera respuesta…",
     "onlyWhen": "Solo si {when}.",
-    "showAll": "Mostrar todo ahora",
+    "showAll": "Mostrar todo",
+    "hideDetails": "Ocultar los detalles",
     "compiling": "El plan se compila cuando los investigadores coinciden…"
   },
   "desk": {

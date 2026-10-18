@@ -947,6 +947,58 @@
    }
   },
   "/v1/cases/{case_id}/papers/{paper_id}": {
+   "delete": {
+    "tags": [
+     "cases"
+    ],
+    "summary": "Delete Paper",
+    "description": "Removes a paper, what was read from it and anything found only in it; the case is worked through again.",
+    "operationId": "delete_paper_v1_cases__case_id__papers__paper_id__delete",
+    "parameters": [
+     {
+      "name": "case_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Case Id"
+      }
+     },
+     {
+      "name": "paper_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Paper Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Delete Paper V1 Cases  Case Id  Papers  Paper Id  Delete"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
    "get": {
     "tags": [
      "cases"
@@ -4454,6 +4506,33 @@
       "type": "string",
       "title": "Mode",
       "default": "scripted"
+     },
+     "working": {
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "reading",
+         "finding"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Working"
+     },
+     "working_since": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Working Since"
      }
     },
     "type": "object",
@@ -4465,7 +4544,9 @@
      "family_places",
      "today",
      "nav",
-     "mode"
+     "mode",
+     "working",
+     "working_since"
     ],
     "title": "CaseHeader"
    },
