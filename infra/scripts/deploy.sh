@@ -144,8 +144,21 @@ done
 gcloud storage buckets add-iam-policy-binding "gs://$BUCKET" --member "serviceAccount:$SA" \
   --role roles/storage.objectAdmin >/dev/null
 
+say "The build's service account"
+# Projects created since 2024 have no default Cloud Build account (an organisation policy may forbid it), so the
+# build runs as its own account, with only what it needs: read the uploaded source, push images, write logs.
+BUILD_SA="afterledger-build@${PROJECT_ID}.iam.gserviceaccount.com"
+gcloud iam service-accounts describe "$BUILD_SA" >/dev/null 2>&1 ||
+  gcloud iam service-accounts create afterledger-build --display-name "AfterLedger build"
+for role in roles/cloudbuild.builds.builder roles/artifactregistry.writer roles/logging.logWriter \
+            roles/storage.objectViewer; do
+  gcloud projects add-iam-policy-binding "$PROJECT_ID" --member "serviceAccount:$BUILD_SA" --role "$role" \
+    --condition None >/dev/null
+done
+
 say "Building the images with Cloud Build (about ten minutes)"
-gcloud builds submit --config infra/cloudbuild.yaml --substitutions "_REGION=$REGION,_TAG=$TAG" .
+gcloud builds submit --config infra/cloudbuild.yaml --substitutions "_REGION=$REGION,_TAG=$TAG" \
+  --service-account "projects/$PROJECT_ID/serviceAccounts/$BUILD_SA" .
 
 LLM=scripted
 TRACE_TO_CLOUD=false
