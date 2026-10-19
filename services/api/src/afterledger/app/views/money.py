@@ -32,10 +32,10 @@ CURRENCY_COUNTRY = {"INR": "IN", "JPY": "JP", "GBP": "GB", "USD": "US", "SGD": "
 def _tag(h: Any, claim: Any) -> str:
     if h.status == "closed":
         return "closed"
+    if claim is not None and claim.status == "settled":
+        return "paid"                     # paid to the family, or a debt the estate has paid
     if h.direction == "debt":
         return "owed"
-    if claim is not None and claim.status == "settled":
-        return "paid"
     if h.status == "lead":
         return "lead"
     return "confirmed"
@@ -89,7 +89,7 @@ async def money_map(deps: Any, case_id: str, lang: str = "en") -> MoneyView:
             from_paper=paper.title if paper else None, holdings=[]))
         grp.holdings.append(hv)
         t = totals.setdefault(country, {"known": Decimal(0), "owed": Decimal(0)})
-        if h.value is not None:
+        if h.value is not None and not (h.direction == "debt" and tag == "paid"):
             t["owed" if h.direction == "debt" else "known"] += h.value
     countries = []
     order = list(dict.fromkeys([*(case.country_codes or []), *groups.keys()]))

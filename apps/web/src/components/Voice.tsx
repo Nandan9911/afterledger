@@ -100,7 +100,7 @@ export function useListening(lang: string, onFinal: (text: string) => void) {
   return { supported, listening, interim, seconds, start, stop };
 }
 
-export type LiveVoiceState = 'idle' | 'connecting' | 'live';
+type LiveVoiceState = 'idle' | 'connecting' | 'live';
 
 type LiveParts = {
   ws: WebSocket | null;

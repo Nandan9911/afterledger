@@ -101,9 +101,16 @@ fi
 rm -f "$SCHEMA"
 
 say "Cloud Tasks (background work)"
-gcloud tasks queues describe afterledger-work --location "$REGION" >/dev/null 2>&1 ||
-  gcloud tasks queues create afterledger-work --location "$REGION" --max-attempts 3 --min-backoff 10s \
-    --max-backoff 120s --max-concurrent-dispatches 4 --max-dispatches-per-second 5
+# A task waits for its own case's earlier work, never for another case's: enough run at once that one family's burst
+# of changes never holds up another family's work (until 19 October 2026 four at once, which one busy case could fill).
+# The settings are applied to a queue made by an earlier deployment too.
+QUEUE_SETTINGS=(--max-attempts 3 --min-backoff 10s --max-backoff 120s --max-concurrent-dispatches 32
+  --max-dispatches-per-second 10)
+if gcloud tasks queues describe afterledger-work --location "$REGION" >/dev/null 2>&1; then
+  gcloud tasks queues update afterledger-work --location "$REGION" "${QUEUE_SETTINGS[@]}" >/dev/null
+else
+  gcloud tasks queues create afterledger-work --location "$REGION" "${QUEUE_SETTINGS[@]}"
+fi
 
 say "Document AI OCR processor"
 DOCAI="https://${DOCAI_LOCATION}-documentai.googleapis.com/v1/projects/${PROJECT_ID}/locations/${DOCAI_LOCATION}/processors"

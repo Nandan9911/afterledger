@@ -1,7 +1,12 @@
 """What the family can do, as use cases: each runs the module that owns the change and then the
 follow-on steps that keep the case consistent (a lead marked changes the claims, an approved plan
-gets its papers prepared). Changes to one case are serialised by a per-case lock, so two screens or a
-background job can never interleave writes to the same case."""
+gets its papers prepared).
+
+An action holds the case only for its own short work, and the follow-on steps that wait on a model run in the
+background (concurrency.py): an answer, an approval or a recorded payment returns at once, and the plans, papers and
+Today follow, with the case's header saying what is being worked out. Actions that are themselves model work (a
+question asked, a letter drafted, a reply read) run without holding the case, and their writes are merged like a
+background job's."""
 from __future__ import annotations
 
 import asyncio
@@ -9,10 +14,13 @@ import io
 import logging
 import zipfile
 from datetime import date, timedelta
+from decimal import Decimal
 from typing import Any
 
+from ..concurrency import CaseLock, job, working
 from ..domain.case import Checkpoint
 from ..domain.ids import new_id
+from ..domain.money import format_amount
 from ..modules import (
     conversation,
     discovery,
@@ -26,7 +34,7 @@ from ..modules import (
     reading,
 )
 from ..modules.common import case_lock as common_case_lock
-from ..modules.common import knowledge, snapshot
+from ..modules.common import knowledge
 
 log = logging.getLogger(__name__)
 
@@ -81,25 +89,19 @@ def _uploads(deps: Any) -> asyncio.Semaphore:
     return deps.extras.setdefault("uploads", asyncio.Semaphore(UPLOADS_AT_ONCE))
 
 
-def _working(deps: Any, case_id: str, job: object, step: str | None) -> None:
-    """What a case's background jobs are doing now, for its header: "reading" while any job reads, else "finding"
-    while any works out what the papers point to, else nothing (two uploads in a row are two jobs)."""
-    jobs = deps.extras.setdefault("case_jobs", {}).setdefault(case_id, {})
-    if step is None:
-        jobs.pop(job, None)
-    else:
-        jobs[job] = {"step": step, "since": jobs.get(job, {}).get("since") or deps.now()}
-    work = deps.extras.setdefault("case_work", {})
-    if jobs:
-        work[case_id] = {"step": "reading" if any(j["step"] == "reading" for j in jobs.values()) else "finding",
-                         "since": min(j["since"] for j in jobs.values())}
-    else:
-        work.pop(case_id, None)
-        deps.extras["case_jobs"].pop(case_id, None)
-    deps.changed(case_id, "work")
+async def _queue(deps: Any, case_id: str, kind: str, payload: dict, step: str) -> None:
+    """A background job queued with the case's header saying at once what is being worked out, so a screen
+    refetched straight after the action does not look finished while the job waits to start."""
+    key = new_id("work")
+    working(deps, case_id, key, step, queued=True)
+    try:
+        await deps.tasks.enqueue(kind, {**payload, "work": key})
+    except Exception:
+        working(deps, case_id, key, None)
+        raise
 
 
-def case_lock(deps: Any, case_id: str) -> asyncio.Lock:
+def case_lock(deps: Any, case_id: str) -> CaseLock:
     return common_case_lock(deps, case_id)
 
 
@@ -129,34 +131,73 @@ async def require_case(deps: Any, case_id: str) -> Any:
 
 def register_handlers(deps: Any) -> None:
     async def after_papers(payload: dict) -> None:
-        # reading first, without holding the case (it takes minutes for a long statement, and writes only each
-        # paper's own records); then what the papers lead to, which changes the case, under its lock. The case's
-        # screens are told which of the two is under way, so they never look finished while it runs.
-        case_id, job = payload["case_id"], object()
+        # reading first, beside any other job (it takes minutes for a long statement, and writes only each paper's
+        # own records); then what the papers lead to, one job at a time on the case. Neither holds the case while it
+        # waits on a model: the family can talk, answer and approve meanwhile. The case's screens are told which
+        # step is under way, so they never look finished while it runs.
+        case_id, work = payload["case_id"], payload.get("work") or new_id("work")
         try:
             if payload["paper_ids"]:
-                _working(deps, case_id, job, "reading")
-                await pipeline.read_papers(deps, case_id, payload["paper_ids"])
-            async with case_lock(deps, case_id):
-                _working(deps, case_id, job, "finding")
+                working(deps, case_id, work, "reading")
+                async with job(deps, case_id, exclusive=False):
+                    await pipeline.read_papers(deps, case_id, payload["paper_ids"])
+            working(deps, case_id, work, "finding")
+            async with job(deps, case_id):
                 await pipeline.after_reading(deps, case_id)
                 await followup.plan_today(deps, case_id)
         finally:
-            _working(deps, case_id, job, None)
+            working(deps, case_id, work, None)
 
     async def prepare_pack(payload: dict) -> None:
-        async with case_lock(deps, payload["case_id"]):
-            await packs.prepare_pack(deps, payload["case_id"], payload["claim_id"])
-            await followup.plan_today(deps, payload["case_id"])
+        case_id, work = payload["case_id"], payload.get("work") or new_id("work")
+        try:
+            working(deps, case_id, work, "preparing")
+            async with job(deps, case_id):
+                await packs.prepare_pack(deps, case_id, payload["claim_id"])
+        finally:
+            working(deps, case_id, work, None)
+        await today_later(deps, case_id)
 
     async def plan_today(payload: dict) -> None:
-        deps.extras.setdefault("today_pending", set()).discard(payload["case_id"])
-        async with case_lock(deps, payload["case_id"]):
-            await followup.plan_today(deps, payload["case_id"])
+        case_id = payload["case_id"]
+        async with job(deps, case_id):
+            # changes made while this waited its turn are in what it reads now: they need no plan of their own
+            deps.extras.setdefault("today_pending", set()).discard(case_id)
+            await followup.plan_today(deps, case_id, payload.get("viewer_id"))
+
+    async def rework(payload: dict) -> None:
+        """An answer, a lead, a person or an event worked into the claims and plans: the model work an action
+        left to the background, so the action itself returned at once."""
+        case_id, work = payload["case_id"], payload.get("work") or new_id("work")
+        try:
+            working(deps, case_id, work, "planning")
+            async with job(deps, case_id):
+                if payload.get("all"):
+                    deps.extras.setdefault("rework_pending", set()).discard(case_id)
+                answer = payload.get("answer")
+                if answer:
+                    await planning.apply_answer(deps, case_id, answer["plan_id"], answer["variable"], answer["value"])
+                if payload.get("holdings"):
+                    await discovery.holdings_from_papers(deps, case_id)
+                if payload.get("all"):
+                    await pipeline.refresh_claims(deps, case_id)
+                for claim_id in payload.get("claims") or []:
+                    claim = await deps.cases.get(case_id, "claims", claim_id)
+                    if claim is None:
+                        continue
+                    await planning.plan_claim(deps, case_id, claim_id)
+                    claim = await deps.cases.get(case_id, "claims", claim_id)
+                    if claim is not None:
+                        await followup.refresh_claim(deps, case_id, claim)
+                deps.changed(case_id, "claims", "plans", "checkpoints")
+        finally:
+            working(deps, case_id, work, None)
+        await today_later(deps, case_id)
 
     deps.tasks.register("after_papers", after_papers)
     deps.tasks.register("prepare_pack", prepare_pack)
     deps.tasks.register("plan_today", plan_today)
+    deps.tasks.register("rework", rework)
 
     async def failed(kind: str, payload: dict, error: BaseException) -> None:
         """A background step that gave up says so on the case, instead of only in the server's log."""
@@ -171,15 +212,42 @@ def register_handlers(deps: Any) -> None:
 
 
 async def today_later(deps: Any, case_id: str) -> None:
-    """Today is planned again after a change, in the background, once however many changes come in."""
+    """Today is planned again after a change, in the background, a few seconds after the change (AL_TODAY_DEBOUNCE_S),
+    once however many changes come in meanwhile."""
     pending = deps.extras.setdefault("today_pending", set())
     if case_id in pending:
         return
     pending.add(case_id)
     try:
-        await deps.tasks.enqueue("plan_today", {"case_id": case_id})
+        await deps.tasks.enqueue("plan_today", {"case_id": case_id},
+                                 delay_seconds=max(0, int(getattr(deps.settings, "today_debounce_s", 0) or 0)))
     except Exception:
         pending.discard(case_id)         # never leave the case marked as waiting for a plan that will not come
+        raise
+
+
+async def rework_later(deps: Any, case_id: str, *, everything: bool = False, claims: list[str] | None = None,
+                       answer: dict | None = None, holdings: bool = False) -> None:
+    """The model work an action leads to, queued: an answer worked into its plan, the claims built and planned again
+    (once for however many changes ask for it before it starts), or some claims planned again."""
+    if everything and not (answer or holdings or claims):
+        pending = deps.extras.setdefault("rework_pending", set())
+        if case_id in pending:
+            return
+        pending.add(case_id)
+    payload: dict = {"case_id": case_id}
+    if everything:
+        payload["all"] = True
+    if claims:
+        payload["claims"] = claims
+    if answer:
+        payload["answer"] = answer
+    if holdings:
+        payload["holdings"] = True
+    try:
+        await _queue(deps, case_id, "rework", payload, "planning")
+    except Exception:
+        deps.extras.setdefault("rework_pending", set()).discard(case_id)
         raise
 
 
@@ -196,12 +264,24 @@ async def start_case(deps: Any, *, lang: str = "en", starter_name: str | None = 
     return case, reply
 
 
+def _talking(deps: Any, case_id: str) -> asyncio.Lock:
+    """One conversation turn at a time on a case: each one answers what was said before it."""
+    return deps.extras.setdefault("turn_locks", {}).setdefault(case_id, asyncio.Lock())
+
+
 async def turn(deps: Any, case_id: str, *, text: str, person_id: str | None, lang: str | None, channel: str,
                seconds: int | None) -> dict:
+    """What the family says in the conversation: heard, worked into what is known, and the next question asked. The
+    model work does not hold the case (until 19 October 2026 it did, for five model calls a turn): the family's
+    other actions and the background work go on meanwhile, and the turn's writes are merged with theirs. Plans that
+    what was said changes are planned again in the background."""
     await require_case(deps, case_id)
-    async with case_lock(deps, case_id):
-        return await intake.family_turn(deps, case_id, text, person_id=person_id, lang=lang, channel=channel,
-                                        seconds=seconds)
+    async with _talking(deps, case_id), job(deps, case_id, exclusive=False):
+        out = await intake.family_turn(deps, case_id, text, person_id=person_id, lang=lang, channel=channel,
+                                       seconds=seconds, replan=False)
+    if out.pop("replan", False):
+        await rework_later(deps, case_id, everything=True)
+    return out
 
 
 # ---------------------------------------------------------------------------------------------
@@ -217,8 +297,10 @@ async def upload(deps: Any, case_id: str, files: list[tuple[str, bytes, str]], *
     # a new paper is records of its own: it is added at once, even while the case is busy with an earlier one
     async with _uploads(deps):
         groups = [files] if together else [[f] for f in files]
-        for group in groups:
-            made.append(await papers.add_upload(deps, case_id, group, uploaded_by=by, title=title))
+        # several files are taken in side by side (until 19 October 2026 one after another, and each page's OCR
+        # too: two papers of three pages kept the family waiting 7.4 s)
+        made = list(await asyncio.gather(*(papers.add_upload(deps, case_id, group, uploaded_by=by, title=title)
+                                           for group in groups)))
     case = await deps.cases.get_case(case_id)
     if case.stage == "intake":                   # the first paper: nothing else is working on the case yet
         async with case_lock(deps, case_id):
@@ -229,7 +311,7 @@ async def upload(deps: Any, case_id: str, files: list[tuple[str, bytes, str]], *
     for p in made:
         await deps.activity(case_id, "reading", f"Added {p.title}; reading it now.", kind="step")
     deps.changed(case_id, "papers")
-    await deps.tasks.enqueue("after_papers", {"case_id": case_id, "paper_ids": [p.id for p in made]})
+    await _queue(deps, case_id, "after_papers", {"case_id": case_id, "paper_ids": [p.id for p in made]}, "reading")
     return made
 
 
@@ -246,15 +328,12 @@ async def delete_paper(deps: Any, case_id: str, paper_id: str) -> dict:
         raise Conflict("A sample case's papers stay; reset the sample instead.")
     if paper.status in ("queued", "reading"):
         raise Conflict("This paper is still being read. It can be removed as soon as reading finishes.")
-    lock = case_lock(deps, case_id)
+    # a paper is not removed while a job works out what the papers point to (it could put back what was removed)
     try:
-        await asyncio.wait_for(lock.acquire(), timeout=5)
+        async with job(deps, case_id, wait=5), case_lock(deps, case_id):
+            removed = await _remove_paper(deps, case_id, paper)
     except TimeoutError:
         raise Conflict("The case is busy working out what its papers point to. Try again in a minute.") from None
-    try:
-        removed = await _remove_paper(deps, case_id, paper)
-    finally:
-        lock.release()
     drop = getattr(deps.blobs, "delete_prefix", None)
     if drop is not None:                     # the original file and its page images
         await drop(f"cases/{case_id}/papers/{paper_id}/")
@@ -263,7 +342,7 @@ async def delete_paper(deps: Any, case_id: str, paper_id: str) -> dict:
                         + (f", with {found} thing{'s' if found != 1 else ''} found only in it" if found else "")
                         + ". The case is being worked through again without it.", kind="step", paper_id=paper_id)
     deps.changed(case_id, "papers", "values", "transactions", "leads", "holdings", "checkpoints")
-    await deps.tasks.enqueue("after_papers", {"case_id": case_id, "paper_ids": []})
+    await _queue(deps, case_id, "after_papers", {"case_id": case_id, "paper_ids": []}, "finding")
     return {"deleted": paper_id, **removed}
 
 
@@ -303,39 +382,45 @@ async def _remove_paper(deps: Any, case_id: str, paper: Any) -> dict:
 async def answer_checkpoint(deps: Any, case_id: str, checkpoint_id: str, *, answer: str, value: str | None = None,
                             note: str | None = None, by: str | None = None) -> Checkpoint:
     await require_case(deps, case_id)
-    cp: Checkpoint | None = await deps.cases.get(case_id, "checkpoints", checkpoint_id)
-    if cp is None:
-        raise NotFound(f"No checkpoint {checkpoint_id}")
-    if cp.status != "open":
-        raise Conflict("This question has already been answered.")
-    valid = {o.value for o in cp.options}
-    if valid and answer not in valid:
-        raise Conflict(f"'{answer}' is not one of the answers offered: {', '.join(sorted(valid))}.")
+    heard: str | None = None              # a correction to the summary, heard as the family's next words
     async with case_lock(deps, case_id):
+        # read under the case's lock, so two answers at once (two screens, or a click twice) take one
+        cp: Checkpoint | None = await deps.cases.get(case_id, "checkpoints", checkpoint_id)
+        if cp is None:
+            raise NotFound(f"No checkpoint {checkpoint_id}")
+        if cp.status != "open":
+            raise Conflict("This question has already been answered.")
+        valid = {o.value for o in cp.options}
+        if valid and answer not in valid:
+            raise Conflict(f"'{answer}' is not one of the answers offered: {', '.join(sorted(valid))}.")
         if cp.code == "C1" and answer == "change" and (note or "").strip():
-            await intake.change_summary(deps, case_id, (note or "").strip(), by=by)
+            heard = (note or "").strip()
+            await intake.change_summary(deps, case_id, heard, by=by)
         elif cp.code == "C1":
             await intake.confirm_summary(deps, case_id, by=by, answer=answer)
             if answer == "yes":
                 # what the family named (an account, a policy, a loan) goes on the money map and is planned, in
                 # the background, as after a paper
-                await deps.tasks.enqueue("after_papers", {"case_id": case_id, "paper_ids": []})
+                await _queue(deps, case_id, "after_papers", {"case_id": case_id, "paper_ids": []}, "finding")
         elif cp.code == "C2":
             vid = (cp.payload or {}).get("value_id")
             await reading.answer_value_check(deps, case_id, vid, "yes" if answer == "yes" else "no", by=by,
                                              corrected=value)
-            if answer != "yes" and value:
-                await discovery.holdings_from_papers(deps, case_id)
-                await pipeline.refresh_claims(deps, case_id)
+            if answer != "yes" and value:          # a corrected value can change the holdings and their claims
+                await rework_later(deps, case_id, holdings=True, everything=True)
         elif cp.code == "C3":
-            await people.answer_identity(deps, case_id, checkpoint_id, answer, by=by, relationship=value or note)
+            if await people.answer_identity(deps, case_id, checkpoint_id, answer, by=by, relationship=value or note,
+                                            rework=False):
+                await rework_later(deps, case_id, everything=True)     # an heir more or less changes who signs
         elif cp.code == "C4":
             lead_id = (cp.subject_ref or "").split(":", 1)[1]
             await discovery.mark_lead(deps, case_id, lead_id, answer, by=by, value=value, note=note)
-            await pipeline.refresh_claims(deps, case_id)
+            await rework_later(deps, case_id, everything=True)
         elif cp.code == "C5" and cp.kind == "plan_question":
             plan_id = (cp.subject_ref or "").split(":")[1]
-            await planning.answer_question(deps, case_id, plan_id, (cp.payload or {}).get("variable"), answer, by=by)
+            variable = (cp.payload or {}).get("variable")
+            await planning.answer_question(deps, case_id, plan_id, variable, answer, by=by, rework=False)
+            await rework_later(deps, case_id, answer={"plan_id": plan_id, "variable": variable, "value": answer})
         elif cp.code == "C5" and cp.kind == "plan_approval":
             plan_id = (cp.subject_ref or "").split(":")[1]
             if answer == "approve":
@@ -344,6 +429,13 @@ async def answer_checkpoint(deps: Any, case_id: str, checkpoint_id: str, *, answ
                 cp.answer_note = note
                 cp.status, cp.answer, cp.answered_by, cp.answered_at = "answered", answer, by, deps.now()
                 await deps.cases.put(case_id, "checkpoints", cp)
+        elif cp.code == "C7" and cp.kind == "claim_event":
+            # what an institution said: recorded on the claim only now, with the family's yes
+            claim = await followup.confirm_claim_event(deps, case_id, cp, answer, by=by)
+            if claim is None:
+                raise Conflict("This claim is finished already, so nothing was recorded.")
+            if answer == "yes" and claim.plan_id:
+                await rework_later(deps, case_id, claims=[claim.id])
         elif cp.code == "C6":
             pack_id = (cp.subject_ref or "").split(":", 1)[1]
             if answer == "approve":
@@ -358,6 +450,8 @@ async def answer_checkpoint(deps: Any, case_id: str, checkpoint_id: str, *, answ
             cp.status, cp.answer, cp.answer_note, cp.answered_by, cp.answered_at = "answered", answer, note, by, deps.now()
             await deps.cases.put(case_id, "checkpoints", cp)
         await today_later(deps, case_id)
+    if heard:
+        await turn(deps, case_id, text=heard, person_id=by, lang=None, channel="text", seconds=None)
     return await deps.cases.get(case_id, "checkpoints", checkpoint_id)
 
 
@@ -369,7 +463,7 @@ async def _approve_plan(deps: Any, case_id: str, plan_id: str, by: str | None) -
         # gets its own papers; the interim letter stays as it was sent)
         have = [pk for pk in await deps.cases.list(case_id, "packs") if pk.claim_id == claim.id]
         if not any(pk.plan_key in (None, cp.plan_key) for pk in have):
-            await deps.tasks.enqueue("prepare_pack", {"case_id": case_id, "claim_id": claim.id})
+            await _queue(deps, case_id, "prepare_pack", {"case_id": case_id, "claim_id": claim.id}, "preparing")
     return cp
 
 
@@ -380,7 +474,7 @@ async def mark_lead(deps: Any, case_id: str, lead_id: str, *, mark: str, value: 
         if await deps.cases.get(case_id, "leads", lead_id) is None:
             raise NotFound(f"No lead {lead_id}")
         lead = await discovery.mark_lead(deps, case_id, lead_id, mark, by=by, value=value, note=note)
-        await pipeline.refresh_claims(deps, case_id)
+        await rework_later(deps, case_id, everything=True)
         await today_later(deps, case_id)
     return lead
 
@@ -408,7 +502,7 @@ async def add_person(deps: Any, case_id: str, body: Any) -> Any:
         changes = {k: v for k, v in {"address": body.address, "age": body.age}.items() if v is not None}
         if changes:
             p = await people.update_person(deps, case_id, p.id, changes, by=body.by)
-        await pipeline.refresh_claims(deps, case_id)
+        await rework_later(deps, case_id, everything=True)
     return p
 
 
@@ -420,7 +514,7 @@ async def update_person(deps: Any, case_id: str, person_id: str, body: Any) -> A
         changes = body.model_dump(exclude_none=True, exclude={"by"})
         p = await people.update_person(deps, case_id, person_id, changes, by=body.by)
         if {"relationship", "display_name"} & set(changes):
-            await pipeline.refresh_claims(deps, case_id)
+            await rework_later(deps, case_id, everything=True)
     return p
 
 
@@ -431,58 +525,8 @@ async def invite_person(deps: Any, case_id: str, person_id: str, by: str | None)
 
 
 # ---------------------------------------------------------------------------------------------
-# plans, procedures and packs
+# the papers of a pack, and the pack as one download
 # ---------------------------------------------------------------------------------------------
-
-async def answer_plan(deps: Any, case_id: str, plan_id: str, *, variable: str, value: str, by: str | None) -> Any:
-    await require_case(deps, case_id)
-    async with case_lock(deps, case_id):
-        cp = await planning.answer_question(deps, case_id, plan_id, variable, value, by=by)
-        if cp is None:
-            raise NotFound(f"No plan {plan_id}")
-        await today_later(deps, case_id)
-    return cp
-
-
-async def approve_plan(deps: Any, case_id: str, plan_id: str, *, by: str | None) -> Any:
-    await require_case(deps, case_id)
-    async with case_lock(deps, case_id):
-        if await deps.cases.get(case_id, "plans", plan_id) is None:
-            raise NotFound(f"No plan {plan_id}")
-        cp = await _approve_plan(deps, case_id, plan_id, by)
-        await today_later(deps, case_id)
-    return cp
-
-
-async def start_procedure(deps: Any, case_id: str, plan_key: str, *, by: str | None) -> Any:
-    await require_case(deps, case_id)
-    async with case_lock(deps, case_id):
-        claim = await planning.start_procedure(deps, case_id, plan_key, by=by)
-        if claim is None:
-            raise NotFound(f"No plan {plan_key}")
-        await today_later(deps, case_id)
-    return claim
-
-
-async def prepare_pack(deps: Any, case_id: str, claim_id: str) -> Any:
-    await require_case(deps, case_id)
-    async with case_lock(deps, case_id):
-        if await deps.cases.get(case_id, "claims", claim_id) is None:
-            raise NotFound(f"No claim {claim_id}")
-        pack = await packs.prepare_pack(deps, case_id, claim_id)
-        await today_later(deps, case_id)
-    return pack
-
-
-async def approve_pack(deps: Any, case_id: str, pack_id: str, *, by: str | None) -> Any:
-    await require_case(deps, case_id)
-    async with case_lock(deps, case_id):
-        if await deps.cases.get(case_id, "packs", pack_id) is None:
-            raise NotFound(f"No pack {pack_id}")
-        pack = await packs.approve_pack(deps, case_id, pack_id, by=by)
-        await today_later(deps, case_id)
-    return pack
-
 
 async def item_file(deps: Any, case_id: str, pack_id: str, item_id: str, *, mirror: bool = False) -> tuple[bytes, str]:
     from ..forms.letters import letter_pdf
@@ -576,16 +620,19 @@ async def claim_event(deps: Any, case_id: str, claim_id: str, *, event: str, on:
         if await deps.cases.get(case_id, "claims", claim_id) is None:
             raise NotFound(f"No claim {claim_id}")
         claim = await followup.record_claim_event(deps, case_id, claim_id, event, on or deps.today_for(case),
-                                                  amount=amount_typed(amount), note=note, by=by)
+                                                  amount=amount_typed(amount), note=note, by=by, rework=False)
+        if claim.plan_id:                 # an event can settle a fact the plan depends on: planned again, after
+            await rework_later(deps, case_id, claims=[claim_id])
         await today_later(deps, case_id)
     return claim
 
 
 async def draft_letter(deps: Any, case_id: str, claim_id: str, *, kind: str, request: str | None, by: str | None) -> Any:
+    """The letter is written by a model: without holding the case, so the family's other actions go on meanwhile."""
     await require_case(deps, case_id)
-    async with case_lock(deps, case_id):
-        if await deps.cases.get(case_id, "claims", claim_id) is None:
-            raise NotFound(f"No claim {claim_id}")
+    if await deps.cases.get(case_id, "claims", claim_id) is None:
+        raise NotFound(f"No claim {claim_id}")
+    async with job(deps, case_id, exclusive=False):
         return await followup.draft_letter(deps, case_id, claim_id, kind, by=by, request=request)
 
 
@@ -622,16 +669,19 @@ async def letter_file(deps: Any, case_id: str, corr_id: str, *, mirror: bool = F
 async def record_reply(deps: Any, case_id: str, claim_id: str, *, title: str, text: str, on: date | None,
                        channel: str) -> Any:
     case = await require_case(deps, case_id)
-    async with case_lock(deps, case_id):
-        if await deps.cases.get(case_id, "claims", claim_id) is None:
-            raise NotFound(f"No claim {claim_id}")
+    if await deps.cases.get(case_id, "claims", claim_id) is None:
+        raise NotFound(f"No claim {claim_id}")
+    # the reply is read by a model: without holding the case
+    async with job(deps, case_id, exclusive=False):
         corr = await followup.record_reply(deps, case_id, claim_id, title=title, text=text,
                                            on=on or deps.today_for(case), channel=channel)
-        await today_later(deps, case_id)
+    await today_later(deps, case_id)
     return corr
 
 
 async def refresh_today(deps: Any, case_id: str, viewer_id: str | None) -> None:
+    """Who is viewing, saved at once; their Today (a greeting of their own) is planned in the background, and the
+    screen hears when it is ready (until 19 October 2026 the family waited for the model, 8 to 28 s)."""
     await require_case(deps, case_id)
     async with case_lock(deps, case_id):
         if viewer_id:
@@ -640,7 +690,7 @@ async def refresh_today(deps: Any, case_id: str, viewer_id: str | None) -> None:
                 raise NotFound(f"No person {viewer_id}")
             case.viewer_person_id = viewer_id
             await deps.cases.put_case(case)
-        await followup.plan_today(deps, case_id, viewer_id)
+    await today_later(deps, case_id)
 
 
 async def ask(deps: Any, case_id: str, *, question: str, person_id: str | None, lang: str | None,
@@ -649,7 +699,8 @@ async def ask(deps: Any, case_id: str, *, question: str, person_id: str | None, 
     if not keep:                              # nothing is saved, so nothing needs the case's lock
         return await conversation.ask(deps, case_id, question, person_id=person_id, lang=lang, channel=channel,
                                       keep=False)
-    async with case_lock(deps, case_id):
+    # the answer is model work: the case is not held meanwhile, and what the question adds to it is merged
+    async with job(deps, case_id, exclusive=False):
         return await conversation.ask(deps, case_id, question, person_id=person_id, lang=lang, channel=channel)
 
 
@@ -672,9 +723,51 @@ async def share_desk(deps: Any, case_id: str, claim_id: str, *, days: int, by: s
         await deps.cases.put_case(case)
         await knowledge(deps).store.put("desk_shares", token, {"id": token, "case_id": case_id, **share})
         inst = await knowledge(deps).institution(claim.institution_id)
-        await deps.activity(case_id, "followup", f"Shared {claim.title} with {inst.name if inst else 'the institution'}, "
-                            f"read only, until {until.day} {until.strftime('%B %Y')}.", kind="decision")
+        await deps.activity(case_id, "followup", f"Shared {claim.title} with {inst.name if inst else 'the institution'}'s "
+                            f"desk until {until.day} {until.strftime('%B %Y')}.", kind="decision")
     return {"token": token, "until": until}
+
+
+async def desk_settle(deps: Any, share: dict, *, amount: str, on: date | None, note: str | None) -> None:
+    """The institution records on its desk that it has paid. It reaches the family as a message from the institution
+    and a question: the claim is settled only when the family confirms the money arrived."""
+    case_id, claim_id = share["case_id"], share["claim_id"]
+    case = await require_case(deps, case_id)
+    paid = amount_typed(amount)
+    if not paid or not Decimal(paid):
+        raise BadInput("Write the amount paid as a number, for example 120000 or 1,20,000.")
+    async with case_lock(deps, case_id):
+        claim = await deps.cases.get(case_id, "claims", claim_id)
+        if claim is None:
+            raise NotFound(f"No claim {claim_id}")
+        if claim.status in ("settled", "closed"):
+            raise Conflict("This claim is settled already." if claim.status == "settled" else "This claim is closed.")
+        when = on or deps.today_for(case)
+        inst = await knowledge(deps).institution(claim.institution_id)
+        name = (inst.short_name or inst.name) if inst else "The institution"
+        paid_text = format_amount(Decimal(paid), claim.currency, decimals=Decimal(paid) % 1 != 0)
+        # a payment recorded here that still waits for the family: the same one again changes nothing, and a
+        # corrected amount replaces it (its entry among the replies says so)
+        for waiting in await deps.cases.list(case_id, "checkpoints"):
+            wp = waiting.payload or {}
+            if not (waiting.status == "open" and waiting.code == "C7" and waiting.kind == "claim_event"
+                    and wp.get("claim_id") == claim_id and wp.get("event") == "settled" and wp.get("source") == "desk"):
+                continue
+            if Decimal(wp.get("amount") or "0") == Decimal(paid) and wp.get("on") == when.isoformat():
+                return
+            before = await deps.cases.get(case_id, "correspondence", wp["correspondence_id"]) \
+                if wp.get("correspondence_id") else None
+            if before is not None:
+                before.summary = f"{before.summary} It corrected this to {paid_text}."
+                await deps.cases.put(case_id, "correspondence", before)
+        corr = await followup.add_correspondence(
+            deps, case_id, claim_id=claim_id, direction="in", channel="online", on=deps.today_for(case),
+            title=f"{name} recorded a payment on its desk",
+            summary=f"{name} recorded on the AfterLedger desk that it paid {paid_text} on {followup.fmt_full(when)}."
+                    + (f" {note}" if note else ""))
+        await followup.propose_claim_event(deps, case_id, claim, "settled", when, amount=paid, source="desk",
+                                           correspondence_id=corr.id)
+        await today_later(deps, case_id)
 
 
 async def desk_lookup(deps: Any, token: str) -> dict:
@@ -689,6 +782,3 @@ async def desk_lookup(deps: Any, token: str) -> dict:
     return share
 
 
-async def case_counts(deps: Any, case_id: str) -> dict:
-    snap = await snapshot(deps, case_id, ["papers", "claims"])
-    return {"papers": len(snap.papers), "claims": len(snap.claims)}

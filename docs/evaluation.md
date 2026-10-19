@@ -171,7 +171,8 @@ section says so. A replayed call uses none either; its trace line says `replayed
 
 `AL_CASE_BUDGET_USD` sets what a case may spend on optional model work. At four fifths of it, the case's activity
 says so; at the limit, extra research rounds and repairs stop and say why, while reading papers and answering
-questions carry on.
+questions carry on. Research into a country's rules that any case can use (how a kind of claim is made there) is
+not charged to the case that started it; each such run stops at `AL_RESEARCH_BUDGET_USD` ($2.50 unless set).
 
 The live runs of 14 and 15 October (Google Cloud project `afterledger`) made 5,492 answered model calls, priced by
 the meter at $42.29: Gemini 3.6 Flash 2,861 calls ($18.70), Gemini 3.8 Flash 1,977 on the global and `us`

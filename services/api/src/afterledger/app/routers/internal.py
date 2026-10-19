@@ -21,6 +21,9 @@ log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/internal", include_in_schema=False)
 
+# The tries Cloud Tasks gives a task, as the queue is made (infra/scripts/deploy.sh, infra/terraform)
+TASK_ATTEMPTS = 3
+
 
 def _allowed(deps: Deps, token: str | None) -> None:
     expected = deps.settings.internal_token
@@ -84,7 +87,18 @@ async def run_task(kind: str, request: Request, deps: Deps = Depends(get_deps),
             raise HTTPException(404, str(exc.args[0])) from exc
         log.warning("task %s dropped, something it needs is gone: %s", kind, exc)
         return {"ok": False, "dropped": f"not found: {exc}"}
-    except Exception:
-        log.exception("task %s failed (attempt %s); Cloud Tasks will retry it", kind, attempt)
-        raise HTTPException(500, "The task failed and will be retried") from None
+    except Exception as exc:
+        tries = int(attempt) + 1 if attempt.isdigit() else 1
+        if tries < TASK_ATTEMPTS:
+            log.exception("task %s failed (attempt %s); Cloud Tasks will retry it", kind, tries)
+            raise HTTPException(500, "The task failed and will be retried") from None
+        # its last try: the case says so, as it does when the in-process queue gives up
+        log.exception("task %s failed on its last attempt (%s)", kind, tries)
+        notice = getattr(deps.tasks, "on_failure", None)
+        if notice is not None:
+            try:
+                await notice(kind, payload, exc)
+            except Exception:
+                log.exception("could not note the failed task %s on its case", kind)
+        raise HTTPException(500, "The task failed on its last attempt") from None
     return {"ok": True}

@@ -1,4 +1,4 @@
-"""The institution's read-only desk view of one shared claim."""
+"""The institution's desk view of one shared claim: read it, record the settlement, or ask for something else."""
 from __future__ import annotations
 
 from datetime import date
@@ -28,11 +28,10 @@ async def _view(deps: Deps, share: dict) -> DeskView:
 
 @router.post("/{token}/settle", response_model=DeskView)
 async def settle(token: str, body: DeskSettleIn, deps: Deps = Depends(get_deps)) -> DeskView:
-    """The institution records that it has paid. The family sees it at once."""
+    """The institution records that it has paid. The family is asked to confirm the money arrived, and the claim is
+    settled once they do."""
     share = await actions.desk_lookup(deps, token)
-    note = "Recorded by the institution on the AfterLedger desk." + (f" {body.note}" if body.note else "")
-    await actions.claim_event(deps, share["case_id"], share["claim_id"], event="settled", on=body.on,
-                              amount=body.amount, note=note, by=None)
+    await actions.desk_settle(deps, share, amount=body.amount, on=body.on, note=body.note)
     return await _view(deps, share)
 
 

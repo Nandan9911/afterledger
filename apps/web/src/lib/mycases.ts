@@ -8,7 +8,7 @@ const KEY = 'afterledger.cases';
 const MAX = 50;
 const listeners = new Set<() => void>();
 
-export function myCases(): string[] {
+function myCases(): string[] {
   try {
     const raw = window.localStorage.getItem(KEY);
     const list: unknown = raw ? JSON.parse(raw) : [];

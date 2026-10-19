@@ -165,8 +165,6 @@ class Meter:
     def forget_run(self, run_id: str) -> None:
         self.by_run.pop(run_id, None)
 
-    def near_budget(self, case_id: str) -> bool:
-        return bool(self.budget) and self.by_case.get(case_id, Usage()).cost_usd >= 0.8 * float(self.budget or 0)
 
     async def _load(self, case_id: str) -> None:
         """After a restart, the case's spend so far comes back from its activity lines."""

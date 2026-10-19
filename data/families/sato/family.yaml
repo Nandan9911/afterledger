@@ -14,7 +14,10 @@ countries: [JP]
 timezone: Asia/Tokyo            # the story's clock: activity times are this family's local times
 viewer: p_daisuke
 order: 2
-today_greeting_local: おはようございます、大輔さん。今日は3つのことがあります。
+today_greeting_local:
+  Daisuke: 大輔さん、今日は3つのことがあります。
+  Keiko: 恵子さん、今日は3つのことがあります。
+  Yumi: 由美さん、今日は3つのことがあります。
 
 deceased:
   id: p_kenji

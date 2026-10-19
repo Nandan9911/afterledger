@@ -61,11 +61,6 @@ async def demo_families(request: Request, deps: Deps = Depends(get_deps)) -> lis
     return out
 
 
-@router.get("/demo/status")
-async def demo_status(deps: Deps = Depends(get_deps)) -> dict:
-    return demo.status(deps)
-
-
 @router.post("/demo/{key}/reset")
 async def demo_reset(key: str, request: Request, deps: Deps = Depends(get_deps)) -> dict:
     """Puts a sample family back as the image built it. Where sign-in is required only the admin may: the samples

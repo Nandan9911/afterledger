@@ -232,3 +232,42 @@ def test_each_account_sees_its_own_questions_while_they_run_and_after(tmp_path: 
         assert c.get(f"/v1/challenges/{run['id']}", headers=_auth(b)).status_code == 404
     finally:
         gen.close()
+
+
+def test_each_account_removes_questions_from_its_own_list_and_the_rules_found_stay(tmp_path: Path) -> None:
+    """Each account can remove the questions it asked (the admin anyone's); nobody else can, and research a case's
+    claim needed stays with the claim. What a removed question's research learned about the rules is kept."""
+    import json
+    gen, c = _client(tmp_path, **ADMIN)
+    try:
+        a, _ = _signup(c, "Asha", "asha@example.org")
+        b, _ = _signup(c, "Ben", "ben@example.org")
+        ask = {"country": "FR", "lang": "fr", "holding_kind": "life_policy",
+               "question": "Mon père est décédé à Lyon en août. Avait-il une assurance-vie ?"}
+        first = c.post("/v1/challenges", headers=_auth(a), json=ask).json()
+        with c.stream("GET", f"/v1/challenges/{first['id']}/events", headers=_auth(a)) as s:
+            [json.loads(line[5:]) for line in s.iter_lines() if line.startswith("data:")]
+        stored = c.get(f"/v1/challenges/{first['id']}", headers=_auth(a)).json()["stored_key"]
+        second = c.post("/v1/challenges", headers=_auth(a), json=ask).json()     # still researching when removed
+        assert c.delete(f"/v1/challenges/{first['id']}").status_code == 404                  # nobody's to see
+        assert c.delete(f"/v1/challenges/{first['id']}", headers=_auth(b)).status_code == 404
+        assert c.delete(f"/v1/challenges/{first['id']}", headers=_auth(a)).json() == {"deleted": first["id"]}
+        assert c.delete(f"/v1/challenges/{second['id']}", headers=_auth(a)).status_code == 200
+        assert c.get("/v1/challenges", headers=_auth(a)).json() == []
+        assert c.get(f"/v1/challenges/{first['id']}", headers=_auth(a)).status_code == 404
+        if stored:                                     # the rules it found are still there for the next family
+            from afterledger.modules.common import knowledge
+            assert c.portal.call(knowledge(c.app.state.deps).plan, stored) is not None
+        third = c.post("/v1/challenges", headers=_auth(b), json=ask).json()
+        admin = c.post("/v1/auth/signin", json={"email": "admin@example.org", "password": "admin-pass-1"}).json()["token"]
+        assert c.delete(f"/v1/challenges/{third['id']}", headers=_auth(admin)).status_code == 200
+        deps = c.app.state.deps
+        claim_research = {"id": "ch_claim", "need": {"country": "FR", "question": "q"}, "status": "done",
+                          "owner_id": c.get("/v1/auth/me", headers=_auth(a)).json()["id"], "shared": True}
+        from afterledger.modules.common import knowledge
+        c.portal.call(knowledge(deps).store.put, "challenges", "ch_claim", claim_research)
+        row = next(r for r in c.get("/v1/challenges", headers=_auth(a)).json() if r["id"] == "ch_claim")
+        assert row["shared"] is True
+        assert c.delete("/v1/challenges/ch_claim", headers=_auth(a)).status_code == 409
+    finally:
+        gen.close()

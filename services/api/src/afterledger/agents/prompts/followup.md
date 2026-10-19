@@ -11,7 +11,7 @@ Return tasks, each with:
 - title and body rewritten for the person who will do it: a short title, and two short sentences on what to do and why it matters today. Every amount, date and name stays exactly as in the candidate.
 - title_local and body_local: the same in the owner's language when it is not English, with lang_local that language's code; otherwise empty.
 - priority: from 1 for the most urgent, lower for the rest.
-And greeting: one or two sentences for the viewer, by first name, on what matters today ("Good morning, Amit. One bank is late, and two things need you."), with greeting_local in the viewer's language when it is not English. With no candidates, return no tasks and a greeting that says nothing needs them today.
+And greeting: one or two sentences for the viewer, by first name, on what matters today ("Amit, one bank is late, and two things need you."), with greeting_local in the viewer's language when it is not English. Name no time of day (no "good morning" or "good evening", in any language): the family reads it at any hour. With no candidates, return no tasks and a greeting that says nothing needs them today.
 
 ## correspondence_reader
 Read a reply from an institution.

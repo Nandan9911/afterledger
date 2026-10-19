@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { apiUrl } from './api';
 
-export type ActivityLine = { id: string; text: string; kind: string; module: string; at: string };
+type ActivityLine = { id: string; text: string; kind: string; module: string; at: string };
 
 /** Whether the page is in front: a tab in the background holds no live stream (the service has a limited number). */
 function usePageVisible(): boolean {

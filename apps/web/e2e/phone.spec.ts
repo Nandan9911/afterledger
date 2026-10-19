@@ -120,7 +120,7 @@ test('on a phone, a family tells the story, changes the summary, then confirms i
   expect((await request.get(`${API}/v1/cases/${id}`)).status()).toBe(404);
 });
 
-test('on a phone, papers are approved, marked handed in and shared with the desk; the demo case is then reset', async ({
+test('on a phone, papers are approved, handed in and shared with the desk, whose payment the family confirms; the demo case is then reset', async ({
   page,
   request,
 }) => {
@@ -146,6 +146,27 @@ test('on a phone, papers are approved, marked handed in and shared with the desk
   await expect(page.getByRole('heading', { level: 1 })).toContainText('The claim of the late');
   expect(await sideways(page)).toBeLessThanOrEqual(1);
   await accessible(page);
+
+  // the institution records its payment on the desk: it waits for the family, and is settled with their yes
+  await page.getByRole('button', { name: 'Record the settlement' }).click();
+  await page.getByLabel('Amount paid').fill('1,00,000');
+  await page.getByRole('button', { name: 'Record the settlement' }).last().click();
+  await expect(page.getByText(/^Sent to the family\./)).toBeVisible();
+  await expect(page.getByText(/₹1,00,000 paid on .+waiting for the family to confirm/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Change the amount' })).toBeVisible();
+  await accessible(page);
+  await page.goto('/en/cases/demo-verma/tracker');
+  await hydrated(page);
+  const asked = page.getByRole('region', { name: 'Waiting for you to confirm' });
+  await expect(asked).toContainText('recorded on its desk that it paid ₹1,00,000');
+  expect(await sideways(page)).toBeLessThanOrEqual(1);
+  await accessible(page);
+  await asked.getByRole('button', { name: 'Yes, it arrived' }).click();
+  await expect(page.getByText('Recorded. The plan and the clocks are updated.')).toBeVisible();
+  await expect(asked).toBeHidden();
+  await page.goto(href!);
+  await hydrated(page);
+  await expect(page.getByText('Settled', { exact: true })).toBeVisible();
 
   await page.goto('/en/cases/demo-verma/today');
   await hydrated(page);

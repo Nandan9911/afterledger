@@ -300,9 +300,9 @@ expected_today:
   totals: {known: "58247.08", paid: "0", in_progress: "58247.08", owed: "0", unknown_leads: 2}
 
 today_greeting_local:
-  María: "Buenos días, María Elena. Hay tres cosas que necesitan a la familia."
-  Daniel: "Buenos días, Daniel. Hay tres cosas que necesitan a la familia."
-  Lucía: "Buenos días, Lucía. Hay tres cosas que necesitan a la familia."
+  María: "María Elena, hay tres cosas que necesitan a la familia."
+  Daniel: "Daniel, hay tres cosas que necesitan a la familia."
+  Lucía: "Lucía, hay tres cosas que necesitan a la familia."
 today_tasks:
   - kind: submit
     institution_id: us_ssa

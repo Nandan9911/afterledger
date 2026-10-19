@@ -212,5 +212,3 @@ if __name__ == "__main__":  # pragma: no cover
     raise SystemExit(main())
 
 
-def load_yaml(path: Path) -> object:
-    return yaml.safe_load(path.read_text(encoding="utf-8"))

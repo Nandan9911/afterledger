@@ -186,6 +186,25 @@ async def events(run_id: str, request: Request, pace: float = Query(0.0, ge=0, l
     return EventSourceResponse(stream(), headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
+@router.delete("/{run_id}")
+async def delete(run_id: str, user: User | None = Depends(optional_user), deps: Deps = Depends(get_deps)) -> dict:
+    """Removes a question from its asker's list (the admin may remove anyone's): the question, its steps and its
+    letter. The rules its research found stay, with their sources, for every family. Research a case's claim
+    needed stays with the claim. A public site without accounts lists nobody's questions, and removes none."""
+    raw = await challenge.get_challenge(deps, run_id)
+    if raw is None or not may_see_question(deps, raw, user):
+        raise HTTPException(404, f"No challenge {run_id}")
+    if deps.settings.auth_required:
+        if user is None or (user.role != "admin" and raw.get("owner_id") != user.id):
+            raise HTTPException(404, f"No challenge {run_id}")
+    elif deps.settings.product:
+        raise HTTPException(403, "Questions are not removed on this site.")
+    if raw.get("shared"):
+        raise HTTPException(409, "This research was done for a claim in a case, and stays with that claim.")
+    await challenge.delete_challenge(deps, run_id)
+    return {"deleted": run_id}
+
+
 @router.post("/{run_id}/case")
 async def save_as_case(run_id: str, user: User | None = Depends(optional_user), deps: Deps = Depends(get_deps)) -> dict:
     if deps.settings.auth_required and user is None:

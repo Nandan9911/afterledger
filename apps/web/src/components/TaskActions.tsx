@@ -2,8 +2,8 @@
 /** The buttons under a task: open the right screen, mark a lead, answer a question, or show why. */
 import type { CiteView, TaskAction } from '@afterledger/contracts';
 import { useTranslations } from 'next-intl';
-import { toast } from 'sonner';
 import { Link } from '@/i18n/navigation';
+import { perform } from '@/lib/changes';
 import { useAnswer, useMarkLead } from '@/lib/queries';
 import { useCase } from './CaseShell';
 import { buttonClass } from './ui';
@@ -21,6 +21,10 @@ const LABELS: Record<string, string> = {
   'Check the papers': 'checkPapers',
   'We found it': 'foundIt',
   "We can't find it": 'cantFind',
+  'Yes, it arrived': 'yesPaid',
+  'No, not yet': 'noPaid',
+  'Yes, record it': 'yesRecord',
+  No: 'no',
   'Why?': 'why',
 };
 
@@ -88,10 +92,7 @@ export function TaskActions({
               title={readOnly ? t('sampleOnly') : undefined}
               className={buttonClass(i === 0 ? 'primary' : 'secondary')}
               onClick={() =>
-                mark.mutate(
-                  { leadId: ref, mark: (a.value as 'know' | 'check') ?? 'check', by: viewerId },
-                  { onSuccess: () => toast.success(t('marked')) },
-                )
+                perform(mark, { leadId: ref, mark: (a.value as 'know' | 'check') ?? 'check', by: viewerId }, { done: () => t('marked') })
               }
             >
               {label(a)}
@@ -107,10 +108,14 @@ export function TaskActions({
               title={readOnly ? t('sampleOnly') : undefined}
               className={buttonClass(i === 0 ? 'dark' : 'secondary')}
               onClick={() =>
-                answer.mutate({ checkpointId: ref, answer: a.value ?? '', by: viewerId }, { onSuccess: () => toast.success(t('answered')) })
+                perform(
+                  answer,
+                  { checkpointId: ref, answer: a.value ?? '', by: viewerId },
+                  { done: () => (a.value === 'no' ? t('answeredNo') : t('answered')) },
+                )
               }
             >
-              {a.label}
+              {label(a)}
             </button>
           );
         }

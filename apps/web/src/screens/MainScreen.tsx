@@ -2,14 +2,14 @@
 import { Check } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState, useSyncExternalStore } from 'react';
-import { toast } from 'sonner';
 import { LanguageSelect } from '@/components/CaseShell';
 import { ChallengeForm } from '@/components/ChallengeForm';
 import { Button, ButtonLink, Chip, ErrorNote, Logo, ScrollX, Skeleton, SlowNote, Wordmark } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
+import { perform } from '@/lib/changes';
 import { countryName, longDate } from '@/lib/format';
 import { myCasesSnapshot, onMyCasesChange } from '@/lib/mycases';
-import { useCases, useDeleteCase, useFamilies, useMyQuestions } from '@/lib/queries';
+import { useCases, useDeleteCase, useDeleteQuestion, useFamilies, useMyQuestions } from '@/lib/queries';
 import { useSite } from '@/lib/site';
 import { WhyAfterLedger } from './WhyAfterLedger';
 import { AccountLinks } from '@/components/Account';
@@ -63,12 +63,7 @@ function YourCases() {
                       size="sm"
                       variant="danger"
                       disabled={remove.isPending}
-                      onClick={() =>
-                        remove.mutate(c.id, {
-                          onSuccess: () => (setAsking(null), toast.success(t('deleted'))),
-                          onError: (e) => (setAsking(null), toast.error(e.message)),
-                        })
-                      }
+                      onClick={() => perform(remove, c.id, { done: () => t('deleted'), after: () => setAsking(null) })}
                     >
                       {t('deleteYes')}
                     </Button>
@@ -408,11 +403,15 @@ export function MainScreen() {
   );
 }
 
-/** The questions this account asked: each keeps researching on the server when its page is left. */
+/** The questions this account asked: each keeps researching on the server when its page is left, and each can be
+ * removed from the list, after asking (research a case's claim needed stays with the claim). */
 function MyQuestions() {
   const t = useTranslations('main');
+  const tc = useTranslations('common');
   const locale = useLocale();
   const q = useMyQuestions();
+  const remove = useDeleteQuestion();
+  const [asking, setAsking] = useState<string | null>(null);
   const rows = q.data ?? [];
   if (!rows.length) return null;
   const state = (status: string) =>
@@ -423,16 +422,47 @@ function MyQuestions() {
       <p className="m-0 mt-2 max-w-[44em] text-[16px] text-night-soft">{t('myQuestionsNote')}</p>
       <ul className="m-0 mt-5 grid list-none gap-3 p-0">
         {rows.map((r) => (
-          <li key={r.id}>
-            <Link
-              href={`/challenge/${encodeURIComponent(r.id)}`}
-              className="tap block rounded-[14px] border border-white/20 px-5 py-4 text-[#F2F5F3] no-underline hover:border-white/50"
-            >
+          <li key={r.id} className="rounded-[14px] border border-white/20 px-5 py-4 focus-within:border-white/50 hover:border-white/50">
+            <Link href={`/challenge/${encodeURIComponent(r.id)}`} className="tap block text-[#F2F5F3] no-underline">
               <span className="block text-[14px] text-night-faint">
-                {[countryName(r.country, locale), state(r.status), longDate(r.started_at, locale)].filter(Boolean).join(' · ')}
+                {[countryName(r.country, locale), state(r.status), r.shared ? t('questionForClaim') : null, longDate(r.started_at, locale)]
+                  .filter(Boolean)
+                  .join(' · ')}
               </span>
-              <span dir="auto" className="mt-1 line-clamp-2 block text-[17px] leading-snug">{r.question}</span>
+              <span dir="auto" className="mt-1 line-clamp-2 block text-[17px] leading-snug">
+                {r.question}
+              </span>
             </Link>
+            {r.shared ? null : asking === r.id ? (
+              <div
+                role="group"
+                aria-label={t('removeQuestion')}
+                className="mt-3 flex flex-col gap-2.5 rounded-xl bg-white/10 p-3 text-[15px]"
+              >
+                <p className="m-0">{t('removeQuestionAsk')}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    disabled={remove.isPending}
+                    onClick={() => perform(remove, r.id, { done: () => t('questionRemoved'), after: () => setAsking(null) })}
+                  >
+                    {t('removeQuestionYes')}
+                  </Button>
+                  <Button size="sm" variant="secondary" disabled={remove.isPending} onClick={() => setAsking(null)}>
+                    {tc('cancel')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAsking(r.id)}
+                className="tap mt-2 text-[15px] font-bold text-night-soft underline-offset-4 hover:text-[#F2F5F3] hover:underline"
+              >
+                {t('removeQuestion')}
+              </button>
+            )}
           </li>
         ))}
       </ul>

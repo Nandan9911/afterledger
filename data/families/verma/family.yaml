@@ -553,9 +553,9 @@ expected_today:
 
 # How the supervisor words today's tasks (the scripted stand-in for the model's wording).
 today_greeting_local:
-  Sunita: "सुप्रभात, सुनीता जी। एक बैंक देर कर रहा है, और दो काम परिवार के लिए हैं।"
-  Amit: "सुप्रभात, अमित। एक बैंक देर कर रहा है, और दो काम परिवार के लिए हैं।"
-  Kamla: "सुप्रभात, अम्मा जी। एक बैंक देर कर रहा है, और दो काम परिवार के लिए हैं।"
+  Sunita: "सुनीता जी, एक बैंक देर कर रहा है, और दो काम परिवार के लिए हैं।"
+  Amit: "अमित, एक बैंक देर कर रहा है, और दो काम परिवार के लिए हैं।"
+  Kamla: "अम्मा जी, एक बैंक देर कर रहा है, और दो काम परिवार के लिए हैं।"
 today_tasks:
   - kind: follow_up
     institution_id: in_narmada_bank

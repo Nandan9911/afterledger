@@ -25,7 +25,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from .common import case_lock, knowledge
+from .common import knowledge
 
 log = logging.getLogger(__name__)
 MODULE = "research"
@@ -75,13 +75,13 @@ def _inflight(deps: Any) -> dict[str, dict]:
     return deps.extras.setdefault("rules_research", {})
 
 
-async def state_for(deps: Any, sig: str) -> dict | None:
-    """What is known about research on a situation: running now, or its last run's outcome."""
-    entry = _inflight(deps).get(sig)
-    if entry is not None:
-        run = entry["run"]
-        return {"signature": sig, "run_id": run.id, "status": "running", "started": run.started_iso}
-    return await knowledge(deps).store.get("research_attempts", sig)
+def _starting(deps: Any) -> asyncio.Lock:
+    """Held while a claim's research is looked up or started, so claims planned side by side never start one
+    situation's research twice."""
+    lock = deps.extras.get("rules_research_starting")
+    if lock is None:
+        lock = deps.extras["rules_research_starting"] = asyncio.Lock()
+    return lock
 
 
 async def ensure(deps: Any, case_id: str, claim: Any, *, country: str, kind: str | None, reason: str = "no_plan",
@@ -92,6 +92,13 @@ async def ensure(deps: Any, case_id: str, claim: Any, *, country: str, kind: str
     mode = getattr(deps.settings, "claim_research", "standard")
     if mode == "off":
         return {"signature": sig, "status": "off"}
+    async with _starting(deps):
+        return await _ensure(deps, case_id, claim, sig=sig, mode=mode, kind=kind, reason=reason, plan_key=plan_key,
+                             authority=authority)
+
+
+async def _ensure(deps: Any, case_id: str, claim: Any, *, sig: str, mode: str, kind: str | None, reason: str,
+                  plan_key: str | None, authority: str | None) -> dict:
     case = await deps.cases.get_case(case_id)
     if case is not None and case.demo_key:
         # a sample is a scripted story: its claims stay on the interim plan rather than start research (research
@@ -136,8 +143,10 @@ async def ensure(deps: Any, case_id: str, claim: Any, *, country: str, kind: str
 
 
 async def _run(deps: Any, sig: str, run: Any, depth: str) -> None:
+    from ..concurrency import WRITER
     from . import challenge
     from .research import research, run_view
+    WRITER.set(None)                      # a run of its own, not part of the job or action that started it
     gate = challenge._research_gate(deps)
     status = "failed"
     try:
@@ -185,8 +194,9 @@ async def _run(deps: Any, sig: str, run: Any, depth: str) -> None:
 
 async def _replan(deps: Any, case_id: str, claim_ids: set[str], sig: str, run: Any, status: str) -> None:
     """The claims that waited for this research are planned again, on the researched plan if one was stored."""
+    from ..concurrency import job
     from .planning import plan_claim, sync_procedures
-    async with case_lock(deps, case_id):
+    async with job(deps, case_id):
         if await deps.cases.get_case(case_id) is None:
             return
         titles = []

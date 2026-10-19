@@ -47,10 +47,13 @@ def triage(ctx: Ctx, req: OracleRequest) -> dict:
     issuer = next((ln.get("text", "").strip() for ln in p.get("lines", [])[:6]
                    if looks_like_org(ln.get("text", "")) and len(ln.get("text", "")) <= 80
                    and not re.search(r"statement|account holder|account number", ln.get("text", ""), re.I)), None)
+    # a title as a person would give it ("Bank statement, Mula Mutha Bank"), not the file's name
+    what = doc_type.replace("_", " ").capitalize() if doc_type != "other" else ""
+    title = f"{what}, {issuer.title() if issuer.isupper() else issuer}" if what and issuer else what
     return {"doc_type": doc_type, "country": None, "languages": [_LANG[s] for s in scripts] or ["en"],
             "scripts": scripts or ["Latn"], "issuer": issuer,
             "is_photo": (p.get("paper") or {}).get("origin") == "photo",
-            "quality": "fair", "title": "", "known_schema": doc_type != "other"}
+            "quality": "fair", "title": title, "known_schema": doc_type != "other"}
 
 
 def _kind_of(name: str) -> str:

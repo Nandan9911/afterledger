@@ -1,7 +1,7 @@
 # Architecture
 
 AfterLedger is a FastAPI service (Python 3.12) and a Next.js web app, with a domain core that is plain code, nine
-modules that run 44 agents on the Agent Development Kit, and ports that are served by local adapters offline and
+modules that run 46 agents on the Agent Development Kit, and ports that are served by local adapters offline and
 by Google Cloud adapters live. This page explains how the parts fit; the [decision records](adr) say why.
 
 ## Principles
@@ -52,19 +52,21 @@ data/                   knowledge, families, evaluation data
 | 1 Intake | The family tells the story by voice or text; one question at a time; a summary to confirm (checkpoint C1) | listener, situation_extractor, gap_planner, tone_critic, locale_detector |
 | 2 Jurisdiction | Connecting factors; conflict-of-laws rules found and checked; one leg per holding; conflicts kept, not resolved by a model | connecting_factors, jurisdiction_researcher, jurisdiction_verifier, jurisdiction_planner, jurisdiction_adjudicator |
 | 3 Reading | Triage, schema (worked out first for a kind of paper with no stored layout), two independent readings, code comparison, a closer look on disagreement, statement rows with running balances; the decision controller sends a value to the family only when the answer is worth their effort (C2) | triage, schema_inducer, reader_a, reader_b, reader_c |
-| 4 People | Names in every script split and matched to people on evidence (never the name alone); a name form that cannot be settled is asked about (C3); issuers to institutions | name_splitter, identity_resolver, merge_critic, institution_resolver |
-| 5 Discovery | Payments grouped by payee and cadence; what they point to; one investigator per lead and a critic; debts; what families here usually hold (C4) | rail_profiler, narration_interpreter, hypothesis_generator, investigator, devils_advocate, coverage_auditor, liability_scout |
-| 6 Research | Questions planned; researchers on the web in pairs per question group (official sources first; the country's language first); citation check; adjudication; more rounds until nothing is left open; a plan compiled and checked by code (and against a gold plan) | question_planner, researcher_primary, researcher_second, research_adjudicator, procedure_compiler |
+| 4 People | Names in every script split and matched to people on evidence (never the name alone); a name form that cannot be settled is asked about (C3); issuers to institutions, an unknown one looked up on the web | name_splitter, identity_resolver, merge_critic, institution_resolver, institution_researcher |
+| 5 Discovery | Payments grouped by payee and cadence; what they point to; one investigator per lead and a critic; debts; what families here usually hold (C4) | rail_profiler, payee_screener, narration_interpreter, hypothesis_generator, investigator, devils_advocate, coverage_auditor, liability_scout |
+| Research service | Questions planned; researchers on the web in pairs per question group (official sources first; the country's language first); citation check; adjudication; more rounds until nothing is left open; a plan compiled and checked by code (and against a gold plan) | question_planner, researcher_primary, researcher_second, research_adjudicator, procedure_compiler |
 | 6 Planning | Each claim's plan run on the case's facts: route, papers, clocks, questions only the family can answer and the plan's approval (C5), explained in plain words; a stored plan on a single source or with stale rules is researched again first | explainer |
 | 7 Forms and letters | The institution's own forms filled in its script and format and read back from the PDF; a covering letter in its language with a family copy checked by back-translation; what fails a check is composed or written again, then checked again; the family approves the pack (C6) | form_scout, form_understander, value_composer, visual_critic, letter_writer, back_translator |
-| 8 Follow-up | Today's few tasks for each family member; replies read against the plan; clocks, late days and compensation; reminders and objections that quote the rule, checked for every number before anyone sees them | supervisor, correspondence_reader, escalation_writer |
+| 8 Follow-up | Today's few tasks for each family member; replies read against the plan; what an institution says happened, in a reply or on its desk (every paper received, the claim paid), recorded only once the family confirms it (C7); clocks, late days and compensation; reminders and objections that quote the rule, checked for every number before anyone sees them | supervisor, correspondence_reader, escalation_writer |
 | 9 Conversation | Ask anything; answered only from the case and its sources, checked for grounding; a need the case does not cover gets a first answer from an official page | intent_router, case_answerer, unknown_need_handler |
 
 Papers drive the pipeline: an upload is read (module 3), names and issuers resolved (4), payments examined (5),
 whose rules apply worked out (2), holdings and leads become claims, each claim planned (6), and packs prepared
-when a plan is approved (7). Follow-up (8) plans each family member's day after every change. All of it runs as
-background work with one lock per case, and every step writes a plain-language line to the case's activity feed,
-which the web app follows over server-sent events.
+when a plan is approved (7). Follow-up (8) plans each family member's day a few seconds after a burst of changes.
+All of it runs as background work, one job at a time on a case, and every step writes a plain-language line to the
+case's activity feed, which the web app follows over server-sent events. A job holds the case only for each write,
+never while it waits on a model, so the family's actions never wait for it; its writes are merged with whatever
+the family changed meanwhile (see "Changes and background work" below).
 
 ### Agents
 
@@ -161,12 +163,35 @@ directory, payment-rail profiles, coverage lists, rates and the reviewed transla
 
 ## The service
 
-- 61 typed HTTP routes under `/v1` (cases and their screens, demo families, knowledge, challenges, the
-  institution desk, evaluation), described by an OpenAPI document from which the web client is generated.
+- 70 typed HTTP operations under `/v1` (cases and their screens, demo families, knowledge, challenges, the
+  institution desk, evaluation, accounts), described by an OpenAPI document from which the web client is generated.
 - Server-sent events for a case's activity and for a challenge's steps; a WebSocket for live voice.
 - Screen-shaped views (`app/views/`): each screen gets what it shows in one call, with the words the server
   writes translated into the page's language (`Accept-Language`) through the translation port.
-- Writes go through actions (`app/actions.py`), which hold the case's lock and start background work.
+- Writes go through actions (`app/actions.py`), which hold the case only for their own short work and queue the
+  model work they lead to.
+
+### Changes and background work
+
+Changed on 19 October 2026, after a live test in which an approval waited up to two minutes behind papers being
+prepared (`concurrency.py`):
+- Each case has two locks. The write lock serialises changes: a family's action holds it for the little time the
+  action takes. The jobs lock keeps one background job at a time on the case (working out what the papers point
+  to, planning, preparing papers, Today), so two jobs never work out the same thing twice. Reading papers runs
+  beside them: it writes only each paper's own records.
+- A job takes the write lock only for each write. What it writes is merged, field by field, with the record as it
+  now stands: a field the job did not change keeps its current value, and a field both changed keeps the newer
+  value, the family's. A record deleted meanwhile is not written back, and a job that began before its case was
+  deleted writes nothing more to it.
+- An action that leads to model work (an answer worked into its plan, a lead or a person that changes the claims,
+  an approved plan's papers) saves the change at once and queues the rest; the case's header says what is being
+  worked out from the moment it is queued, and the screens refresh when it is done. Today is planned once for a
+  burst of changes, a few seconds after the first of them, and not at all when nothing it shows has changed.
+- A conversation turn and a question asked are model work too: they run without holding the case, one turn at a
+  time, and their writes are merged like a job's.
+- The web app sends each change with an `Idempotency-Key` and sends it again when the connection drops; the API
+  answers a repeat with what it did the first time (`app/idempotency.py`), so a change is never made twice and the
+  family learns whether it went through. A change that still fails says so, and the page shows what was saved.
 
 ## The web app
 
@@ -209,14 +234,16 @@ nothing held in memory grows without bound (changed on 19 October 2026, after a 
 | Pages read from the web | cached for six hours | at most 400 pages and 30 million characters, oldest out first (`adapters/gcp/web.py`) |
 | Gemini clients | one per model and endpoint, kept with its open connections | (`agents/factory.py`) |
 
-Background jobs come from Cloud Tasks, four at a time. Measured during the live test: memory peaked at 29% of 2 GiB
-and CPU at 10%; the time went to waiting for Gemini.
+Background jobs come from Cloud Tasks, up to 32 at a time: a job waits only for its own case's earlier work, so
+one family's burst of changes never holds up another's (until 19 October 2026 four at a time, which one busy case
+could fill). Measured during the live test: memory peaked at 29% of 2 GiB and CPU at 10%; the time went to waiting
+for Gemini.
 
 ### Growing beyond one instance
 
 The boundaries are already where a larger deployment needs them:
-- case locks move from memory to Firestore leases (or Redis), and the write-through caches become read-through
-  with Firestore listeners;
+- case locks move from memory to Firestore leases (or Redis), the write-through caches become read-through
+  with Firestore listeners, and the answers kept for repeated changes move to a shared store;
 - background work is already expressed as named tasks with JSON payloads, so Cloud Tasks (or Pub/Sub with
   Eventarc) can deliver it to any instance;
 - the activity stream moves from an in-process hub to Pub/Sub or Firestore listeners;

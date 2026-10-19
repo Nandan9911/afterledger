@@ -8,9 +8,12 @@ can appear in a letter unless it is in the case (checkpoint C7 records what was 
 """
 from __future__ import annotations
 
+import hashlib
+import json
+import re
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import Any
+from typing import Any, get_args
 
 from ..agents.runner import call_agent, repair_loop
 from ..domain.case import Claim, ClockState, Correspondence, Task, TaskAction, TodayNote
@@ -19,7 +22,7 @@ from ..domain.ids import new_id, stable_id
 from ..domain.money import format_amount
 from ..domain.plan_language import ProcedurePlan
 from ..domain.plan_runtime import active_clocks, compensation, due_date, per_day, route
-from .common import case_block, knowledge, pack_key, screen_outside, snapshot
+from .common import Snapshot, case_block, knowledge, open_checkpoint, pack_key, screen_outside, snapshot
 
 MODULE = "followup"
 
@@ -163,7 +166,10 @@ async def refresh_clocks(deps: Any, case_id: str) -> None:
 
 
 async def record_claim_event(deps: Any, case_id: str, claim_id: str, event: str, on: date, *,
-                             amount: str | None = None, note: str | None = None, by: str | None = None) -> Claim:
+                             amount: str | None = None, note: str | None = None, by: str | None = None,
+                             rework: bool = True) -> Claim:
+    """An event on a claim (handed in, every paper received, paid, sent back...). The plan is planned again after it,
+    here with rework, or by the caller in the background."""
     claim: Claim = await deps.cases.get(case_id, "claims", claim_id)
     inst = await knowledge(deps).institution(claim.institution_id)
     name = inst.name if inst else claim.institution_id
@@ -186,7 +192,12 @@ async def record_claim_event(deps: Any, case_id: str, claim_id: str, event: str,
     elif event == "settled":
         claim.status = "settled"
         claim.settled_amount = Decimal(amount) if amount else claim.amount_due
-        text = f"{name} paid {format_amount(claim.settled_amount, claim.currency)}."
+        paid = (format_amount(claim.settled_amount, claim.currency, decimals=claim.settled_amount % 1 != 0)
+                if claim.settled_amount is not None else None)
+        if claim.kind == "debt":
+            text = f"The debt to {name} was settled" + (f": {paid} paid." if paid else ".")
+        else:
+            text = f"{name} paid" + (f" {paid}." if paid else ".")
         for hid in claim.holding_ids:
             h = await deps.cases.get(case_id, "holdings", hid)
             if h:
@@ -202,7 +213,15 @@ async def record_claim_event(deps: Any, case_id: str, claim_id: str, event: str,
     if note and event != "returned":
         text += f" {note}"
     await deps.cases.put(case_id, "claims", claim)
-    if claim.plan_id:
+    # what an institution said about this event, still waiting for the family, is settled by the event itself (a
+    # claim settled settles everything still waiting on it)
+    for waiting in await deps.cases.list(case_id, "checkpoints"):
+        p = waiting.payload or {}
+        if waiting.status == "open" and waiting.code == "C7" and waiting.kind == "claim_event" and \
+                p.get("claim_id") == claim_id and (event == "settled" or p.get("event") == event):
+            waiting.status = "expired"
+            await deps.cases.put(case_id, "checkpoints", waiting)
+    if claim.plan_id and rework:
         # an event can settle a fact the plan depends on (no investigation once the claim is in, say)
         from .planning import plan_claim
         await plan_claim(deps, case_id, claim_id)
@@ -326,6 +345,85 @@ async def draft_letter(deps: Any, case_id: str, claim_id: str, kind: str = "remi
     return corr
 
 
+def to_confirm(snap: Snapshot) -> list[Any]:
+    """What institutions said that waits for the family (checkpoint C7), for the claims still in progress."""
+    out = []
+    for cp in snap.checkpoints:
+        if cp.status == "open" and cp.code == "C7" and cp.kind == "claim_event":
+            claim = snap.claim((cp.payload or {}).get("claim_id"))
+            if claim is not None and claim.status not in ("settled", "closed"):
+                out.append(cp)
+    return out
+
+
+async def propose_claim_event(deps: Any, case_id: str, claim: Claim, event: str, on: date, *,
+                              amount: str | None = None, source: str, correspondence_id: str | None = None) -> Any:
+    """What an institution says happened, in a reply or on its desk (every paper received; the claim paid), becomes
+    the claim's only once the family confirms it (checkpoint C7): a model's reading of a letter, or an institution's
+    own word, never moves a claim's clocks or its money by itself. Its latest word on an event replaces an earlier one
+    still waiting (a corrected amount on the desk, the desk after a reply), so the family is asked once."""
+    case = await deps.cases.get_case(case_id)
+    inst = await knowledge(deps).institution(claim.institution_id)
+    name = (inst.short_name or inst.name) if inst else claim.institution_id
+    where = "on its AfterLedger desk" if source == "desk" else "in its reply"
+    for older in await deps.cases.list(case_id, "checkpoints"):
+        op = older.payload or {}
+        if older.status == "open" and older.code == "C7" and older.kind == "claim_event" and \
+                op.get("claim_id") == claim.id and op.get("event") == event:
+            older.status, older.answer_note = "expired", "Replaced by what the institution said later."
+            await deps.cases.put(case_id, "checkpoints", older)
+    paid = None
+    if event == "settled":
+        paid = format_amount(Decimal(amount or "0"), claim.currency, decimals=Decimal(amount or "0") % 1 != 0)
+        title = f"Did {name}'s payment of {paid} arrive?"
+        said = f"{name} says {where} that it paid {paid} on {fmt_full(on)}"
+        question = f"{said}. Has the money reached the family?"
+        options = [("yes", "Yes, it arrived"), ("no", "No, not yet")]
+    else:
+        title = f"Does {name} have every paper?"
+        said = f"{name} says {where} that it has every paper for the claim, as of {fmt_full(on)}"
+        question = f"{said}. Is that right?"
+        options = [("yes", "Yes, record it"), ("no", "No")]
+    cp = await open_checkpoint(
+        deps, case, code="C7", kind="claim_event", title=title, question=question, options=options,
+        subject_ref=f"claim:{claim.id}:{event}:{correspondence_id or new_id('said')}",
+        why="Nothing an institution says is recorded on the claim until the family confirms it.",
+        payload={"claim_id": claim.id, "event": event, "on": on.isoformat(), "amount": amount, "amount_text": paid,
+                 "source": source, "correspondence_id": correspondence_id, "institution": name,
+                 "currency": claim.currency})
+    await deps.activity(case_id, MODULE, f"{said}. It is recorded once the family confirms it.", kind="question",
+                        claim_id=claim.id)
+    deps.changed(case_id, "checkpoints")
+    return cp
+
+
+async def confirm_claim_event(deps: Any, case_id: str, cp: Any, answer: str, *, by: str | None = None) -> Claim | None:
+    """The family's answer to what an institution said (checkpoint C7): yes records the event as the institution
+    gave it; no records nothing, and the institution's desk is told the family has not confirmed it. A question about
+    a claim that is finished already records nothing either way (None)."""
+    p = cp.payload or {}
+    claim = await deps.cases.get(case_id, "claims", p["claim_id"]) if p.get("claim_id") else None
+    if claim is None or claim.status in ("settled", "closed"):
+        cp.status, cp.answer_note = "expired", "The claim was finished before the family answered."
+        await deps.cases.put(case_id, "checkpoints", cp)
+        deps.changed(case_id, "checkpoints")
+        return None
+    cp.status, cp.answer, cp.answered_by, cp.answered_at = "answered", answer, by, deps.now()
+    await deps.cases.put(case_id, "checkpoints", cp)
+    name = p.get("institution") or claim.institution_id
+    if answer != "yes":
+        said = "the payment" if p.get("event") == "settled" else "that it has every paper"
+        await deps.activity(case_id, MODULE, f"The family did not confirm {said} {name} gave"
+                            f"{' on its desk' if p.get('source') == 'desk' else ' in its reply'}, so it is not "
+                            "recorded.", kind="decision", claim_id=claim.id)
+        deps.changed(case_id, "checkpoints")
+        return claim
+    note = (f"As {name} recorded on its desk; the family confirmed it." if p.get("source") == "desk" else
+            f"As {name}'s reply said; the family confirmed it.")
+    return await record_claim_event(deps, case_id, claim.id, p["event"], date.fromisoformat(p["on"]),
+                                    amount=p.get("amount"), note=note, by=by, rework=False)
+
+
 async def record_reply(deps: Any, case_id: str, claim_id: str, *, title: str, text: str, on: date,
                        channel: str = "letter", paper_id: str | None = None) -> Correspondence:
     """An institution replied (checkpoint C7). The reply is read and compared with the plan."""
@@ -351,12 +449,25 @@ async def record_reply(deps: Any, case_id: str, claim_id: str, *, title: str, te
     await deps.cases.put(case_id, "claims", claim)
     await deps.activity(case_id, MODULE, f"Read a reply from {title.split(':')[0]}: {out.summary}",
                         agent="correspondence_reader", kind="warning" if out.objection else "step", claim_id=claim_id)
+    # The reader proposes; code checks it against the reply, and the family confirms it before it is the claim's. A
+    # confirmation dated with a day the reply does not have counts from the reply's own date (so a clock never starts
+    # earlier than the reply shows), and an amount paid that is not in the reply is not proposed at all.
+    done = claim.status in ("settled", "closed")
     confirmed_on = _model_date(out.complete_set_confirmed_on, claim.country)
-    if confirmed_on:
-        await record_claim_event(deps, case_id, claim_id, "complete_set_confirmed", confirmed_on)
+    if confirmed_on and fidelity_violations(str(confirmed_on.day), text):
+        confirmed_on = on
+    if confirmed_on and not done and not claim.complete_set_on:
+        await propose_claim_event(deps, case_id, claim, "complete_set_confirmed", confirmed_on, source="reply",
+                                  correspondence_id=corr.id)
     settled = _model_amount(out.settled_amount, claim.country)
-    if settled:
-        await record_claim_event(deps, case_id, claim_id, "settled", on, amount=settled)
+    if settled and fidelity_violations(settled, text):
+        await deps.activity(case_id, MODULE, f"The reply from {title.split(':')[0]} seems to say the claim was paid, "
+                            f"but the amount read ({settled}) is not in the reply, so it was not recorded. If the money "
+                            "came, record it on the tracker.", kind="warning", claim_id=claim_id)
+        settled = None
+    if settled and not done:
+        await propose_claim_event(deps, case_id, claim, "settled", on, amount=settled, source="reply",
+                                  correspondence_id=corr.id)
     if out.objection:
         await draft_letter(deps, case_id, claim_id, "objection", request="; ".join(out.requests))
     if cp is not None:
@@ -436,7 +547,7 @@ def _next_occurrence(day: int, after: date) -> date:
 async def deadlines(deps: Any, case_id: str, horizon_days: int = 30, *, refresh: bool = True) -> list[dict]:
     if refresh:
         await refresh_clocks(deps, case_id)
-    snap = await snapshot(deps, case_id, ["claims", "leads", "correspondence", "groups", "plans"])
+    snap = await snapshot(deps, case_id, ["claims", "leads", "correspondence", "groups", "plans", "holdings"])
     today = deps.today_for(snap.case)
     k = knowledge(deps)
     out = []
@@ -455,21 +566,28 @@ async def deadlines(deps: Any, case_id: str, horizon_days: int = 30, *, refresh:
                 out.append({"date": clk.due_on.isoformat(), "title": title,
                             "note": (f"{clk.days_late} day{'s' if clk.days_late != 1 else ''} late") if late else clk.label,
                             "late": late, "claim_id": c.id, "kind": "clock", "owner": clk.owner, "cites": clk.cites})
+    finished = {c.id for c in snap.claims if c.status in ("settled", "closed")}
     for corr in snap.correspondence:
-        if corr.expected_on and corr.expected_on >= today:
+        if corr.expected_on and corr.expected_on >= today and corr.claim_id not in finished:
             out.append({"date": corr.expected_on.isoformat(), "title": corr.expected_title or corr.title,
                         "note": corr.expected_note or corr.summary, "late": False,
                         "kind": "expected", "claim_id": corr.claim_id})
     for lead in snap.leads:
         if lead.kind == "debt" and lead.status != "closed":
+            held = snap.holding(lead.holding_id)
+            claim = snap.claim(held.claim_id) if held else None
+            if (held and held.status == "closed") or (claim and claim.status in ("settled", "closed")):
+                continue                  # paid off or closed: nothing more is taken
             grp = next((g for g in snap.groups if g.id in lead.group_ids), None)
             if grp and grp.cadence == "monthly":
                 nxt = _next_occurrence(grp.last.day, today)
                 inst = await k.institution(lead.institution_id) if lead.institution_id else None
                 what = lead.title.split(" at ")[0]
                 what = what[2].upper() + what[3:] if what.startswith("A ") else what
-                out.append({"date": nxt.isoformat(), "title": f"{what} instalment of "
-                            f"{format_amount(grp.amount_typical, grp.currency, decimals=False)}",
+                amount = format_amount(grp.amount_typical, grp.currency, decimals=False)
+                # "Two-wheeler loan instalment of ₹2,150"; a title that already speaks of instalments is not repeated
+                title = f"Next instalment of {amount}" if "instalment" in what.lower() else f"{what} instalment of {amount}"
+                out.append({"date": nxt.isoformat(), "title": title,
                             "note": f"Tell {(inst.short_name or inst.name) if inst else 'the lender'} before it is "
                                     "taken", "late": False,
                             "kind": "debt"})
@@ -487,7 +605,8 @@ async def totals(deps: Any, case_id: str) -> dict:
         t = by_cur.setdefault(cur, {"known": Decimal(0), "paid": Decimal(0), "in_progress": Decimal(0),
                                     "owed": Decimal(0), "holdings_known": 0})
         if h.direction == "debt":
-            if h.value is not None:
+            settled = snap.claim(h.claim_id)
+            if h.value is not None and not (settled and settled.status == "settled"):
                 t["owed"] += h.value
             continue
         if h.value is None:
@@ -703,6 +822,12 @@ async def plan_today(deps: Any, case_id: str, viewer_id: str | None = None) -> l
                           "claim_id": cp.claim_id, "cites": step.cites,
                           "due_on": clock.due_on.isoformat() if clock and clock.due_on else None,
                           "actions": [{"label": "Open the plan", "kind": "open", "target": f"plan:{cp.id}"}]})
+    for cp in to_confirm(snap):           # what an institution said, for the family to confirm
+        cands.append({"key": f"confirm:{cp.id}", "kind": "decide", "priority": 0.93, "title": cp.title,
+                      "body": cp.question, "owner_person_ids": [claimant.id] if claimant else [],
+                      "claim_id": (cp.payload or {}).get("claim_id"), "cites": [],
+                      "actions": [{"label": o.label, "kind": "answer", "target": f"checkpoint:{cp.id}",
+                                   "value": o.value} for o in cp.options]})
     for cp in snap.checkpoints:           # who someone is, when only the payments show them
         if cp.status == "open" and cp.code == "C3":
             cands.append({"key": f"ask:identity:{cp.id}", "kind": "ask", "priority": 0.75, "title": cp.title,
@@ -723,38 +848,108 @@ async def plan_today(deps: Any, case_id: str, viewer_id: str | None = None) -> l
                       "actions": [{"label": "Open the plan", "kind": "open", "target": f"plan:{asking[0]}"}]
                       if len(asking) == 1 else [{"label": "Open the plans", "kind": "open", "target": "plans:"}]})
     viewer = snap.person(viewer_id or case.viewer_person_id)
+    brief = {"case": case_block(case), "today": today.isoformat(),
+             "viewer": {"id": viewer.id, "name": viewer.display_name, "name_en": viewer.name_en,
+                        "lang": (viewer.languages or ["en"])[0]} if viewer else None,
+             "candidates": cands, "people": [{"id": p.id, "name": p.display_name, "relationship": p.relationship}
+                                             for p in snap.family()]}
+    basis = hashlib.sha256(json.dumps(brief, sort_keys=True, default=str, ensure_ascii=False).encode()).hexdigest()[:24]
+    who = viewer.id if viewer else ""
+    if case.today_basis.get(who) == basis and (not viewer or viewer.id in case.today_notes):
+        # nothing Today is chosen from changed since it was last planned for this person (an action that changed
+        # nothing it shows, a viewer coming back): the tasks and greeting stand, and no model is asked again
+        return [t for t in snap.tasks]
     out = await call_agent(deps, "supervisor", {
         "key": pack_key("supervisor", case, today.isoformat(), viewer.id if viewer else "", str(len(cands))),
-        "case": case_block(case),
-        "today": today.isoformat(), "viewer": {"id": viewer.id, "name": viewer.display_name, "name_en": viewer.name_en,
-                                               "lang": (viewer.languages or ["en"])[0]} if viewer else None,
-        "candidates": cands, "people": [{"id": p.id, "name": p.display_name, "relationship": p.relationship}
-                                        for p in snap.family()]}, case_id=case_id)
+        **brief}, case_id=case_id)
     tasks: list[Task] = []
     by_key = {c["key"]: c for c in cands}
-    for i, t in enumerate(out.tasks[:3]):
-        cand = by_key.get(t.key, {})
-        tasks.append(Task(id=stable_id("task", case_id, t.key), case_id=case_id, kind=t.kind if t.kind in (
-            "ask", "research", "acquire", "fill", "sign", "certify", "submit", "wait", "follow_up", "handoff",
-            "review", "notify", "decide", "find") else "review", title=t.title, body=t.body,  # type: ignore[arg-type]
-            title_local=t.title_local, body_local=t.body_local, lang_local=t.lang_local,
-            owner_person_ids=t.owner_person_ids or cand.get("owner_person_ids", []), claim_id=t.claim_id or cand.get("claim_id"),
-            due_on=_model_date(t.due_on, None) or _model_date(cand.get("due_on"), None), priority=1 - i * 0.1,
-            actions=[TaskAction(**a) for a in cand.get("actions", [])], cites=t.cites or cand.get("cites", []),
-            created_at=deps.now()))
+    # a sample built from prepared answers keeps its story's own words; whatever a model writes is checked
+    story = bool(case.demo_key) and deps.models.label == "scripted"
+    for t in out.tasks:
+        cand = by_key.get(t.key)
+        if cand is None or len(tasks) == 3:
+            continue                      # a task none of the candidates offered is not the case's to show
+        # The model chooses and words the tasks; what they rest on (the kind, the claim, who does it, the date,
+        # the sources) is the candidate's, worked out by code. A figure or date in the words that the candidate
+        # does not have sends the candidate's own words instead.
+        allowed = " ".join([cand.get("title", ""), cand.get("body", ""), str(cand.get("due_on") or ""),
+                            today.isoformat()])
+        worded = story or not fidelity_violations(f"{t.title} {t.body}", allowed)
+        # the family's-language copy may write in figures what the English writes in words ("1人" for "one heir",
+        # "12月7日" for "7 December")
+        local = story or (worded and not fidelity_violations(f"{t.title_local} {t.body_local}",
+                                                             in_figures(f"{allowed} {t.title} {t.body}")))
+        people = {p.id for p in snap.people}
+        tasks.append(Task(
+            id=stable_id("task", case_id, t.key), case_id=case_id,
+            kind=cand["kind"] if cand.get("kind") in get_args(Task.model_fields["kind"].annotation) else "review",
+            title=t.title if worded else cand.get("title", t.title), body=t.body if worded else cand.get("body", ""),
+            title_local=t.title_local if local else "", body_local=t.body_local if local else "",
+            lang_local=t.lang_local if local else "",
+            owner_person_ids=cand.get("owner_person_ids") or [p for p in t.owner_person_ids if p in people],
+            claim_id=cand.get("claim_id"), due_on=_model_date(cand.get("due_on"), None),
+            priority=1 - len(tasks) * 0.1, actions=[TaskAction(**a) for a in cand.get("actions", [])],
+            cites=cand.get("cites", []), created_at=deps.now()))
     old = {x.id for x in await deps.cases.list(case_id, "tasks")}
     for tid in old - {t.id for t in tasks}:
         await deps.cases.delete(case_id, "tasks", tid)
     await deps.cases.put_many(case_id, "tasks", tasks)
     case = await deps.cases.get_case(case_id)
-    case.today_note, case.today_note_local = out.greeting, out.greeting_local
+    greeting, greeting_local = timeless(out.greeting), timeless(out.greeting_local or "")
+    said = " ".join([*(f"{c.get('title', '')} {c.get('body', '')}" for c in cands), today.isoformat(), "1 2 3"])
+    if not story and fidelity_violations(f"{greeting} {greeting_local}", in_figures(said)):
+        greeting, greeting_local = "", ""  # a figure Today does not have: the page's own plain hello instead
+    case.today_note, case.today_note_local = greeting, greeting_local
     case.today_note_for = viewer.id if viewer else None
+    case.today_basis = {**case.today_basis, who: basis}
     if viewer:
-        case.today_notes = {**case.today_notes, viewer.id: TodayNote(text=out.greeting, local=out.greeting_local or "",
-                                                                      on=today)}
+        case.today_notes = {**case.today_notes, viewer.id: TodayNote(text=greeting, local=greeting_local, on=today)}
     await deps.cases.put_case(case)
     deps.changed(case_id, "tasks")
     return tasks
+
+
+# A greeting is read at any hour: a time of day the model wrote anyway becomes that language's plain hello (Japanese
+# has none, so the salutation is dropped).
+_TIME_OF_DAY = (
+    (re.compile(r"good (morning|afternoon|evening)\b", re.I), "Hello"),
+    (re.compile(r"(buenos días|buenas tardes|buenas noches)\b", re.I), "Hola"),
+    (re.compile(r"guten (morgen|tag|abend)\b", re.I), "Hallo"),
+    (re.compile(r"(सुप्रभात|शुभ प्रभात|शुभ संध्या)"), "नमस्ते"),
+    (re.compile(r"(സുപ്രഭാതം|ശുഭ സായാഹ്നം|ശുഭസായാഹ്നം)"), "നമസ്കാരം"),
+    (re.compile(r"(صباح الخير|مساء الخير)"), "مرحبًا"),
+    (re.compile(r"(おはようございます|こんばんは)[、。,\s]*"), ""),
+)
+
+
+def timeless(text: str) -> str:
+    """The greeting without a time of day at its start."""
+    lead = text[:len(text) - len(text.lstrip())]
+    for rx, hello in _TIME_OF_DAY:
+        m = rx.match(text, len(lead))
+        if m:
+            return lead + hello + text[m.end():]
+    return text
+
+
+_NUMBER_WORDS = {w: str(i) for i, w in enumerate(
+    ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve",
+     "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"])}
+_NUMBER_WORDS |= {"thirty": "30", "sixty": "60", "ninety": "90"}
+_MONTHS = {m: str(i) for i, m in enumerate(
+    ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november",
+     "december"], 1)}
+_MONTHS |= {m[:3]: n for m, n in _MONTHS.items()} | {"sept": "9"}
+
+
+def in_figures(text: str) -> str:
+    """A text with the numbers it writes in words added in figures: its number words, its month names as month
+    numbers and its years as Japanese era years (Reiwa), so a translation that writes them in figures is checked
+    against what the text says."""
+    extra = [_NUMBER_WORDS.get(w) or _MONTHS.get(w) for w in re.findall(r"[a-z]+", text.lower())]
+    extra += [str(int(y) - 2018) for y in re.findall(r"\b(20[2-9]\d)\b", text)]
+    return text + " " + " ".join(x for x in extra if x)
 
 
 def _model_date(text: str | None, country: str | None) -> date | None:

@@ -22,7 +22,7 @@ from typing import Any
 
 from ..domain.case import Institution
 from ..domain.checks import normalise
-from ..knowledge import LEARNED, learned_case_id
+from ..knowledge import LEARNED
 from ..netsafe import allowed
 from .common import case_block, knowledge, pack_key, screen_outside
 
@@ -342,5 +342,3 @@ async def _learn_here(deps: Any, case: Any, printed: str, country: str | None, k
     return inst
 
 
-def is_learned_here(inst_id: str | None) -> bool:
-    return learned_case_id(inst_id) is not None

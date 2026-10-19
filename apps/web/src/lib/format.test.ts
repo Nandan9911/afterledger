@@ -72,6 +72,8 @@ describe('names are never translated', () => {
     expect(shortName('Kamla Devi')).toBe('Kamla Devi');
     expect(shortName('Saraswathy Amma')).toBe('Saraswathy Amma');
     expect(shortName('Amit Verma')).toBe('Amit');
+    expect(shortName('R. P. Shukla')).toBe('R. P. Shukla');
+    expect(shortName('R P Shukla')).toBe('R P Shukla');
   });
 });
 

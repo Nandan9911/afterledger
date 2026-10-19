@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date
 from decimal import Decimal
 from typing import Any
 
@@ -14,7 +13,6 @@ from ..domain.case import (
     Fact,
     Holding,
     Lead,
-    OcrLine,
     Pack,
     Paper,
     PaymentGroup,
@@ -102,13 +100,10 @@ async def snapshot(deps: Any, case_id: str, only: list[str] | None = None) -> Sn
 
 
 def case_lock(deps: Any, case_id: str) -> Any:
-    """The lock that serialises changes to one case (asyncio.Lock), shared by the screens' actions and background jobs."""
-    import asyncio
-    locks = deps.extras.setdefault("case_locks", {})
-    lock = locks.get(case_id)
-    if lock is None:
-        lock = locks[case_id] = asyncio.Lock()
-    return lock
+    """What a family's action holds while it changes the case (concurrency.CaseLock): the case's write lock, held only
+    for the action's own short work. Background work takes concurrency.job instead."""
+    from ..concurrency import CaseLock
+    return CaseLock(deps, case_id)
 
 
 def knowledge(deps: Any) -> Knowledge:
@@ -141,17 +136,6 @@ def money(v: Decimal | str | float | int | None) -> Decimal | None:
     return Decimal(str(v)).quantize(Decimal("0.01"))
 
 
-def lines_by_page(lines: list[OcrLine]) -> dict[str, list[OcrLine]]:
-    out: dict[str, list[OcrLine]] = {}
-    for ln in lines:
-        out.setdefault(ln.page_id, []).append(ln)
-    return out
-
-
-def iso(d: date | None) -> str | None:
-    return d.isoformat() if d else None
-
-
 async def open_checkpoint(deps: Any, case: CaseFile, *, code: str, kind: str, title: str, question: str,
                           options: list[tuple[str, str]], for_person_id: str | None = None,
                           subject_ref: str | None = None, why: str = "", payload: dict | None = None,
@@ -173,6 +157,7 @@ async def open_checkpoint(deps: Any, case: CaseFile, *, code: str, kind: str, ti
     cp.question_local, cp.language = question_local, language
     await deps.cases.put(case.id, "checkpoints", cp)
     return cp
+
 
 async def screen_outside(deps: Any, text: str, *, kind: str, source: str, case_id: str | None = None,
                          subject: str | None = None, module: str = "system") -> Any:

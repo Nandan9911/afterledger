@@ -131,13 +131,32 @@ async def _challenge(deps: Any, run: ResearchRun) -> None:
                        }.get(run.status, "Finished."), status=run.status, unverified=unverified)
 
 
+def _tasks(deps: Any) -> dict[str, asyncio.Task]:
+    """The background task researching each question still running, by the question's id."""
+    return deps.extras.setdefault("challenge_tasks", {})
+
+
 def launch(deps: Any, **kwargs: Any) -> ResearchRun:
     """Starts a challenge in the background and returns its run at once, for watching."""
     run = new_run(deps, **{k: v for k, v in kwargs.items() if k != "on_event"})
     task = asyncio.get_running_loop().create_task(start_challenge(deps, run=run, **kwargs))
-    deps.extras.setdefault("challenge_tasks", set()).add(task)
-    task.add_done_callback(deps.extras["challenge_tasks"].discard)
+    tasks = _tasks(deps)
+    tasks[run.id] = task
+    task.add_done_callback(lambda _: tasks.pop(run.id, None) if tasks.get(run.id) is task else None)
     return run
+
+
+async def delete_challenge(deps: Any, run_id: str) -> bool:
+    """Forgets one question someone asked: its steps, its sources list and its letter. One still being researched is
+    stopped first. What the research learned about the rules stays, with its sources, for every family (as when
+    the copy is cleaned). Returns whether there was such a question."""
+    task = _tasks(deps).get(run_id)
+    if task is not None and not task.done():
+        task.cancel()
+        await asyncio.wait({task}, timeout=10)
+    held = _running(deps).pop(run_id, None) is not None
+    stored = await knowledge(deps).store.delete("challenges", run_id)
+    return held or bool(stored)
 
 
 async def get_challenge(deps: Any, run_id: str) -> dict | None:
@@ -168,7 +187,8 @@ async def list_challenges(deps: Any) -> list[dict]:
         items.setdefault(run.id, run_view(run))
     out = [{"id": c["id"], "country": c["need"]["country"], "question": c["need"]["question"],
             "lang": c["need"].get("lang"), "status": c["status"], "started_at": c.get("started_at"),
-            "stored_key": c.get("stored_key"), "owner_id": c.get("owner_id")} for c in items.values()]
+            "stored_key": c.get("stored_key"), "owner_id": c.get("owner_id"), "shared": bool(c.get("shared"))}
+           for c in items.values()]
     return sorted(out, key=lambda c: c.get("started_at") or "", reverse=True)
 
 

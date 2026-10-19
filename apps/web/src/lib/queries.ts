@@ -3,7 +3,7 @@
  * Every read and every action the screens use, as TanStack Query hooks. Everything about one case lives
  * under the key ['case', caseId], so one 'something changed' event from the API refreshes what is open.
  */
-import type { AccountIn, AccountPatch, AnswerIn, ChallengeIn, PersonIn, PersonPatch, SignInIn, SignUpIn } from '@afterledger/contracts';
+import type { AccountIn, AccountPatch, AnswerIn, ChallengeIn, PapersView, PersonIn, SignInIn, SignUpIn } from '@afterledger/contracts';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, unwrap, uploadPapers } from './api';
 import { useAuth } from './auth';
@@ -132,7 +132,14 @@ export function useDeletePaper(caseId: string) {
   return useMutation({
     mutationFn: (paperId: string) =>
       unwrap(api().DELETE('/v1/cases/{case_id}/papers/{paper_id}', { params: { path: { case_id: caseId, paper_id: paperId } } })),
-    onSuccess: () => qc.invalidateQueries({ queryKey: c(caseId) }),
+    onSuccess: (_out, paperId) => {
+      // the paper is gone: off the list at once, so the screen moves to another paper and never asks for this one again
+      qc.setQueryData<PapersView>([...c(caseId), 'papers'], (old) =>
+        old ? { ...old, papers: old.papers.filter((r) => r.paper.id !== paperId) } : old,
+      );
+      qc.removeQueries({ queryKey: [...c(caseId), 'paper', paperId] });
+      return qc.invalidateQueries({ queryKey: c(caseId) });
+    },
   });
 }
 
@@ -198,20 +205,6 @@ export function useAddPerson(caseId: string) {
   });
 }
 
-export function useUpdatePerson(caseId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (args: { personId: string; body: PersonPatch }) =>
-      unwrap(
-        api().PATCH('/v1/cases/{case_id}/people/{person_id}', {
-          params: { path: { case_id: caseId, person_id: args.personId } },
-          body: args.body,
-        }),
-      ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: c(caseId) }),
-  });
-}
-
 export function useInvite(caseId: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -242,20 +235,6 @@ export function usePlan(caseId: string, planId: string | null | undefined) {
   });
 }
 
-export function useApprovePlan(caseId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (args: { planId: string; by?: string | null }) =>
-      unwrap(
-        api().POST('/v1/cases/{case_id}/plans/{plan_id}/approve', {
-          params: { path: { case_id: caseId, plan_id: args.planId } },
-          body: { by: args.by ?? null },
-        }),
-      ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: c(caseId) }),
-  });
-}
-
 export function usePacks(caseId: string) {
   return useQuery({
     queryKey: [...c(caseId), 'packs'],
@@ -269,20 +248,6 @@ export function usePack(caseId: string, packId: string | null | undefined) {
     enabled: !!packId,
     queryFn: () => unwrap(api().GET('/v1/cases/{case_id}/packs/{pack_id}', { params: { path: { case_id: caseId, pack_id: packId! } } })),
     placeholderData: keepPreviousData,
-  });
-}
-
-export function useApprovePack(caseId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (args: { packId: string; by?: string | null }) =>
-      unwrap(
-        api().POST('/v1/cases/{case_id}/packs/{pack_id}/approve', {
-          params: { path: { case_id: caseId, pack_id: args.packId } },
-          body: { by: args.by ?? null },
-        }),
-      ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: c(caseId) }),
   });
 }
 
@@ -396,14 +361,6 @@ export function useActivity(caseId: string, limit = 200) {
   });
 }
 
-export function useCheckpoints(caseId: string) {
-  return useQuery({
-    queryKey: [...c(caseId), 'checkpoints'],
-    queryFn: () =>
-      unwrap(api().GET('/v1/cases/{case_id}/checkpoints', { params: { path: { case_id: caseId }, query: { status: 'open' } } })),
-  });
-}
-
 export function useAnswer(caseId: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -428,15 +385,6 @@ export function useAsk(caseId: string) {
 }
 
 // ---- knowledge, challenge, desk, evaluation ---------------------------------------------------------
-
-export function useAssertion(id: string | null | undefined) {
-  return useQuery({
-    queryKey: ['assertion', id],
-    enabled: !!id,
-    queryFn: () => unwrap(api().GET('/v1/knowledge/assertions/{assertion_id}', { params: { path: { assertion_id: id! } } })),
-    staleTime: 10 * 60_000,
-  });
-}
 
 export function usePresets() {
   return useQuery({ queryKey: ['presets'], queryFn: () => unwrap(api().GET('/v1/challenges/presets')), staleTime: 10 * 60_000 });
@@ -466,6 +414,15 @@ export function useChallenge(runId: string) {
     queryKey: ['challenge', runId],
     queryFn: () => unwrap(api().GET('/v1/challenges/{run_id}', { params: { path: { run_id: runId } } })),
     refetchInterval: (q) => (q.state.data?.finished ? false : 3000),
+  });
+}
+
+/** Removes a question from the account's list (its research stops if it is still running; the rules it found stay). */
+export function useDeleteQuestion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (runId: string) => unwrap(api().DELETE('/v1/challenges/{run_id}', { params: { path: { run_id: runId } } })),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['challenges'] }),
   });
 }
 
@@ -510,6 +467,7 @@ export function useSignIn() {
   const qc = useQueryClient();
   const signIn = useAuth((s) => s.signIn);
   return useMutation({
+    meta: { quiet: true }, // the form says what went wrong
     mutationFn: (body: SignInIn) => unwrap(api().POST('/v1/auth/signin', { body })),
     onSuccess: (out) => {
       signIn(out.token, out.user);
@@ -522,6 +480,7 @@ export function useSignUp() {
   const qc = useQueryClient();
   const signIn = useAuth((s) => s.signIn);
   return useMutation({
+    meta: { quiet: true }, // the form says what went wrong
     mutationFn: (body: SignUpIn) => unwrap(api().POST('/v1/auth/signup', { body })),
     onSuccess: (out) => {
       signIn(out.token, out.user);

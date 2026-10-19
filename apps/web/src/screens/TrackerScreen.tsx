@@ -1,10 +1,10 @@
 'use client';
 /**
- * The tracker: every claim's clock on one time line with today marked, the letters waiting for approval with
- * their fidelity check and the family's-language copy, what to do if an institution does not answer, replies
- * received, and a read-only link for the institution's desk.
+ * The tracker: what an institution said that waits for the family to confirm, every claim's clock on one time line
+ * with today marked, the letters waiting for approval with their fidelity check and the family's-language copy, what
+ * to do if an institution does not answer, replies received, and a link for the institution's desk.
  */
-import type { ClockRow, LetterView, TrackerView } from '@afterledger/contracts';
+import type { Checkpoint, ClockRow, LetterView, TrackerView } from '@afterledger/contracts';
 import { Copy, ExternalLink, Printer, Share2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type FormEvent } from 'react';
@@ -13,8 +13,9 @@ import { useCase } from '@/components/CaseShell';
 import { Button, Chip, ErrorNote, h1Class, h2Class, Sheet, Skeleton } from '@/components/ui';
 import { Why } from '@/components/Why';
 import { apiUrl } from '@/lib/api';
+import { perform } from '@/lib/changes';
 import { asDate, cls, dayMonth, languageName, longDate, personName } from '@/lib/format';
-import { useClaimEvent, useDraftLetter, useLetterAction, useRecordReply, useShare, useTracker } from '@/lib/queries';
+import { useAnswer, useClaimEvent, useDraftLetter, useLetterAction, useRecordReply, useShare, useTracker } from '@/lib/queries';
 
 const DAY = 86_400_000;
 
@@ -241,9 +242,7 @@ function LetterCard({ lv, view }: { lv: LetterView; view: TrackerView }) {
         {L.status === 'draft' ? (
           <Button
             disabled={act.isPending || readOnly}
-            onClick={() =>
-              act.mutate({ corrId: L.id, action: 'approve', by: viewerId }, { onSuccess: () => toast.success(t('approvedNote')) })
-            }
+            onClick={() => perform(act, { corrId: L.id, action: 'approve', by: viewerId }, { done: () => t('approvedNote') })}
           >
             {t('approveSend')}
           </Button>
@@ -251,12 +250,7 @@ function LetterCard({ lv, view }: { lv: LetterView; view: TrackerView }) {
         {L.status === 'approved' ? (
           <Button
             disabled={act.isPending || readOnly}
-            onClick={() =>
-              act.mutate(
-                { corrId: L.id, action: 'sent', by: viewerId, channel: 'letter' },
-                { onSuccess: () => toast.success(t('markedSent')) },
-              )
-            }
+            onClick={() => perform(act, { corrId: L.id, action: 'sent', by: viewerId, channel: 'letter' }, { done: () => t('markedSent') })}
           >
             {t('markSent')}
           </Button>
@@ -336,17 +330,7 @@ function ReplyForm({ view, onDone }: { view: TrackerView; onDone: () => void }) 
   function submit(e: FormEvent) {
     e.preventDefault();
     if (!claimId || !title.trim() || !text.trim()) return;
-    const id = toast.loading(tc('working'));
-    reply.mutate(
-      { claimId, title: title.trim(), text: text.trim() },
-      {
-        onSuccess: () => {
-          toast.success(t('replyDone'), { id });
-          onDone();
-        },
-        onError: (err) => toast.error(err.message, { id }),
-      },
-    );
+    perform(reply, { claimId, title: title.trim(), text: text.trim() }, { working: tc('working'), done: () => (onDone(), t('replyDone')) });
   }
   const field = 'rounded-[10px] border border-rule-strong bg-sheet px-3 text-[17px] font-normal';
   return (
@@ -433,12 +417,13 @@ function ShareDesk({ view }: { view: TrackerView }) {
                   variant="secondary"
                   disabled={share.isPending || readOnly}
                   onClick={() =>
-                    share.mutate(
+                    perform(
+                      share,
                       { claimId: r.claim_id, by: viewerId },
                       {
-                        onSuccess: (out) => {
+                        done: (out) => {
                           setLinks((m) => ({ ...m, [r.claim_id]: `${window.location.origin}/${locale}/desk/${out.token}` }));
-                          toast.success(t('shared'));
+                          return t('shared');
                         },
                       },
                     )
@@ -457,6 +442,76 @@ function ShareDesk({ view }: { view: TrackerView }) {
 }
 
 type EventKind = 'complete_set_confirmed' | 'settled' | 'returned' | 'submitted';
+
+/** What an institution said happened, as the API keeps it on the question to the family. */
+type Said = {
+  claim_id?: string;
+  event?: EventKind;
+  on?: string;
+  amount_text?: string | null;
+  source?: 'reply' | 'desk';
+  institution?: string;
+};
+
+const said = (cp: Checkpoint) => cp.payload as Said;
+
+/** What an institution said (in a reply, or on its desk) that is recorded on the claim only once the family says
+ * yes: the money arrived, or every paper is in. */
+function ToConfirm({ view }: { view: TrackerView }) {
+  const t = useTranslations('tracker');
+  const locale = useLocale();
+  const { caseId, viewerId, readOnly } = useCase();
+  const answer = useAnswer(caseId);
+  if (!view.confirm.length) return null;
+  function reply(cp: Checkpoint, value: 'yes' | 'no') {
+    perform(
+      answer,
+      { checkpointId: cp.id, answer: value, by: viewerId },
+      { done: () => (value === 'yes' ? t('ev.done') : t('confirm.doneNo')) },
+    );
+  }
+  return (
+    <section aria-labelledby="confirm" className="rounded-[14px] border-[1.5px] border-dashed border-pencil bg-pencil-tint px-6 py-5">
+      <h2 id="confirm" className={h2Class}>
+        {t('confirm.title')}
+      </h2>
+      <p className="m-0 mt-1.5 text-[15px] text-ink-soft">{t('confirm.lede')}</p>
+      <ul className="m-0 mt-2 list-none p-0">
+        {view.confirm.map((cp) => {
+          const p = said(cp);
+          const row = view.rows.find((r) => r.claim_id === p.claim_id);
+          const paid = p.event === 'settled';
+          const words = { institution: p.institution ?? row?.institution ?? '', date: longDate(p.on, locale) };
+          return (
+            <li key={cp.id} className="border-t border-pencil/25 py-3.5 first:border-t-0">
+              {row ? <p className="m-0 text-[14px] text-ink-soft">{row.title}</p> : null}
+              <p className="m-0 mt-0.5 font-bold">
+                {paid
+                  ? `${t('confirm.settled', { ...words, source: p.source ?? 'reply', amount: p.amount_text ?? '' })} ${t('confirm.settledAsk')}`
+                  : `${t('confirm.complete', words)} ${t('confirm.completeAsk')}`}
+              </p>
+              <div className="mt-2.5 flex flex-wrap gap-2.5">
+                <Button size="sm" disabled={answer.isPending || readOnly} onClick={() => reply(cp, 'yes')}>
+                  {paid ? t('confirm.yesPaid') : t('confirm.yes')}
+                </Button>
+                <Button size="sm" variant="secondary" disabled={answer.isPending || readOnly} onClick={() => reply(cp, 'no')}>
+                  {paid ? t('confirm.noPaid') : t('confirm.no')}
+                </Button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+/** What a claim is for, under its institution's name: "Bajaj Finance: loan" says "Loan". */
+function claimWhat(title: string): string {
+  const cut = title.indexOf(': ');
+  const what = cut > 0 ? title.slice(cut + 2) : title;
+  return what.charAt(0).toLocaleUpperCase() + what.slice(1);
+}
 
 /** What the family can record for one claim, given where it stands. */
 function eventsFor(row: ClockRow): EventKind[] {
@@ -490,8 +545,8 @@ function EventForm({ row, event, onDone }: { row: ClockRow; event: EventKind; on
   const today = new Date().toISOString().slice(0, 10);
   function submit(e: FormEvent) {
     e.preventDefault();
-    const id = toast.loading(tc('working'));
-    record.mutate(
+    perform(
+      record,
       {
         claimId: row.claim_id,
         event,
@@ -500,13 +555,7 @@ function EventForm({ row, event, onDone }: { row: ClockRow; event: EventKind; on
         note: note.trim() || null,
         by: viewerId,
       },
-      {
-        onSuccess: () => {
-          toast.success(t('ev.done'), { id });
-          onDone();
-        },
-        onError: (err) => toast.error(err.message, { id }),
-      },
+      { working: tc('working'), done: () => (onDone(), t('ev.done')) },
     );
   }
   const field = 'rounded-[10px] border border-rule-strong bg-sheet px-3 text-[17px] font-normal';
@@ -515,7 +564,13 @@ function EventForm({ row, event, onDone }: { row: ClockRow; event: EventKind; on
       <p className="m-0 font-bold">{t(`ev.ask.${event}`, { institution: row.institution || row.title })}</p>
       <label className="flex flex-col gap-1 text-[15px] font-bold">
         {t('ev.when')}
-        <input type="date" value={on} max={today} onChange={(e) => setOn(e.target.value)} className={cls(field, 'min-h-11 max-w-[220px]')} />
+        <input
+          type="date"
+          value={on}
+          max={today}
+          onChange={(e) => setOn(e.target.value)}
+          className={cls(field, 'min-h-11 max-w-[220px]')}
+        />
         <span className="text-[14px] font-normal text-ink-soft">{t('ev.whenHint')}</span>
       </label>
       {event === 'settled' ? (
@@ -556,14 +611,7 @@ function ClaimProgress({ view, onReply }: { view: TrackerView; onReply: () => vo
   const rows = view.rows.filter((r) => r.status !== 'closed');
   if (!rows.length) return null;
   function draftLetter(row: ClockRow, kind: 'reminder' | 'chase' | 'request') {
-    const id = toast.loading(t('drafting'));
-    draft.mutate(
-      { claimId: row.claim_id, kind, by: viewerId },
-      {
-        onSuccess: () => toast.success(t('drafted'), { id }),
-        onError: (err) => toast.error(err.message, { id }),
-      },
-    );
+    perform(draft, { claimId: row.claim_id, kind, by: viewerId }, { working: t('drafting'), done: () => t('drafted') });
   }
   return (
     <Sheet as="section" className="px-6 py-5" aria-labelledby="progress">
@@ -573,8 +621,19 @@ function ClaimProgress({ view, onReply }: { view: TrackerView; onReply: () => vo
       <p className="m-0 mt-1.5 text-[15px] text-ink-soft">{t('progressLede')}</p>
       <ul className="m-0 mt-3 list-none p-0">
         {rows.map((r) => {
-          const events = eventsFor(r);
-          const letter = letterFor(r);
+          // what the institution said waits above for a yes or no: it is not offered here as well
+          const events = eventsFor(r).filter((ev) => !view.confirm.some((cp) => said(cp).claim_id === r.claim_id && said(cp).event === ev));
+          // no second letter while one waits to be sent, or while the institution has time to answer the last
+          const drafted = view.letters.some((l) => l.letter.claim_id === r.claim_id && l.letter.status !== 'sent');
+          const answering = [...view.letters, ...view.received].some(
+            (l) =>
+              l.letter.claim_id === r.claim_id &&
+              l.letter.direction === 'out' &&
+              l.letter.status === 'sent' &&
+              !!l.letter.expected_on &&
+              l.letter.expected_on >= view.today,
+          );
+          const letter = drafted || answering ? null : letterFor(r);
           const waiting = Boolean(r.events?.notified) && !r.events?.submitted && r.status !== 'settled';
           return (
             <li key={r.claim_id} className="border-t border-rule py-3.5">
@@ -582,7 +641,7 @@ function ClaimProgress({ view, onReply }: { view: TrackerView; onReply: () => vo
                 <div className="min-w-0">
                   <p className="m-0 font-bold">{r.institution || r.title}</p>
                   <p className="m-0 text-[14px] text-ink-soft">
-                    {r.institution ? `${r.title} · ` : ''}
+                    {r.institution ? `${claimWhat(r.title)} · ` : ''}
                     <span className={cls(r.late ? 'font-bold text-debit' : r.status === 'settled' ? 'font-bold text-ledger' : '')}>
                       {r.status_text}
                     </span>
@@ -699,6 +758,7 @@ export function TrackerScreen({ caseId }: { caseId: string }) {
       ) : (
         <>
           {replying ? <ReplyForm view={view} onDone={() => setReplying(false)} /> : null}
+          <ToConfirm view={view} />
           <Timeline view={view} />
           <ClaimProgress
             view={view}

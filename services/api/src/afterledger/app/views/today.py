@@ -7,6 +7,7 @@ from typing import Any
 
 from ...modules import followup
 from ...modules.common import Snapshot, knowledge, snapshot
+from ...modules.reading import payee_name, payee_of
 from ..schemas import CurrencyTotals, DeadlineView, LateClock, TaskView, TodayView, Uncertainty
 from .common import chip, chips, cite_views, institution_name, money, tidy_text
 from .localize import localize
@@ -26,8 +27,11 @@ _FEE = re.compile(r"\b(AMC|FEE|CHARGE|CHG|GEBÜHR|手数料)\b", re.I)
 
 
 def _after_death(snap: Snapshot, inst_names: dict[str, str]) -> list[Uncertainty]:
-    """Money that left an account after the death: the bank asks about cash, and a fee can be reversed."""
+    """Money that left an account after the death: the bank asks about cash, and a fee can be reversed. A payment
+    says who was paid: the payee discovery named, else the one the statement line names."""
     out = []
+    payee = {t: payee_name(g.counterparty) for g in snap.groups if payee_name(g.counterparty) and g.direction == "debit"
+             for t in g.transaction_ids}
     by_holding: dict[str, list] = {}
     for t in snap.transactions:
         if t.after_death and t.direction == "debit":
@@ -47,7 +51,8 @@ def _after_death(snap: Snapshot, inst_names: dict[str, str]) -> list[Uncertainty
                 parts.append(f"a {amt.short} fee")
                 fee = True
             else:
-                parts.append(f"{amt.short} paid to {t.narration.title()}")
+                who = payee.get(t.id) or payee_of(t.narration)
+                parts.append(f"{amt.short} paid to {who}" if who else f"{amt.short} paid out")
         n = len(parts)
         what = ("One payment" if n == 1 else f"{_word(n)} payments") + f" left the {where + ' ' if where else ''}account " \
             "after the date of death: " + (parts[0] if n == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]) + "."

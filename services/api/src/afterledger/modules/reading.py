@@ -111,12 +111,6 @@ def _evidence(paper: Paper, lines: dict[str, OcrLine], line_ids: list[str], labe
     return out
 
 
-def _row_label(paper: Paper, page_no: int | None, row_index_on_page: int | None) -> str:
-    if row_index_on_page is None:
-        return f"{paper.title}, page {page_no}"
-    return f"{paper.title}, page {page_no}, line {row_index_on_page}"
-
-
 async def set_stage(deps: Any, paper: Paper, status: str, stage: str) -> None:
     paper.status, paper.stage = status, stage   # type: ignore[assignment]
     await deps.cases.put(paper.case_id, "papers", paper)
@@ -294,10 +288,12 @@ async def read_paper(deps: Any, case_id: str, paper_id: str) -> Paper:
                                                             "balance" if "balance" in rv.checks else None))
         probs[rv.id] = p if rv.value is not None else 0.0
         rv.certainty = value_certainty(p) if rv.value is not None else "unknown"
-        if rv.status == "matched":
+        # two paths only when the second reader read it too: a statement line read once and checked by the running
+        # balance is sure through the balance (its own check), not through a second reading
+        two = rv.status in ("matched", "resolved") and rv.reading_b is not None
+        if two and rv.status == "matched":
             rv.checks.append("two_paths")
-        await deps.ledger(case_id, f"read_value:{rv.id}", "two_paths",
-                          "pass" if rv.status in ("matched", "resolved") else "unknown",
+        await deps.ledger(case_id, f"read_value:{rv.id}", "two_paths", "pass" if two else "unknown",
                           method="reader_a text layer vs reader_b image",
                           detail=f"A={rv.reading_a!r} B={rv.reading_b!r}" + (f" C={rv.reading_c!r}" if rv.reading_c else ""))
 
@@ -595,11 +591,15 @@ async def _reconcile_rows(deps: Any, case: Any, paper: Paper, lines: dict[str, O
                           after_death=bool(death and d > death), balance_ok=balance_ok)
         txns.append(txn)
         if death and d > death and direction == "debit":
+            # sure when the second reader read the row too, or the running balance adds up through it; a long
+            # statement's rows are read once, so without the balance the amount is only read once
+            twice = rb is not None and status in ("matched", "resolved")
             extra_values.append(ReadValue(
                 id=stable_id("rv", paper.id, f"row{ra.row}", "after_death"), case_id=case.id, paper_id=paper.id,
-                page_id=txn.page_id, field=f"row_{ra.row}_debit", label=_after_death_label(ra.narration, d),
+                page_id=txn.page_id, field=f"row_{ra.row}_debit", label=after_death_label(ra.narration, d),
                 kind="amount", value=f"{amount:.2f}", as_printed=ra.amount, reading_a=ra.amount,
-                reading_b=rb.amount if rb else None, status="matched", tier="B",
+                reading_b=rb.amount if rb else None, status="matched" if twice or balance_ok else "one_path",
+                tier="B", checks=["balance"] if balance_ok else [],
                 note=_after_death_note(ra.narration), evidence=_evidence(paper, lines, ra.line_ids)))
     await deps.ledger(case.id, f"paper:{paper.id}", "running_balance",
                       "pass" if all(t.balance_ok is not False for t in txns) else "fail",
@@ -608,12 +608,15 @@ async def _reconcile_rows(deps: Any, case: Any, paper: Paper, lines: dict[str, O
     if txns:
         last = txns[-1]
         if last.balance is not None and not any(v.field == f"row_{rows_a[-1].row}_balance" for v in extra_values):
+            # read twice (the second reader read the row and agreed), or read once and checked by the running balance
+            twice = by_b.get(rows_a[-1].row) is not None
             extra_values.append(ReadValue(
                 id=stable_id("rv", paper.id, "balance_latest"), case_id=case.id, paper_id=paper.id,
                 page_id=last.page_id, field="balance_latest", label=f"Balance on {_human_date(last.date.isoformat())}",
                 kind="amount", value=f"{last.balance:.2f}", as_printed=rows_a[-1].balance,
-                reading_a=rows_a[-1].balance, reading_b=by_b.get(rows_a[-1].row).balance if by_b.get(rows_a[-1].row) else None,
-                status="matched", tier="A", checks=["balance"] if last.balance_ok else [],
+                reading_a=rows_a[-1].balance, reading_b=by_b.get(rows_a[-1].row).balance if twice else None,
+                status="matched" if twice or last.balance_ok else "one_path", tier="A",
+                checks=["balance"] if last.balance_ok else [],
                 evidence=_evidence(paper, lines, rows_a[-1].line_ids)))
         else:
             for v in extra_values:
@@ -660,14 +663,45 @@ def _human_date(iso_or_text: str) -> str:
     return f"{d.day} {d.strftime('%B %Y')}"
 
 
-def _after_death_label(narration: str, d: date) -> str:
+def after_death_label(narration: str, d: date, payee: str | None = None) -> str:
+    """A debit after the death, as the family reads it: who was paid and when (the payee named by discovery once it
+    has run, else tidied from the line itself, never the raw line "Nach Dr Bajaj Finance Ltd ...")."""
     n = narration.upper()
     when = f"{d.day} {d.strftime('%B')}"
     if "ATM" in n or "CASH" in n:
         return f"Cash taken on {when}"
     if "AMC" in n or "FEE" in n or "CHG" in n or "CHARGE" in n:
         return f"Card fee on {when}"
-    return f"Debit on {when}: {narration.title()}"
+    who = payee or payee_of(narration)
+    return f"Paid to {who} on {when}" if who else f"Debit on {when}"
+
+
+# How a statement line starts before the payee: the payment rail, its direction and the like ("UPI/DR/", "NACH DR ")
+_RAIL = re.compile(r"^(?:(?:(?:(?:TO|BY)\s+(?:TRANSFER|CLG|CLEARING)|UPI|NEFT|RTGS|IMPS|NACH|ACH|ECS|POS|BIL|BILLPAY|"
+                   r"MMT|INB|IB|TPT|TRF|SI|DD|CHQ)\b|フリコミ|振込|口座振替|振替)"
+                   r"(?:[\s/:-]*(?:DR|CR|DEBIT|CREDIT|OUT|IN|P2A|P2M)\b)?[\s/:-]*)+", re.I)
+_UPPER = {"LIC", "HDFC", "SBI", "ICICI", "IDBI", "IDFC", "UTI", "SIP", "EMI", "PPF", "EPF", "NPS", "BSNL", "MTNL",
+          "LPG", "BPCL", "IOCL", "HPCL", "NSDL", "CDSL", "AMC", "PNB", "BOB", "UCO", "IOB", "BSES", "MSEDCL", "BESCOM"}
+_LOWER = {"OF", "AND", "THE", "FOR", "TO", "IN", "ON", "AT", "BY"}
+
+
+def payee_name(counterparty: str | None) -> str | None:
+    """A payee discovery named, as a name: an institution's directory id ("in_cams", what the offline interpreter
+    gives) is not one, and the statement line names the payee instead."""
+    return None if not counterparty or re.fullmatch(r"[a-z]{2}_[a-z0-9_]+", counterparty) else counterparty
+
+
+def payee_of(narration: str) -> str | None:
+    """The payee a statement line names, tidied for reading ("NACH DR BAJAJ FINANCE LTD 4XX1187" -> "Bajaj Finance
+    Ltd", "UPI/PRIYA DESHPANDE/BENGALURU" -> "Priya Deshpande"); None when it names nobody (a reference alone)."""
+    text = _RAIL.sub("", unicodedata.normalize("NFKC", narration or "").strip())
+    for part in re.split(r"[/|]", text):
+        words = [w for w in part.strip(" -:.,*#").split()
+                 if not re.search(r"\d", w) and "@" not in w and not re.fullmatch(r"X{2,}\w*", w, re.I)]
+        if any(len(w) > 1 for w in words):
+            return " ".join(w.upper() if w.upper() in _UPPER else w.lower() if i and w.upper() in _LOWER
+                            else w[:1].upper() + w[1:].lower() for i, w in enumerate(words))
+    return None
 
 
 def _after_death_note(narration: str) -> str:
@@ -794,14 +828,10 @@ async def answer_value_check(deps: Any, case_id: str, value_id: str, answer: str
     return rv
 
 
-def normalised_name(text: str) -> str:
-    return normalise(text)
-
-
 async def death_from_certificate(deps: Any, case_id: str) -> bool:
     """A death certificate the family added settles the date of death when nobody has said it, and names the person
-    who died when the conversation has not: every claim's time limits count from that date. Runs under the case's
-    lock, after reading (reading itself writes only each paper's own records). Returns True when the case changed."""
+    who died when the conversation has not: every claim's time limits count from that date. Runs in the job after
+    reading (reading itself writes only each paper's own records). Returns True when the case changed."""
     from ..domain.case import NameForm, Person
     from ..domain.names import script_of
     case = await deps.cases.get_case(case_id)

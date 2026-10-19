@@ -8,7 +8,6 @@ import type { ClockState, Compensation, PlanView } from '@afterledger/contracts'
 import { Check, Volume2, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
 import { useCase } from '@/components/CaseShell';
 import { Button, ButtonLink, Chip, ErrorNote, h2Class, Sheet, Skeleton } from '@/components/ui';
 import { useSpeech } from '@/components/Voice';
@@ -20,6 +19,7 @@ import {
   countryName,
   dayMonth,
   eraDate,
+  FAMILY,
   inLanguage,
   institutionLabel,
   languageName,
@@ -29,6 +29,7 @@ import {
   personName,
   sentence,
 } from '@/lib/format';
+import { perform } from '@/lib/changes';
 import { useAnswer, usePlan } from '@/lib/queries';
 import { levelChip } from './PlansScreen';
 
@@ -374,9 +375,7 @@ function Questions({ view }: { view: PlanView }) {
                 key={o.value}
                 variant={i === 0 ? 'dark' : 'secondary'}
                 disabled={answer.isPending || readOnly}
-                onClick={() =>
-                  answer.mutate({ checkpointId: q.id, answer: o.value, by: viewerId }, { onSuccess: () => toast.success(tt('answered')) })
-                }
+                onClick={() => perform(answer, { checkpointId: q.id, answer: o.value, by: viewerId }, { done: () => tt('answered') })}
               >
                 {t.has(`options.${o.value}` as 'options.yes') ? t(`options.${o.value}` as 'options.yes') : o.label}
               </Button>
@@ -395,10 +394,7 @@ function ResearchNote({ view }: { view: PlanView }) {
   const r = (view.claim.research ?? {}) as { status?: string; run_id?: string };
   const running = r.status === 'running';
   return (
-    <section
-      role="status"
-      className="flex items-start gap-3.5 rounded-[14px] border-[1.5px] border-dotted border-blank bg-sheet px-5 py-4"
-    >
+    <section role="status" className="flex items-start gap-3.5 rounded-[14px] border-[1.5px] border-dotted border-blank bg-sheet px-5 py-4">
       {running ? <span aria-hidden="true" className="mt-1.5 h-3 w-3 shrink-0 animate-pulse-soft rounded-full bg-blank" /> : null}
       <div className="min-w-0">
         <p className="m-0 text-[17px] font-bold">{running ? t('interim.runningTitle') : t('interim.waitingTitle')}</p>
@@ -415,30 +411,34 @@ function ResearchNote({ view }: { view: PlanView }) {
   );
 }
 
-export function isInterim(planKey: string | null | undefined): boolean {
+function isInterim(planKey: string | null | undefined): boolean {
   return Boolean(planKey && planKey.startsWith('XX/'));
 }
 
 function Approval({ view }: { view: PlanView }) {
   const t = useTranslations('plan');
-  const { caseId, viewerId, readOnly } = useCase();
+  const { caseId, viewerId, readOnly, header } = useCase();
   const answer = useAnswer(caseId);
   const router = useRouter();
   const a = view.approval;
+  // an answer or a change is being worked into the plans: the family approves the plan as it will stand
+  const updating = header?.working === 'planning';
   if (!a || a.status !== 'open' || view.questions.length) return null;
   return (
     <section className="flex flex-wrap items-center justify-between gap-4 rounded-[14px] border-[1.5px] border-ledger bg-ledger-tint px-6 py-5">
       <div>
         <p className="m-0 text-[18px] font-bold">{t('approveAsk')}</p>
-        {a.why ? <p className="m-0 mt-1 text-[15px] text-ink-soft">{a.why}</p> : null}
+        {updating ? (
+          <p className="m-0 mt-1 text-[15px] text-ink-soft">{t('approveWait')}</p>
+        ) : a.why ? (
+          <p className="m-0 mt-1 text-[15px] text-ink-soft">{a.why}</p>
+        ) : null}
       </div>
       <div className="flex flex-wrap gap-2.5">
         <Button
           size="lg"
-          disabled={answer.isPending || readOnly}
-          onClick={() =>
-            answer.mutate({ checkpointId: a.id, answer: 'approve', by: viewerId }, { onSuccess: () => toast.success(t('approved')) })
-          }
+          disabled={answer.isPending || readOnly || updating}
+          onClick={() => perform(answer, { checkpointId: a.id, answer: 'approve', by: viewerId }, { done: () => t('approved') })}
         >
           {t('approve')}
         </Button>
@@ -554,10 +554,12 @@ export function PlanScreen({ caseId, planId }: { caseId: string; planId: string 
             {p.gold_match ? <Chip>{t('gold', { country: goldCountry })}</Chip> : null}
             {view.approved_by && p.approved_on ? (
               <Chip>
-                {t('approvedBy', {
-                  name: personName(view.approved_by, locale),
-                  date: dayMonth(p.approved_on, locale),
-                })}
+                {view.approved_by.id === FAMILY
+                  ? t('approvedByFamily', { date: dayMonth(p.approved_on, locale) })
+                  : t('approvedBy', {
+                      name: personName(view.approved_by, locale),
+                      date: dayMonth(p.approved_on, locale),
+                    })}
               </Chip>
             ) : view.approval ? (
               <Chip tone="pencil">{t('notApproved')}</Chip>
@@ -598,6 +600,12 @@ export function PlanScreen({ caseId, planId }: { caseId: string; planId: string 
           </p>
         ) : null}
 
+        {header?.working === 'planning' ? (
+          <p role="status" className="m-0 flex items-start gap-2.5 text-[16px] text-ink-soft">
+            <span aria-hidden="true" className="mt-2 h-2.5 w-2.5 shrink-0 animate-pulse-soft rounded-full bg-ledger" />
+            {t('updating')}
+          </p>
+        ) : null}
         <Sheet className="px-6 py-[22px]" aria-labelledby="steps">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 id="steps" className="m-0 font-serif text-[24px] font-semibold">

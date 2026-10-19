@@ -101,3 +101,24 @@ def test_not_in_the_public_contract(client: TestClient) -> None:
     assert not any(p.startswith("/internal") for p in doc["paths"])
     meta = client.get("/v1/meta").json()
     assert meta["services"]["tasks"] == "in_process" and meta["services"]["llm"] == "scripted"
+
+
+def test_a_task_that_fails_its_last_try_says_so_on_the_case(client: TestClient) -> None:
+    """Cloud Tasks gives a task three tries; the third failure is told to the case, as in-process work is."""
+    told: list[tuple[str, dict, str]] = []
+
+    async def boom(payload: dict) -> None:
+        raise RuntimeError("model overloaded")
+
+    async def note(kind: str, payload: dict, error: BaseException) -> None:
+        told.append((kind, payload, str(error)))
+
+    client.deps.tasks.register("boom", boom)
+    client.deps.tasks.on_failure = note
+    for retry in ("0", "1"):
+        r = client.post("/internal/tasks/boom", json={"case_id": "c1"},
+                        headers={"X-AfterLedger-Token": "s3cret", "X-CloudTasks-TaskRetryCount": retry})
+        assert r.status_code == 500 and not told
+    r = client.post("/internal/tasks/boom", json={"case_id": "c1"},
+                    headers={"X-AfterLedger-Token": "s3cret", "X-CloudTasks-TaskRetryCount": "2"})
+    assert r.status_code == 500 and told == [("boom", {"case_id": "c1"}, "model overloaded")]

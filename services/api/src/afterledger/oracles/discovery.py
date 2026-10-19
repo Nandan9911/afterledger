@@ -8,6 +8,19 @@ from ..adapters.llm.models import OracleRequest, ToolCalls
 from ..domain.money import format_amount
 from . import Ctx, oracle
 
+_CURRENCY = {"IN": "INR", "JP": "JPY", "GB": "GBP", "US": "USD", "SG": "SGD"}
+
+
+def _day(iso: str) -> str:
+    """'2026-03-12' -> '12 March 2026'."""
+    from datetime import date
+    try:
+        d = date.fromisoformat(iso)
+    except ValueError:
+        return iso
+    return f"{d.day} {d.strftime('%B')} {d.year}"
+
+
 CADENCE_WORD = {"monthly": "every month", "quarterly": "every quarter", "yearly": "once a year", "once": "once",
                 "weekly": "every week", "half_yearly": "twice a year", "irregular": "now and then"}
 
@@ -85,7 +98,7 @@ def narration_interpreter(ctx: Ctx, req: OracleRequest) -> dict:
     for pat in _patterns(p.get("rails")):
         if re.search(pat["rx"], up, re.I):
             return {"group_id": g["id"], "counterparty": pat.get("institution_id"), "counterparty_kind": pat["category"],
-                    "interpretation": f"{pat['title']}: {g.get('count')} payment(s) of "
+                    "interpretation": f"{pat['title']}: {g.get('count')} payment{'' if g.get('count') == 1 else 's'} of "
                                       f"{format_amount(g.get('amount', 0), g.get('currency', 'INR'))}, "
                                       f"{CADENCE_WORD.get(g.get('cadence'), '')}.", "alternatives": []}
     m = re.match(r"(?:UPI|NEFT|IMPS)[/ ]+([A-Z][A-Z .]+?)[/ ]", up + "/")
@@ -164,10 +177,12 @@ def investigator(ctx: Ctx, req: OracleRequest) -> dict | ToolCalls:
                 "cites": cites, "value": lead.get("value")}
     rows = (req.tool_results[0]["response"].get("rows", []) if req.tool_results else [])
     n = len(rows)
-    amount = rows[0]["amount"] if rows else "?"
-    when = ", ".join(r["date"] for r in rows[:3])
-    return {"key": h["key"], "sentence": f"{h.get('title', 'Something')} - {n} payment(s) point to it.",
-            "investigator_note": f"{n} payment(s) of {amount} on {when}.",
+    cur = next((_CURRENCY[c] for c in (p.get("case") or {}).get("countries") or [] if c in _CURRENCY), None)
+    amount = (format_amount(rows[0]["amount"], cur) if cur else rows[0]["amount"]) if rows else "?"
+    when = ", ".join(_day(r["date"]) for r in rows[:3])
+    payments = f"{n} payment{'s' if n != 1 else ''}"
+    return {"key": h["key"], "sentence": f"{payments} on the statement point{'s' if n == 1 else ''} to it.",
+            "investigator_note": f"{payments} of {amount}, on {when}.",
             "how_to_confirm": "Ask the institution whether he held this, quoting the payments.",
             "next_step_note": "", "signals": {"cadence": "monthly" if n >= 3 else "irregular", "product_match": "partial"},
             "cites": [], "value": None}

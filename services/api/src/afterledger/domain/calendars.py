@@ -6,7 +6,6 @@ import unicodedata
 from datetime import date
 
 from babel.dates import format_date as _babel_format_date
-from convertdate import islamic
 
 from .checks import ascii_digits, japanese_era_to_iso
 
@@ -28,15 +27,6 @@ def to_japanese_era(d: date, *, with_romaji: bool = False) -> str:
                 text += f" ({_ERA_ROMAJI[name]} {year})"
             return text
     return d.isoformat()
-
-
-def to_thai_buddhist(d: date) -> str:
-    return f"{d.day}/{d.month}/{d.year + 543}"
-
-
-def to_hijri(d: date) -> str:
-    y, m, day = islamic.from_gregorian(d.year, d.month, d.day)
-    return f"{day}/{m}/{y} AH"
 
 
 def format_date(d: date, lang: str = "en", style: str = "long") -> str:

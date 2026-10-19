@@ -17,7 +17,9 @@ OFFLINE = {"mode": "offline", "store": "local", "llm": "scripted", "seed_on_star
            "internal_token": None, "llm_record_dir": None, "llm_replay_dir": None,
            # a laptop's .env may set up the public site and its fast endpoints; the tests start from the full site
            "site": "", "demo_families": "", "llm_tier_locations": "", "agent_tiers": "",
-           "auth": "auto", "auth_secret": None, "admin_email": None, "admin_password": None}
+           "auth": "auto", "auth_secret": None, "admin_email": None, "admin_password": None,
+           # Today planned at once after a change, so a test that drains the queue does not wait out the pause
+           "today_debounce_s": 0}
 
 
 def offline_settings(state_dir: Path, **more: Any) -> Settings:

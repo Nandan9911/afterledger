@@ -79,16 +79,14 @@ export function languageName(code: string | null | undefined, locale: string): s
 
 const KEEP_SECOND = new Set(['devi', 'amma', 'bai', 'begum', 'kaur', 'ben', 'bibi']);
 
-/** The name a family uses in a list: the first name, or both words of names like "Kamla Devi". */
+/** The name a family uses in a list: the first name, or both words of names like "Kamla Devi", or the whole name
+ * when it starts with an initial ("R. P. Shukla", not "R."). */
 export function shortName(name: string | null | undefined): string {
   if (!name) return '';
   const parts = name.trim().split(/\s+/);
   if (parts.length === 2 && KEEP_SECOND.has(parts[1].toLowerCase())) return name.trim();
+  if (/^\p{L}\.?$/u.test(parts[0])) return name.trim();
   return parts[0];
-}
-
-export function firstName(name: string | null | undefined): string {
-  return shortName(name);
 }
 
 /** Prefer the text in the reader's language when the API has one for it. */
@@ -144,6 +142,9 @@ export function listOf(items: string[], locale: string): string {
 
 type Named = { name?: string | null; display_name?: string | null; name_en?: string | null };
 
+/** Who approved, when the screen that approved did not say which family member: the API's "the family". */
+export const FAMILY = 'family';
+
 /** A person's name for this page: in their own script when the page is in that script (佐藤 大輔 on a Japanese
  * page), otherwise the short form of their English name. Names are never translated. */
 export function personName(p: Named | null | undefined, locale: string): string {
@@ -156,7 +157,10 @@ export function personName(p: Named | null | undefined, locale: string): string 
 export function personFirst(p: Named | null | undefined, locale: string): string {
   if (!p) return '';
   const own = p.name ?? p.display_name ?? '';
-  return own && inLanguage(own, locale) ? own : (p.name_en ?? own).split(' ')[0];
+  if (own && inLanguage(own, locale)) return own;
+  const full = (p.name_en ?? own).trim();
+  const first = full.split(/\s+/)[0];
+  return /^\p{L}\.?$/u.test(first) ? full : first;
 }
 
 /** A text closed as a sentence in its own script: "…に決めます" gets 。, "…the claim" gets ., and a text that already

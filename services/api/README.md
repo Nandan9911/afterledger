@@ -1,6 +1,6 @@
 # AfterLedger API
 
-The FastAPI service: the domain core, the nine modules and their 44 agents on the Agent Development Kit, and
+The FastAPI service: the domain core, the nine modules, the research service and their 46 agents on the Agent Development Kit, and
 the adapters that run it offline or on Google Cloud. Setup is in the repository README
 (`python tools/dev.py setup`); this page is for working on the service. How the parts fit:
 [docs/architecture.md](../../docs/architecture.md).
@@ -77,5 +77,5 @@ checked) and plans in the plan language; the page itself is saved as a snapshot 
 - Every file is read and written as UTF-8, and paths are built with `pathlib`, so the service runs the same on
   Windows.
 - A route returns a screen-shaped view in one call; writes go through `app/actions.py`, which holds the case's
-  lock and starts background work.
+  write lock only for the change itself and queues the background work it leads to.
 - After changing a route or a response model, run `python tools/dev.py contracts` to regenerate the web client.

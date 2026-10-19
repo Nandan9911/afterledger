@@ -18,6 +18,20 @@ export function levelChip(level: string | undefined | null): {
   return { tone: 'blank', key: 'unverified' };
 }
 
+type State = 'planning' | 'answers' | 'approval' | 'preparing' | 'settledDebt' | PlanRow['claim']['status'];
+
+/** Where a claim stands, in the words of the page's language: while it is planned, what it waits for. */
+export function claimState(r: PlanRow): State {
+  const status = r.claim.status;
+  if (status === 'planning') {
+    if (!r.plan) return 'planning';
+    if (r.questions) return 'answers';
+    return r.plan.approved_by ? 'preparing' : 'approval';
+  }
+  if (status === 'settled' && r.claim.kind === 'debt') return 'settledDebt';
+  return status;
+}
+
 function Row({ r }: { r: PlanRow }) {
   const t = useTranslations('plans');
   const locale = useLocale();
@@ -28,6 +42,7 @@ function Row({ r }: { r: PlanRow }) {
   const settled = r.claim.status === 'settled';
   const tt = useTranslations('today');
   const lateDays = r.claim.clocks.find((c) => c.status === 'late' && c.owner === 'institution')?.days_late ?? 0;
+  const state = t(`state.${claimState(r)}` as 'state.planning');
   return (
     <li className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-5 gap-y-1 border-t border-rule px-5 py-4">
       <div className="min-w-0">
@@ -62,9 +77,9 @@ function Row({ r }: { r: PlanRow }) {
           <p className="m-0 text-ink-soft">{t('noAmount')}</p>
         )}
         {r.late ? (
-          <Stamp>{lateDays ? tt('lateDays', { count: lateDays }) : r.status_label}</Stamp>
+          <Stamp>{lateDays ? tt('lateDays', { count: lateDays }) : state}</Stamp>
         ) : (
-          <span className={cls('text-[14px]', settled ? 'font-bold text-ledger' : 'text-ink-soft')}>{r.status_label}</span>
+          <span className={cls('text-[14px]', settled ? 'font-bold text-ledger' : 'text-ink-soft')}>{state}</span>
         )}
       </div>
     </li>

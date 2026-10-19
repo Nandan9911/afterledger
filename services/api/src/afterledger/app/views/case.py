@@ -3,7 +3,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from ...concurrency import work_now
 from ...domain.case import CaseFile
+from ...modules import followup
 from ...modules.common import Snapshot, snapshot
 from ..schemas import CaseHeader, CaseSummary, NavCounts
 from .common import chip
@@ -56,7 +58,8 @@ def nav_counts(snap: Snapshot, activity: int = 0) -> NavCounts:
         plans=sum(1 for c in snap.claims if c.plan_id and c.status != "closed"),
         plan_questions=sum(1 for c in open_cp if c.code == "C5" and c.kind == "plan_question"),
         packs=len(snap.packs), packs_ready=sum(1 for p in snap.packs if p.status == "ready"),
-        tracker_late=late, sources=len(case_cites(snap)), activity=activity)
+        tracker_late=late, tracker_confirm=len(followup.to_confirm(snap)),
+        sources=len(case_cites(snap)), activity=activity)
 
 
 async def header(deps: Any, case_id: str, viewer_id: str | None = None) -> CaseHeader:
@@ -67,7 +70,7 @@ async def header(deps: Any, case_id: str, viewer_id: str | None = None) -> CaseH
     for p in snap.family():
         if p.city and p.city not in places:
             places.append(p.city)
-    work = (getattr(deps, "extras", None) or {}).get("case_work", {}).get(snap.case.id) or {}
+    work = work_now(deps, snap.case.id) or {}
     researching = [{"claim_id": c.id, "title": c.title, "run_id": c.research.get("run_id"),
                     "started": c.research.get("started")}
                    for c in snap.claims if (c.research or {}).get("status") == "running" and c.status != "closed"]

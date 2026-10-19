@@ -155,19 +155,6 @@ def render_form(spec: dict, values: dict[str, Any] | None = None, *, watermark: 
     return out
 
 
-def readback(form: FilledForm, intended: dict[str, Any]) -> tuple[int, int, list[str]]:
-    """Every intended value must be on the page, in its own box, exactly as intended (layout record)."""
-    total, ok, bad = 0, 0, []
-    for fid, val in _flatten(intended).items():
-        total += 1
-        expected = "✓" if val is True else str(val)
-        if any(ln.text == expected for ln in form.placed.get(fid, [])):
-            ok += 1
-        else:
-            bad.append(fid)
-    return ok, total, bad
-
-
 _COMPLEX = ("ऀ", "ഀ", "؀")   # Devanagari, Malayalam, Arabic blocks: PDF text extraction garbles them
 
 

@@ -126,7 +126,6 @@ def _tools(deps: Any, run: ResearchRun, who: str):
     return web_search, fetch_page, pages_read
 
 
-
 async def citation_check(deps: Any, run: ResearchRun, item: dict, who: str) -> bool:
     """A found rule is kept only if its quote is on the fetched page word for word, the page supports the
     sentence, and the page was not flagged for planted instructions."""
@@ -720,18 +719,6 @@ def _numeric_probes(plan: ProcedurePlan, name: str) -> list:
         v = float(m.group(2))
         probes |= {v - 1, v + 1} if name in plan.unclear_at_threshold else {v - 1, v, v + 1}
     return sorted(probes, key=lambda x: (isinstance(x, str), x if not isinstance(x, str) else 0))
-
-
-async def research_need(deps: Any, case_id: str, claim_id: str, *, depth: str = "deep") -> str | None:
-    """Research for a claim whose situation has no stored plan, or whose stored plan is to be checked again."""
-    case = await deps.cases.get_case(case_id)
-    claim = await deps.cases.get(case_id, "claims", claim_id)
-    holding = await deps.cases.get(case_id, "holdings", claim.holding_ids[0]) if claim.holding_ids else None
-    need = {"country": claim.country or (case.country_codes or ["IN"])[0], "institution_id": claim.institution_id,
-            "holding_kind": holding.kind if holding else None, "situation": case.summary,
-            "lang": (case.languages or ["en"])[0], "case": {"demo": case.demo_key}}
-    run = await research(deps, need, case_id=case_id, depth=depth)
-    return run.stored_key
 
 
 def run_view(run: ResearchRun) -> dict:

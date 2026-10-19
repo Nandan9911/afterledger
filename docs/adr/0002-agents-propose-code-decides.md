@@ -16,3 +16,6 @@ closer look or to the family, never to a guess.
 - The schemas avoid free-form maps so that both Gemini endpoints (Agent Platform and the Developer API) accept
   them; a test converts every schema for both.
 - Prompts can change without changing what is checked.
+- What an institution says happened to a claim (read from its reply by a model, or typed by its staff on the
+  desk) is a proposal too: code checks it against the reply's own words, and the claim changes only when the family
+  confirms it.

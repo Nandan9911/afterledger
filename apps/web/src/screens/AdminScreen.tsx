@@ -2,13 +2,13 @@
 /** The admin's table of accounts: everyone signed up, with their cases; add, edit or delete an account. */
 import type { AccountRow } from '@afterledger/contracts';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState, type FormEvent } from 'react';
-import { toast } from 'sonner';
+import { Fragment, useId, useState, type FormEvent, type ReactNode } from 'react';
 import { AccountLinks, SignInFirst, useMounted } from '@/components/Account';
 import { LanguageSelect } from '@/components/CaseShell';
 import { Button, Logo, ScrollX, Skeleton } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 import { useAuth } from '@/lib/auth';
+import { perform } from '@/lib/changes';
 import { longDate } from '@/lib/format';
 import { useAccounts, useCreateAccount, useDeleteAccount, useEditAccount } from '@/lib/queries';
 
@@ -77,17 +77,17 @@ function NewAccount() {
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    create.mutate(
+    perform(
+      create,
       { name, email, password },
       {
-        onSuccess: () => {
-          toast.success(t('createdToast'));
+        done: () => {
           setName('');
           setEmail('');
           setPassword('');
           setOpen(false);
+          return t('createdToast');
         },
-        onError: (err) => toast.error(err.message),
       },
     );
   }
@@ -182,33 +182,44 @@ function Accounts({ rows }: { rows: AccountRow[] }) {
             editing === r.id ? (
               <tr key={r.id}>
                 <td className={td} colSpan={6}>
-                  <EditAccount row={r} done={() => setEditing(null)} />
+                  <InView>
+                    <EditAccount row={r} done={() => setEditing(null)} />
+                  </InView>
                 </td>
               </tr>
             ) : (
-              <tr key={r.id}>
-                <td className={`${td} font-bold`}>{r.name}</td>
-                <td className={`${td} break-all`}>{r.email}</td>
-                <td className={td}>{r.role === 'admin' ? t('roleAdmin') : t('roleUser')}</td>
-                <td className={td}>{longDate(r.created_at, locale)}</td>
-                <td className={td}>{r.cases}</td>
-                <td className={td}>
-                  {r.role === 'admin' ? (
-                    <span className="text-[14px] text-ink-faint">{t('adminFixed')}</span>
-                  ) : asking === r.id ? (
-                    <DeleteAccount row={r} done={() => setAsking(null)} />
-                  ) : (
-                    <span className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="secondary" onClick={() => setEditing(r.id)}>
-                        {t('edit')}
-                      </Button>
-                      <Button size="sm" variant="secondary" onClick={() => setAsking(r.id)}>
-                        {t('delete')}
-                      </Button>
-                    </span>
-                  )}
-                </td>
-              </tr>
+              <Fragment key={r.id}>
+                <tr>
+                  <td className={`${td} font-bold`}>{r.name}</td>
+                  <td className={`${td} break-all`}>{r.email}</td>
+                  <td className={td}>{r.role === 'admin' ? t('roleAdmin') : t('roleUser')}</td>
+                  <td className={td}>{longDate(r.created_at, locale)}</td>
+                  <td className={td}>{r.cases}</td>
+                  <td className={td}>
+                    {r.role === 'admin' ? (
+                      <span className="text-[14px] text-ink-faint">{t('adminFixed')}</span>
+                    ) : (
+                      <span className="flex flex-wrap gap-2">
+                        <Button size="sm" variant="secondary" onClick={() => (setAsking(null), setEditing(r.id))}>
+                          {t('edit')}
+                        </Button>
+                        <Button size="sm" variant="secondary" aria-expanded={asking === r.id} onClick={() => setAsking(r.id)}>
+                          {t('delete')}
+                        </Button>
+                      </span>
+                    )}
+                  </td>
+                </tr>
+                {asking === r.id ? (
+                  <tr>
+                    <td className={td} colSpan={6}>
+                      <InView>
+                        <DeleteAccount row={r} done={() => setAsking(null)} />
+                      </InView>
+                    </td>
+                  </tr>
+                ) : null}
+              </Fragment>
             ),
           )}
         </tbody>
@@ -217,25 +228,23 @@ function Accounts({ rows }: { rows: AccountRow[] }) {
   );
 }
 
+/** A form in the table that stays in view however far the table is scrolled sideways (on a phone the table is
+ * wider than the screen, and the buttons that open the form sit at its far end). */
+function InView({ children }: { children: ReactNode }) {
+  return <div className="sticky start-0 w-[min(100%,calc(100vw-5rem))]">{children}</div>;
+}
+
 function EditAccount({ row, done }: { row: AccountRow; done: () => void }) {
   const t = useTranslations('admin');
   const edit = useEditAccount();
   const [name, setName] = useState(row.name);
   const [email, setEmail] = useState(row.email);
   const [password, setPassword] = useState('');
+  const ids = useId();
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    edit.mutate(
-      { id: row.id, body: { name, email, password: password || null } },
-      {
-        onSuccess: () => {
-          toast.success(t('savedToast'));
-          done();
-        },
-        onError: (err) => toast.error(err.message),
-      },
-    );
+    perform(edit, { id: row.id, body: { name, email, password: password || null } }, { done: () => (done(), t('savedToast')) });
   }
 
   return (
@@ -252,17 +261,22 @@ function EditAccount({ row, done }: { row: AccountRow; done: () => void }) {
         {t('email')}
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={field} />
       </label>
-      <label className={label}>
-        {t('newPassword')}
+      {/* the hint describes the field, outside its name */}
+      <div className={label}>
+        <label htmlFor={`${ids}-password`}>{t('newPassword')}</label>
         <input
+          id={`${ids}-password`}
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="new-password"
+          aria-describedby={`${ids}-hint`}
           className={field}
         />
-        <span className="text-[13px] font-normal text-ink-faint">{t('newPasswordHint')}</span>
-      </label>
+        <span id={`${ids}-hint`} className="text-[13px] font-normal text-ink-faint">
+          {t('newPasswordHint')}
+        </span>
+      </div>
       <span className="flex flex-wrap gap-2">
         <Button type="submit" size="sm" disabled={edit.isPending}>
           {t('save')}
@@ -284,15 +298,7 @@ function DeleteAccount({ row, done }: { row: AccountRow; done: () => void }) {
           size="sm"
           variant="danger"
           disabled={remove.isPending}
-          onClick={() =>
-            remove.mutate(row.id, {
-              onSuccess: () => {
-                toast.success(t('deletedToast'));
-                done();
-              },
-              onError: (err) => toast.error(err.message),
-            })
-          }
+          onClick={() => perform(remove, row.id, { done: () => (done(), t('deletedToast')) })}
         >
           {t('deleteYes')}
         </Button>

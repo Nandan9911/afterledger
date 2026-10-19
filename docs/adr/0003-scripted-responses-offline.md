@@ -1,7 +1,7 @@
 # 0003 Scripted responses for every agent offline, labelled as such
 
 ## Context
-The flow has 44 agents. Building, testing and demonstrating it offline needs every agent to answer, repeatably.
+The flow has 46 agents. Building, testing and demonstrating it offline needs every agent to answer, repeatably.
 
 ## Decision
 Each agent has an oracle (`oracles/`) that derives its answer from the demo family's truth file and the

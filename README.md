@@ -35,8 +35,9 @@ with Gemini and the Agent Development Kit.
   the PDF; a covering letter in the institution's language, with a copy in the family's language that is
   translated back and compared before anyone signs.
 - **Follow every claim**: the statutory clock, late days, and the compensation an institution owes for delay,
-  with a reminder or objection letter that quotes the rule. A Today screen says what matters this morning, for
-  each family member, in their language.
+  with a reminder or objection letter that quotes the rule. What an institution says in its reply or on its desk
+  (every paper received, the claim paid) counts only once the family confirms it. A Today screen says what
+  matters today, for each family member, in their language.
 - **Ask anything**, typed or spoken: answers come only from the case and its sources, checked for grounding.
 
 ## The demonstration
@@ -70,8 +71,8 @@ flowchart LR
   end
   Client -->|HTTPS, SSE, WebSocket| API
   subgraph API["services/api (FastAPI, Python 3.12)"]
-    Routers --> Actions --> Modules["9 modules: intake, jurisdiction, reading, people,<br/>discovery, research, planning, forms, follow-up, conversation"]
-    Modules --> Agents["44 agents on ADK workflows<br/>(typed context packs in, typed JSON out)"]
+    Routers --> Actions --> Modules["9 modules and a research service: intake, jurisdiction,<br/>reading, people, discovery, planning, forms, follow-up, conversation"]
+    Modules --> Agents["46 agents on ADK workflows<br/>(typed context packs in, typed JSON out)"]
     Modules --> Domain["Domain core: plan language, clocks,<br/>checks, calibration (pure code)"]
     Modules --> Ports
   end
@@ -88,7 +89,8 @@ flowchart LR
   each lead, a back-translation for each family copy.
 - **Ports and adapters.** The same application runs offline (scripted responses for every agent, local files,
   page snapshots, reviewed translations) or live (Gemini and Google Cloud services, each switched on separately).
-  The Evaluation page says which parts of the running copy are live, and nothing offline is presented as live.
+  On the working copy the Evaluation page says which parts are live; on the public site each sample case says its
+  content comes from prepared answers. Nothing offline is presented as live.
 - **The plan language.** Rules become small typed programs (variables, documents, clocks, steps with conditions)
   that agents compile from verified assertions and code runs for each family. See
   [docs/architecture.md](docs/architecture.md) and the [decision records](docs/adr).

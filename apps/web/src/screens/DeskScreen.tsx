@@ -1,9 +1,9 @@
 'use client';
 /**
- * The institution's desk: a read-only page a family shares with the bank or insurer handling one claim. It
- * shows the claim against the regulator's checklist, paragraph by paragraph, what the family has noted, and
- * lets the institution record the settlement or ask for something else (which reaches the family as a reply,
- * read against the rules).
+ * The institution's desk: a page a family shares with the bank or insurer handling one claim. It shows the claim
+ * against the regulator's checklist, paragraph by paragraph, and what the family has noted; it changes nothing in
+ * the case except what the institution may record there: the settlement (which the family confirms before the claim
+ * is settled), or a request for something else (which reaches the family as a reply, read against the rules).
  */
 import type { DeskView } from '@afterledger/contracts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -29,9 +29,10 @@ function DeskLogo() {
 function Actions({ token, view }: { token: string; view: DeskView }) {
   const t = useTranslations('desk');
   const tc = useTranslations('common');
+  const locale = useLocale();
   const qc = useQueryClient();
   const [mode, setMode] = useState<null | 'settle' | 'ask'>(null);
-  const [amount, setAmount] = useState(view.amount?.amount ?? '');
+  const [amount, setAmount] = useState(view.awaiting_family?.amount ?? view.amount?.amount ?? '');
   const [text, setText] = useState('');
   const [rule, setRule] = useState('');
   const done = (data: DeskView, msg: string) => {
@@ -43,25 +44,37 @@ function Actions({ token, view }: { token: string; view: DeskView }) {
     mutationFn: () =>
       unwrap(api().POST('/v1/desk/{token}/settle', { params: { path: { token } }, body: { amount, on: null, note: null } })),
     onSuccess: (d) => done(d, t('recordDone')),
-    onError: (e) => toast.error(e.message),
   });
   const ask = useMutation({
     mutationFn: () => unwrap(api().POST('/v1/desk/{token}/request', { params: { path: { token } }, body: { text, rule: rule || null } })),
     onSuccess: (d) => done(d, t('sent')),
-    onError: (e) => toast.error(e.message),
   });
   const settled = view.claim.status === 'settled';
   if (settled)
     return <span className="inline-flex min-h-[46px] items-center rounded-[10px] bg-ledger px-4 font-bold text-white">{t('settled')}</span>;
+  // a payment recorded here (or in the institution's reply) waits for the family to confirm the money arrived
+  const awaiting = view.awaiting_family;
   const field = 'min-h-11 rounded-[10px] border border-rule-strong bg-sheet px-3 text-[17px] font-normal';
   return (
     <div className="flex flex-col items-end gap-3">
+      {awaiting ? (
+        <p
+          role="status"
+          className="m-0 max-w-md rounded-[10px] border-[1.5px] border-dashed border-pencil bg-pencil-tint px-4 py-2.5 font-bold text-pencil"
+        >
+          {t('awaiting', { amount: awaiting.text, date: longDate(view.awaiting_on, locale) })}
+        </p>
+      ) : null}
       <div className="flex flex-wrap gap-2.5">
         <Button variant="secondary" aria-expanded={mode === 'ask'} onClick={() => setMode(mode === 'ask' ? null : 'ask')}>
           {t('askElse')}
         </Button>
-        <Button aria-expanded={mode === 'settle'} onClick={() => setMode(mode === 'settle' ? null : 'settle')}>
-          {t('record')}
+        <Button
+          variant={awaiting ? 'secondary' : 'primary'}
+          aria-expanded={mode === 'settle'}
+          onClick={() => setMode(mode === 'settle' ? null : 'settle')}
+        >
+          {awaiting ? t('change') : t('record')}
         </Button>
       </div>
       {mode === 'settle' ? (
@@ -78,7 +91,7 @@ function Actions({ token, view }: { token: string; view: DeskView }) {
           </label>
           <div className="flex gap-2">
             <Button type="submit" disabled={settle.isPending || !amount.trim()}>
-              {t('record')}
+              {awaiting ? t('change') : t('record')}
             </Button>
             <Button variant="secondary" onClick={() => setMode(null)}>
               {tc('cancel')}

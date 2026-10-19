@@ -21,7 +21,7 @@ from afterledger.domain.checks import (
     reconcile,
 )
 from afterledger.domain.identifiers import check, mask
-from afterledger.domain.money import amount_in_words, format_amount
+from afterledger.domain.money import format_amount
 from afterledger.domain.names import (
     initials_compatible,
     katakana_to_romaji,
@@ -154,8 +154,6 @@ def test_money_is_written_the_way_each_country_writes_it() -> None:
     assert format_amount(Decimal("1234000"), "JPY") == "¥1,234,000"
     assert format_amount(Decimal("12400"), "EUR") == "12.400,00 €"
     assert format_amount(Decimal("18240.55"), "SGD") == "S$18,240.55"
-    assert amount_in_words(Decimal("641870")) == "Rupees Six Lakh Forty-One Thousand Eight Hundred and Seventy only"
-    assert amount_in_words(Decimal("1234000"), "JPY", "ja") == "金1,234,000円也"
     assert parse_amount("₹6,00,000.00") == Decimal("600000.00")
     assert parse_amount("1.234,56", ",") == Decimal("1234.56")
     assert parse_amount("１２，０００円") == Decimal("12000")

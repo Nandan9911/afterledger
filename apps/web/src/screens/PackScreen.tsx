@@ -8,12 +8,12 @@ import type { CheckResult, FilledField, PackItemView, PackView } from '@afterled
 import { Check, ChevronLeft, ChevronRight, Download, ExternalLink, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { useCase } from '@/components/CaseShell';
 import { Button, ErrorNote, Skeleton } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 import { apiUrl } from '@/lib/api';
-import { cls, dayMonth, institutionLabel, languageName, longDate, personName } from '@/lib/format';
+import { perform } from '@/lib/changes';
+import { cls, dayMonth, FAMILY, institutionLabel, languageName, longDate, personName } from '@/lib/format';
 import { useAnswer, useClaimEvent, usePack } from '@/lib/queries';
 import { PACK_STATUS_LOOK } from './PacksScreen';
 
@@ -44,9 +44,7 @@ function HandIn({ view }: { view: PackView }) {
     return (
       <span className="inline-flex min-h-12 flex-wrap items-center gap-x-3 gap-y-1">
         <span className="font-bold text-ledger">
-          {sentOn
-            ? t(interim ? 'sentOn' : 'handedIn', { date: dayMonth(sentOn, locale) })
-            : t(interim ? 'sentPlain' : 'handedInPlain')}
+          {sentOn ? t(interim ? 'sentOn' : 'handedIn', { date: dayMonth(sentOn, locale) }) : t(interim ? 'sentPlain' : 'handedInPlain')}
         </span>
         <Link href={`/cases/${caseId}/tracker`} className="tap font-bold">
           {tn('tracker')}
@@ -66,9 +64,10 @@ function HandIn({ view }: { view: PackView }) {
       className="flex w-full flex-col gap-2 sm:w-auto"
       onSubmit={(e) => {
         e.preventDefault();
-        event.mutate(
+        perform(
+          event,
           { claimId: claim.id, event: 'submitted', on: on || null, by: viewerId },
-          { onSuccess: () => (setOpen(false), toast.success(t(interim ? 'sentDone' : 'handInDone'))) },
+          { done: () => (setOpen(false), t(interim ? 'sentDone' : 'handInDone')) },
         );
       }}
     >
@@ -104,6 +103,7 @@ function Enclosure({ status, name, note }: { status: string; name: string; note:
         <Check size={18} strokeWidth={2.6} className="mt-0.5 text-ledger" aria-label={t('haveIt')} />
       ) : (
         <span
+          role="img"
           aria-label={unknown ? t('notKnown') : t('missing')}
           className={cls(
             'mt-0.5 h-[18px] w-[18px] rounded-full border-2',
@@ -249,10 +249,12 @@ function Approve({ view }: { view: PackView }) {
       <>
         {view.approved_by && view.pack.approved_on ? (
           <span className="inline-flex min-h-12 items-center rounded-[10px] border-[1.5px] border-ledger bg-ledger-tint px-4 font-bold text-ledger">
-            {t('approved', {
-              name: personName(view.approved_by, locale),
-              date: dayMonth(view.pack.approved_on, locale),
-            })}
+            {view.approved_by.id === FAMILY
+              ? t('approvedByFamily', { date: dayMonth(view.pack.approved_on, locale) })
+              : t('approved', {
+                  name: personName(view.approved_by, locale),
+                  date: dayMonth(view.pack.approved_on, locale),
+                })}
           </span>
         ) : null}
         <HandIn view={view} />
@@ -267,9 +269,10 @@ function Approve({ view }: { view: PackView }) {
         onSubmit={(e) => {
           e.preventDefault();
           if (!note.trim()) return;
-          answer.mutate(
+          perform(
+            answer,
             { checkpointId: cp.id, answer: 'change', note: note.trim(), by: viewerId },
-            { onSuccess: () => (setChanging(false), toast.success(t('changeSent'))) },
+            { done: () => (setChanging(false), t('changeSent')) },
           );
         }}
       >
@@ -301,9 +304,7 @@ function Approve({ view }: { view: PackView }) {
       <Button
         size="lg"
         disabled={answer.isPending || readOnly}
-        onClick={() =>
-          answer.mutate({ checkpointId: cp.id, answer: 'approve', by: viewerId }, { onSuccess: () => toast.success(t('approvedToast')) })
-        }
+        onClick={() => perform(answer, { checkpointId: cp.id, answer: 'approve', by: viewerId }, { done: () => t('approvedToast') })}
       >
         {t('approve')}
       </Button>
@@ -345,6 +346,8 @@ export function PackScreen({ caseId, packId }: { caseId: string; packId: string 
       return t('checkPass.rules_fresh', { date: longDate(v.checked_on, locale) });
     return c.detail;
   };
+  /** A pack made before letters-only packs left the read-back out: "0 of 0 values match" says nothing. */
+  const nothingRead = (c: CheckResult) => c.name === 'readback' && (c.params as { checked?: number } | undefined)?.checked === 0;
   const signers = current?.signers.map((s) => personName(s, locale)) ?? [];
   const mirrorLang = current?.item.mirror_language;
   const page = current ? Math.min(pages[current.item.id] ?? 1, Math.max(current.pages, 1)) : 1;
@@ -484,23 +487,26 @@ export function PackScreen({ caseId, packId }: { caseId: string; packId: string 
               {t('checks')}
             </h2>
             <ul className="m-0 mt-2 list-none p-0 text-[15.5px]">
-              {p.checks.map((c, i) => (
-                <li key={i} className="grid grid-cols-[22px_minmax(0,1fr)] gap-2 border-t border-rule py-1.5">
-                  {c.result === 'pass' ? (
-                    <Check size={18} strokeWidth={2.6} className="mt-0.5 text-ledger" aria-label={t('pass')} />
-                  ) : c.result === 'fail' ? (
-                    <X size={18} strokeWidth={2.6} className="mt-0.5 text-debit" aria-label={t('fail')} />
-                  ) : (
-                    <span
-                      aria-label={t('notKnown')}
-                      className="mt-0.5 h-[18px] w-[18px] rounded-full border-2 border-dotted border-blank"
-                    />
-                  )}
-                  <span>
-                    {CHECK_KEYS.has(c.name) ? t(`check.${c.name}` as 'check.readback') : c.name}: <strong>{checkDetail(c)}</strong>
-                  </span>
-                </li>
-              ))}
+              {p.checks
+                .filter((c) => !nothingRead(c))
+                .map((c, i) => (
+                  <li key={i} className="grid grid-cols-[22px_minmax(0,1fr)] gap-2 border-t border-rule py-1.5">
+                    {c.result === 'pass' ? (
+                      <Check size={18} strokeWidth={2.6} className="mt-0.5 text-ledger" aria-label={t('pass')} />
+                    ) : c.result === 'fail' ? (
+                      <X size={18} strokeWidth={2.6} className="mt-0.5 text-debit" aria-label={t('fail')} />
+                    ) : (
+                      <span
+                        role="img"
+                        aria-label={t('notKnown')}
+                        className="mt-0.5 h-[18px] w-[18px] rounded-full border-2 border-dotted border-blank"
+                      />
+                    )}
+                    <span>
+                      {CHECK_KEYS.has(c.name) ? t(`check.${c.name}` as 'check.readback') : c.name}: <strong>{checkDetail(c)}</strong>
+                    </span>
+                  </li>
+                ))}
             </ul>
           </section>
           {view.claim?.plan_id ? (

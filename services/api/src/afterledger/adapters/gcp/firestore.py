@@ -54,7 +54,8 @@ class FirestoreCaseStore:
                                                "updated": _now()})
             self._cases[case.id] = data
 
-    async def get_case(self, case_id: str) -> CaseFile | None:
+    async def raw_case(self, case_id: str) -> dict | None:
+        """The case file as stored (the store's own copy: never changed in place)."""
         data = self._cases.get(case_id)
         if data is None:
             snap = await self._case_ref(case_id).get()
@@ -62,7 +63,11 @@ class FirestoreCaseStore:
                 return None
             data = json.loads(snap.to_dict()["json"])
             self._cases[case_id] = data
-        return CaseFile.model_validate(data)
+        return data
+
+    async def get_case(self, case_id: str) -> CaseFile | None:
+        data = await self.raw_case(case_id)
+        return CaseFile.model_validate(data) if data is not None else None
 
     async def list_cases(self) -> list[CaseFile]:
         out = []
@@ -112,6 +117,10 @@ class FirestoreCaseStore:
                 await batch.commit()
             for r in records:
                 data[r.id] = r.model_dump(mode="json")
+
+    async def raw_records(self, case_id: str, collection: str) -> dict[str, dict]:
+        """A collection as stored, by id (the store's own copies: never changed in place)."""
+        return await self._load(case_id, collection)
 
     async def get(self, case_id: str, collection: str, record_id: str) -> Any | None:
         raw = (await self._load(case_id, collection)).get(record_id)

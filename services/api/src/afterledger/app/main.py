@@ -18,6 +18,7 @@ from ..logs import configure_logging
 from ..runtime import Deps, build_deps
 from . import demo
 from .actions import BadInput, Conflict, NotFound, register_handlers
+from .idempotency import IdempotencyMiddleware
 
 log = logging.getLogger(__name__)
 
@@ -54,6 +55,9 @@ def create_app(deps: Deps | None = None, *, prepare_demo: bool | None = None) ->
                   description="Finds what a person left behind and prepares every claim, in any country. "
                               "Every family, bank and paper in the demo is fictional; the rules are real.")
     origins = [o.strip() for o in (deps.settings if deps else _settings()).cors_origins.split(",") if o.strip()]
+    # a change asked for again after a dropped connection is answered, not done twice (inside CORS, so a repeated
+    # answer carries its headers too)
+    app.add_middleware(IdempotencyMiddleware)
     app.add_middleware(CORSMiddleware, allow_origins=origins or ["*"], allow_origin_regex=lan_origins(origins),
                        allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 

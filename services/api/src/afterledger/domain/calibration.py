@@ -7,7 +7,6 @@ refitted by the evaluation harness (afterledger.eval.calibrate).
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from pathlib import Path
 
 from .case import Certainty
@@ -32,13 +31,6 @@ def lead_label(p: float) -> str:
     if p >= 0.35:
         return "possible"
     return "unlikely"
-
-
-@dataclass
-class Bin:
-    signals: dict[str, str | bool]
-    p: float
-    n: int
 
 
 class Calibrator:

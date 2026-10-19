@@ -92,5 +92,3 @@ def fmt_amount(value: Decimal | float | int | str, style: str) -> str:
     return f"-{s}" if neg else s
 
 
-def amount_value(value: Decimal | float | int | str) -> Decimal:
-    return Decimal(str(value)).quantize(Decimal("0.01"))

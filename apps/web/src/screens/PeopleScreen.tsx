@@ -8,9 +8,9 @@ import type { IdentityQuestion, PeopleView, Person, SignRow } from '@afterledger
 import { UserPlus } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type FormEvent } from 'react';
-import { toast } from 'sonner';
 import { useCase } from '@/components/CaseShell';
 import { Avatar, Button, ErrorNote, h1Class, h2Class, Sheet, Skeleton } from '@/components/ui';
+import { perform } from '@/lib/changes';
 import { asDate, cls, countryName, intl, languageName, personName } from '@/lib/format';
 import { useAddPerson, useAnswer, useInvite, usePeople } from '@/lib/queries';
 
@@ -33,7 +33,7 @@ function QuestionCard({ q, view }: { q: IdentityQuestion; view: PeopleView }) {
   const local = cp.question_local && cp.language.split('-')[0] !== 'en' ? cp.question_local : null;
   const question = local && cp.language.split('-')[0] === locale ? local : cp.question;
   const pay = (cp.payload ?? {}) as Record<string, string>;
-  const done = () => toast.success(t('answered'));
+  const done = () => t('answered');
   const label = (v: string, fallback: string) =>
     v === 'yes' && pay.relationship_guess ? t('yesRel', { rel: rel(t, pay.relationship_guess, view.pronoun) }) : fallback;
   return (
@@ -55,7 +55,7 @@ function QuestionCard({ q, view }: { q: IdentityQuestion; view: PeopleView }) {
             onSubmit={(e) => {
               e.preventDefault();
               if (!value.trim()) return;
-              answer.mutate({ checkpointId: cp.id, answer: 'other', value: value.trim(), by: viewerId }, { onSuccess: done });
+              perform(answer, { checkpointId: cp.id, answer: 'other', value: value.trim(), by: viewerId }, { done });
             }}
           >
             <label className="flex flex-col gap-1 text-[15px] font-bold">
@@ -88,7 +88,7 @@ function QuestionCard({ q, view }: { q: IdentityQuestion; view: PeopleView }) {
                   key={o.value}
                   variant={i === 0 ? 'dark' : 'secondary'}
                   disabled={answer.isPending || readOnly}
-                  onClick={() => answer.mutate({ checkpointId: cp.id, answer: o.value, by: viewerId }, { onSuccess: done })}
+                  onClick={() => perform(answer, { checkpointId: cp.id, answer: o.value, by: viewerId }, { done })}
                 >
                   {o.value === 'yes' ? label('yes', o.label) : o.value === 'no' ? t('no') : o.label}
                 </Button>
@@ -108,7 +108,9 @@ function QuestionCard({ q, view }: { q: IdentityQuestion; view: PeopleView }) {
                 asDate(r.date)!,
               )}
             </span>
-            <span dir="auto" className="truncate font-bold">{r.narration}</span>
+            <span dir="auto" className="truncate font-bold">
+              {r.narration}
+            </span>
             <span className="text-end font-bold">{r.amount.text}</span>
           </div>
         ))}
@@ -213,10 +215,7 @@ function PersonLine({ p, pronoun }: { p: Person; pronoun: string }) {
             variant="secondary"
             disabled={invite.isPending || readOnly}
             onClick={() =>
-              invite.mutate(
-                { personId: p.id, by: viewerId },
-                { onSuccess: () => toast.success(t('inviteDone', { name: personName(p, locale) })) },
-              )
+              perform(invite, { personId: p.id, by: viewerId }, { done: () => t('inviteDone', { name: personName(p, locale) }) })
             }
           >
             {t('inviteOne')}
@@ -329,7 +328,8 @@ function AddPerson({ onDone }: { onDone: () => void }) {
   function submit(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    add.mutate(
+    perform(
+      add,
       {
         display_name: name.trim(),
         relationship: relationship.trim() || null,
@@ -338,12 +338,7 @@ function AddPerson({ onDone }: { onDone: () => void }) {
         languages: [],
         by: viewerId,
       },
-      {
-        onSuccess: () => {
-          toast.success(t('addDone', { name: name.trim() }));
-          onDone();
-        },
-      },
+      { done: () => (onDone(), t('addDone', { name: name.trim() })) },
     );
   }
   const field = 'min-h-11 rounded-[10px] border border-rule-strong bg-sheet px-3 text-[17px] font-normal';

@@ -34,11 +34,19 @@ def supervisor(ctx: Ctx, req: OracleRequest) -> dict:
         if len(tasks) == 3:
             break
     v = p.get("viewer") or {}
-    viewer = (v.get("name_en") or v.get("name") or "").split(" ")[0]
+    first = (v.get("name_en") or v.get("name") or "").split(" ")[0]
     local = (fam.get("today_greeting_local") or "") if fam else ""
     if isinstance(local, dict):                   # one greeting per family member, by first name
-        local = local.get(viewer) or local.get((v.get("name") or "").split(" ")[0]) or ""
-    return {"greeting": greeting_for(viewer, tasks, p.get("candidates", [])), "greeting_local": local, "tasks": tasks}
+        local = local.get(first) or local.get((v.get("name") or "").split(" ")[0]) or ""
+    return {"greeting": greeting_for(called(v.get("name_en") or v.get("name") or ""), tasks, p.get("candidates", [])),
+            "greeting_local": local, "tasks": tasks}
+
+
+def called(name: str) -> str:
+    """How a greeting addresses someone: the first name, or the whole name when it starts with an initial
+    ("R. P. Shukla")."""
+    first = name.split(" ")[0]
+    return name if first.endswith(".") or len(first) == 1 else first
 
 
 def greeting_for(viewer: str, tasks: list[dict], cands: list[dict]) -> str:
@@ -56,13 +64,13 @@ def greeting_for(viewer: str, tasks: list[dict], cands: list[dict]) -> str:
                      f"{'is' if len(letters) == 1 else 'are'} ready to send")
     if rest:
         parts.append(f"{WORDS.get(rest, rest)} thing{'s' if rest != 1 else ''} need{'' if rest != 1 else 's'} the family")
-    if not parts:
-        return f"Good morning{', ' + viewer if viewer else ''}. Nothing needs you today."
-    text = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + ", and " + parts[-1]
-    text = text[0].upper() + text[1:]
+    # no time of day: the family reads it at any hour
+    text = (parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + ", and " + parts[-1]) if parts \
+        else "nothing needs you today"
+    text = text[0].lower() + text[1:]
     for w in list(WORDS.values())[:5]:
         text = text.replace(f", and {w} ", f", and {w.lower()} ").replace(f", {w} ", f", {w.lower()} ")
-    return f"Good morning{', ' + viewer if viewer else ''}. {text}."
+    return f"{viewer}, {text}." if viewer else f"{text[0].upper()}{text[1:]}."
 
 
 @oracle("correspondence_reader")

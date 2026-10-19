@@ -90,19 +90,37 @@ async def _read(deps: Any, case_id: str, paper_id: str) -> None:
             return
 
 
+PLANS_AT_ONCE = 4                         # claims planned side by side (each explanation is a model call)
+
+
 async def refresh_claims(deps: Any, case_id: str) -> None:
     claims = await planning.build_claims(deps, case_id)
-    for c in claims:
-        await planning.plan_claim(deps, case_id, c.id)
+    await plan_each(deps, case_id, [c.id for c in claims])
     seen: set[str] = set()
     for _ in range(3):                    # a procedure's own plan can need another procedure
         procs = [p for p in await planning.ensure_procedures(deps, case_id) if p.id not in seen]
         if not procs:
             break
-        for p in procs:
-            seen.add(p.id)
-            await planning.plan_claim(deps, case_id, p.id)
+        seen.update(p.id for p in procs)
+        await plan_each(deps, case_id, [p.id for p in procs])
     await close_settled_leads(deps, case_id)
+
+
+async def plan_each(deps: Any, case_id: str, claim_ids: list[str]) -> None:
+    """Claims planned side by side, a few at a time (until 19 October 2026 one after another: six claims' explanations
+    took 45 s). Each claim's planning writes only that claim's own plan, questions and clocks."""
+    gate = asyncio.Semaphore(PLANS_AT_ONCE)
+
+    async def one(claim_id: str) -> None:
+        async with gate:
+            await planning.plan_claim(deps, case_id, claim_id)
+
+    try:
+        async with asyncio.TaskGroup() as tg:
+            for cid in claim_ids:
+                tg.create_task(one(cid))
+    except ExceptionGroup as group:      # the first failure, as itself (a passing error is retried as before)
+        raise group.exceptions[0] from None
 
 
 async def close_settled_leads(deps: Any, case_id: str) -> None:
@@ -129,6 +147,6 @@ async def close_settled_leads(deps: Any, case_id: str) -> None:
             claim.next_action = "Nothing to claim"
             await deps.cases.put(case_id, "claims", claim)
         for c in await deps.cases.list(case_id, "checkpoints"):
-            if c.status == "open" and (c.subject_ref or "").startswith(f"plan:{cp.id}:"):
+            if c.status == "open" and (c.subject_ref or "").startswith((f"plan:{cp.id}:", f"claim:{claim.id}:")):
                 c.status, c.answer_note = "expired", not_covered.text
                 await deps.cases.put(case_id, "checkpoints", c)

@@ -77,10 +77,16 @@ export function AuthScreen({ mode }: { mode: 'signin' | 'signup' }) {
               autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
               required
               minLength={mode === 'signup' ? 8 : undefined}
+              aria-describedby={mode === 'signup' ? 'password-hint' : undefined}
               className={field}
             />
-            {mode === 'signup' ? <span className="text-[14px] font-normal text-ink-faint">{t('passwordHint')}</span> : null}
           </label>
+          {/* the hint describes the field, outside its name */}
+          {mode === 'signup' ? (
+            <span id="password-hint" className="-mt-2.5 text-[14px] text-ink-faint">
+              {t('passwordHint')}
+            </span>
+          ) : null}
           {error ? (
             <p role="alert" className="m-0 rounded-[10px] border border-debit bg-debit-tint px-3 py-2 text-[16px] font-bold text-debit">
               {error}

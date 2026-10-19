@@ -2,11 +2,11 @@
 /** Starting a case: which language to speak in, then straight into telling the story. */
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState, type FormEvent } from 'react';
-import { toast } from 'sonner';
 import { LanguageSelect } from '@/components/CaseShell';
 import { Button, Logo } from '@/components/ui';
 import { Link, useRouter } from '@/i18n/navigation';
 import { locales, type Locale } from '@/i18n/routing';
+import { perform } from '@/lib/changes';
 import { intl } from '@/lib/format';
 import { useStartCase } from '@/lib/queries';
 import { rememberCase } from '@/lib/mycases';
@@ -66,15 +66,15 @@ export function NewCaseScreen() {
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    start.mutate(
+    perform(
+      start,
       { lang, starter_name: name.trim() || null },
       {
-        onSuccess: (out) => {
+        done: (out) => {
           rememberCase(out.case.id);
           const ui = (locales as readonly string[]).includes(lang) ? (lang as Locale) : (locale as Locale);
           router.push(`/cases/${out.case.id}/story`, { locale: ui });
         },
-        onError: (err) => toast.error(err.message),
       },
     );
   }

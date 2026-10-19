@@ -27,13 +27,14 @@ test('the home page lists the six demo families', async ({ page }) => {
 
 test("a demo case's Today, in English and in the family's Hindi", async ({ page }) => {
   await page.goto('/en/cases/demo-verma/today');
-  await expect(page.getByText('Good morning, Amit')).toBeVisible();
+  // the greeting is on the page twice, for a phone and for a wide screen: the one shown is checked
+  await expect(page.getByText('Amit, one bank is late').filter({ visible: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Look for the locker key' })).toBeVisible();
   await accessible(page);
 
   await page.goto('/hi/cases/demo-verma/today');
   await expect(page.locator('html')).toHaveAttribute('lang', 'hi');
-  await expect(page.getByText('सुप्रभात, अमित')).toBeVisible();
+  await expect(page.getByText('अमित, एक बैंक देर कर रहा है').filter({ visible: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'लॉकर की चाबी ढूँढें' })).toBeVisible();
 });
 

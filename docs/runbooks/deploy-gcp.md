@@ -5,8 +5,11 @@ BigQuery, Cloud Tasks, Document AI, Cloud Translation, check grounding, Model Ar
 Platform. There are two ways to do it, and both create the same things:
 
 - **The deploy script** (`infra/scripts/deploy.sh`): gcloud, bq and curl only. Run it in Cloud Shell. Running it
-  again updates the deployment.
-- **Terraform** (`infra/terraform`), if you keep infrastructure as code.
+  again updates the deployment. It sets up the public site by default (`SITE=product`: accounts, the chosen
+  samples, no Evaluation page); `SITE=` gives the working copy.
+- **Terraform** (`infra/terraform`), if you keep infrastructure as code. It creates the same resources and runs
+  the working copy (the full site, with the Evaluation page and no accounts); the public site's settings (`AL_SITE`,
+  `AL_AUTH`, its signing key and admin account) are set by the deploy script.
 
 ## What gets created
 

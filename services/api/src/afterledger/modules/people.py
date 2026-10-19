@@ -340,11 +340,13 @@ async def invite_person(deps: Any, case_id: str, person_id: str, *, by: str | No
 
 
 async def answer_identity(deps: Any, case_id: str, checkpoint_id: str, answer: str, *, by: str | None,
-                          person_id: str | None = None, relationship: str | None = None) -> None:
-    """The family says whether a name form on a paper is the person we think (checkpoint C3)."""
+                          person_id: str | None = None, relationship: str | None = None, rework: bool = True) -> bool:
+    """The family says whether a name form on a paper is the person we think (checkpoint C3). Returns whether the
+    claims need planning again (who the heirs are changed); with rework they are planned again here, otherwise the
+    caller queues it."""
     cp = await deps.cases.get(case_id, "checkpoints", checkpoint_id)
     if cp is None or cp.code != "C3":
-        return
+        return False
     cp.status, cp.answer, cp.answered_by, cp.answered_at = "answered", answer, by, deps.now()
     await deps.cases.put(case_id, "checkpoints", cp)
     name = cp.subject_ref.split(":", 1)[-1]
@@ -368,10 +370,11 @@ async def answer_identity(deps: Any, case_id: str, checkpoint_id: str, answer: s
                 p.notes = f"{rel.capitalize()}, as the family says."
             await deps.cases.put(case_id, "people", p)
         await deps.activity(case_id, MODULE, f"The family answered about {name}: {answer}.", kind="decision")
-        from .pipeline import refresh_claims
-        await refresh_claims(deps, case_id)       # an heir more or less changes who signs
+        if rework:
+            from .pipeline import refresh_claims
+            await refresh_claims(deps, case_id)   # an heir more or less changes who signs
         deps.changed(case_id, "people", "checkpoints", "plans")
-        return
+        return True
     if answer == "yes" and target_id:
         p = await deps.cases.get(case_id, "people", target_id)
         if p and not any(n.text == name for n in p.names):
@@ -380,6 +383,7 @@ async def answer_identity(deps: Any, case_id: str, checkpoint_id: str, answer: s
     await deps.ledger(case_id, f"name:{name}", "family_check", "pass", detail=f"answer={answer} by={by}")
     await deps.activity(case_id, MODULE, f"The family answered about “{name}”: {answer}.", kind="decision")
     deps.changed(case_id, "people", "checkpoints")
+    return False
 
 
 async def confirm_people(deps: Any, case_id: str, *, by: str | None) -> None:

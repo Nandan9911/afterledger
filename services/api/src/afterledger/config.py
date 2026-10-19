@@ -142,6 +142,9 @@ class Settings(BaseSettings):
     # Live update streams open at once on the server (each holds a request slot while open); past it a page refreshes
     # without one. Keep it well under the service's concurrency (deploy.sh: 500). 0: no limit.
     sse_max_streams: int = Field(300, alias="AL_SSE_MAX_STREAMS")
+    # Today is planned again this many seconds after a change, once for however many changes come in meanwhile (an
+    # approval, then another, then an answer): one model call instead of three. 0: at once.
+    today_debounce_s: int = Field(3, alias="AL_TODAY_DEBOUNCE_S")
 
     @property
     def live(self) -> bool:

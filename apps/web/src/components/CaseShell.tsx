@@ -10,10 +10,10 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useIsFetching } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { localeNames, locales, type Locale } from '@/i18n/routing';
 import { ApiError } from '@/lib/api';
+import { perform } from '@/lib/changes';
 import { useCaseEvents } from '@/lib/events';
 import { cls, countryName, languageName, longDate, personName } from '@/lib/format';
 import { rememberCase } from '@/lib/mycases';
@@ -55,18 +55,7 @@ function ResetDemo({ demoKey }: { demoKey: string }) {
           size="sm"
           variant="danger"
           disabled={reset.isPending}
-          onClick={() =>
-            reset.mutate(demoKey, {
-              onSuccess: () => {
-                setAsking(false);
-                toast.success(t('resetDone'));
-              },
-              onError: (e) => {
-                setAsking(false);
-                toast.error(e.message);
-              },
-            })
-          }
+          onClick={() => perform(reset, demoKey, { done: () => t('resetDone'), after: () => setAsking(false) })}
         >
           {t('resetYes')}
         </Button>
@@ -88,7 +77,7 @@ const ORDER: NavKey[] = ['today', 'papers', 'money', 'leads', 'people', 'plans',
 
 function badge(key: NavKey, nav: NavCounts | undefined, t: ReturnType<typeof useTranslations>) {
   if (!nav) return null;
-  const faint = 'text-ink-faint text-[14px]';
+  const faint = 'text-ink-soft text-[14px]'; // readable on the open item's tint too
   switch (key) {
     case 'papers':
       return nav.papers_to_check ? (
@@ -115,7 +104,12 @@ function badge(key: NavKey, nav: NavCounts | undefined, t: ReturnType<typeof use
     case 'packs':
       return nav.packs ? <span className={nav.packs_ready ? 'text-[14px] font-bold text-ledger' : faint}>{nav.packs}</span> : null;
     case 'tracker':
-      return nav.tracker_late ? <span className="text-[14px] font-bold text-debit">{t('late', { count: nav.tracker_late })}</span> : null;
+      // what an institution said, waiting for a yes or no, comes before a late clock: only the family can answer it
+      return nav.tracker_confirm ? (
+        <span className="text-[14px] font-bold text-pencil">{t('toConfirm', { count: nav.tracker_confirm })}</span>
+      ) : nav.tracker_late ? (
+        <span className="text-[14px] font-bold text-debit">{t('late', { count: nav.tracker_late })}</span>
+      ) : null;
     case 'sources':
       return nav.sources ? <span className={faint}>{nav.sources}</span> : null;
     default:
@@ -182,6 +176,7 @@ export function CaseShell({ caseId, children }: { caseId: string; children: Reac
 
   function chooseViewer(personId: string) {
     setViewer(caseId, personId);
+    setMoreAt(null); // on a phone the More sheet closes, so the page shows what this person sees
     if (!readOnly) refreshToday.mutate(personId); // a sample keeps the greetings it has
     const person = h?.family.find((p) => p.id === personId);
     const lang = person?.languages?.[0]?.split('-')[0];
@@ -320,7 +315,10 @@ export function CaseShell({ caseId, children }: { caseId: string; children: Reac
               <LanguageSelect compact />
               {h?.case.demo_key && mayReset ? <ResetDemo demoKey={h.case.demo_key} /> : null}
               <div className="text-center text-[12.5px] text-ink-faint">
-                {h && !site.product ? <p className="m-0 font-bold">{modeLabel(h.mode)}</p> : null}
+                {/* what prepared the case's content: on the public site, said for the samples (prepared answers) */}
+                {h && (!site.product || h.case.demo_key) ? (
+                  <p className="m-0 font-bold">{site.product && h.mode !== 'gemini' ? tc('modeSample') : modeLabel(h.mode)}</p>
+                ) : null}
                 <p className="m-0" role="status">
                   <span
                     className={cls('me-1 inline-block h-2 w-2 rounded-full', live ? 'bg-ledger' : 'bg-rule-strong')}
@@ -340,7 +338,9 @@ export function CaseShell({ caseId, children }: { caseId: string; children: Reac
               <Logo size={24} />
             </Link>
             <div className="min-w-0 flex-1">
-              <p dir="auto" className="m-0 truncate text-[15px] font-bold">{h?.case.title ?? ''}</p>
+              <p dir="auto" className="m-0 truncate text-[15px] font-bold">
+                {h?.case.title ?? ''}
+              </p>
               {h?.case.synthetic ? <p className="m-0 text-[12px] font-bold text-blank">{tc('synthetic')}</p> : null}
             </div>
             <Link
@@ -356,7 +356,7 @@ export function CaseShell({ caseId, children }: { caseId: string; children: Reac
             {watching && demoKey ? <WatchBanner demoKey={demoKey} /> : null}
             {readOnly ? <SampleBanner /> : null}
             <LoadingNote caseId={caseId} />
-            {h?.working ? <WorkingBanner step={h.working} /> : null}
+            {h?.working ? <WorkingBanner step={h.working} papers={h.nav.papers} /> : null}
             {h?.researching?.length ? <ResearchBanner items={h.researching} /> : null}
             {children}
           </main>
@@ -450,7 +450,10 @@ export function LanguageSelect({ compact, dark }: { compact?: boolean; dark?: bo
 function SampleBanner() {
   const t = useTranslations('nav');
   return (
-    <div role="note" className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[12px] border border-blank bg-blank-tint px-4 py-3">
+    <div
+      role="note"
+      className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[12px] border border-blank bg-blank-tint px-4 py-3"
+    >
       <p className="m-0 min-w-0 flex-1 text-[15px]">
         <span className="font-bold">{t('sampleTitle')}</span> <span className="text-ink-soft">{t('sampleNote')}</span>
       </p>
@@ -489,16 +492,25 @@ function ResearchBanner({ items }: { items: CaseHeader['researching'] }) {
   );
 }
 
-/** While the case's background job runs: what it is doing, so a screen never looks finished before it is. The
+type WorkStep = NonNullable<CaseHeader['working']>;
+
+/** While the case's background work runs: what it is doing, so a screen never looks finished before it is. The
  * screens refresh by themselves when it is done. */
-function WorkingBanner({ step }: { step: 'reading' | 'finding' }) {
+function WorkingBanner({ step, papers }: { step: WorkStep; papers: number }) {
   const t = useTranslations('nav');
+  const say: Record<WorkStep, [string, string]> = {
+    reading: [t('workingReading'), t('workingNote')],
+    // straight after the story there are no papers yet: what is worked out is what the family said
+    finding: [papers ? t('workingFinding') : t('workingFindingStory'), t('workingNote')],
+    planning: [t('workingPlanning'), t('workingNotePlanning')],
+    preparing: [t('workingPreparing'), t('workingNotePreparing')],
+  };
+  const [what, note] = say[step] ?? say.finding;
   return (
     <div role="status" className="mb-5 flex items-start gap-3 rounded-[12px] border border-rule bg-sheet px-4 py-3">
       <span aria-hidden="true" className="mt-1.5 h-2.5 w-2.5 shrink-0 animate-pulse-soft rounded-full bg-ledger" />
       <p className="m-0 text-[15px]">
-        <span className="font-bold">{step === 'reading' ? t('workingReading') : t('workingFinding')}</span>{' '}
-        <span className="text-ink-soft">{t('workingNote')}</span>
+        <span className="font-bold">{what}</span> <span className="text-ink-soft">{note}</span>
       </p>
     </div>
   );

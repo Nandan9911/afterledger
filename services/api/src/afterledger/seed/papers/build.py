@@ -24,12 +24,6 @@ _ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _PLACEHOLDER = re.compile(r"\{d:(\d{4}-\d{2}-\d{2})\|([a-z_0-9]+)\}")
 
 
-def shift_date(d: date | str, shift: int) -> date:
-    if isinstance(d, str):
-        d = date.fromisoformat(d)
-    return d + timedelta(days=shift)
-
-
 def shift_tree(obj: Any, shift: int) -> Any:
     """Shift every ISO date and every {d:...|style} placeholder in a spec tree."""
     if isinstance(obj, dict):
@@ -206,7 +200,6 @@ class BuiltPaper:
     spec: dict
     rendered: Rendered
     images: list[degrade.PageImage]
-    ledger_summary: dict | None = None
 
 
 def expand(spec: dict) -> tuple[dict, dict | None]:
@@ -231,7 +224,7 @@ def expand(spec: dict) -> tuple[dict, dict | None]:
 
 
 def build_paper(spec: dict, *, seed: int = 7) -> BuiltPaper:
-    expanded, summary = expand(spec)
+    expanded, _ = expand(spec)
     rendered = TEMPLATES[expanded["template"]](expanded)
     images: list[degrade.PageImage] = []
     photo = expanded.get("photo")
@@ -244,4 +237,4 @@ def build_paper(spec: dict, *, seed: int = 7) -> BuiltPaper:
                                         paper_tint=photo.get("tint", "#F4EEDC"), table=photo.get("table", "#6B5644")))
         else:
             images.append(degrade.scan(rendered.pdf, i, boxes))
-    return BuiltPaper(spec=expanded, rendered=rendered, images=images, ledger_summary=summary)
+    return BuiltPaper(spec=expanded, rendered=rendered, images=images)

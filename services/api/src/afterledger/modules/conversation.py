@@ -64,7 +64,7 @@ async def _case_facts(deps: Any, case_id: str) -> list[dict]:
         if c.next_action and c.status not in ("settled", "closed"):
             text += f" Next: {c.next_action.rstrip('.')}."
         facts.append({"text": text, "source": f"claim:{c.id}", "cites": cites})
-    for t in snap.tasks:
+    for t in sorted(snap.tasks, key=lambda t: -t.priority):
         facts.append({"text": f"Today: {t.title}. {t.body}", "source": f"task:{t.id}", "cites": t.cites})
     for cp in snap.plans:
         claim = snap.claim(cp.claim_id)
@@ -103,12 +103,15 @@ async def ask(deps: Any, case_id: str, question: str, *, person_id: str | None =
         words = [w for w in re.findall(r"\w+", q) if len(w) > 3 and w not in ("when", "will", "what", "does",
                                                                                 "have", "with", "there")]
         timing = bool(re.search(r"\b(when|pay|paid|due|late|deadline|how long|settle)", q))
+        todo = bool(re.search(r"\b(first|next|now|start|begin|today|priorit\w*|should (we|i)|what (do|to do))\b", q))
         facts = await _case_facts(deps, case_id)
 
         def score(f: dict) -> float:
             s_ = sum(w in f["text"].lower() for w in words)
             if timing and f["source"].startswith("claim:") and s_:
                 s_ += 1.5                 # a question about when is answered by the claim and its clock
+            if todo and f["source"].startswith("task:"):
+                s_ += 2                   # what to do now is what Today says, most important first
             return s_
 
         scored = sorted(facts, key=lambda f: -score(f))
@@ -127,6 +130,7 @@ async def ask(deps: Any, case_id: str, question: str, *, person_id: str | None =
     asker = await deps.cases.get(case_id, "people", person_id) if person_id else None
     who = {"name": asker.display_name, "relationship": asker.relationship,
            "languages": asker.languages} if asker else None
+    supported: bool | None = None            # the grounding check's verdict, where the answer was checked
     if intent.intent == "unknown_need":
         from .research import ResearchRun, _tools
         country = (case.country_codes or [None])[0]
@@ -163,15 +167,19 @@ async def ask(deps: Any, case_id: str, question: str, *, person_id: str | None =
         grounded_texts += [(f"case:{i}", t) for i, t in enumerate(out.grounded_on)]
         if grounded_texts:
             g = await deps.grounding.check(answer_en, grounded_texts, threshold=0.35)
+            supported = g.supported
             if keep:
                 await deps.ledger(case_id, f"answer:{u.id}", "grounding", "pass" if g.supported else "fail",
                                   method=g.method, detail=f"support {g.support_score}")
     at = deps.now()
     if u.at is not None and at <= u.at:      # the answer always follows its question
         at = u.at + timedelta(seconds=1)
+    # grounded: what the answer rests on supports it (the check's verdict, where the answer was checked); the page
+    # says when an answer's sources were not found to support it
     reply = Utterance(id=new_id("ut"), case_id=case_id, role="assistant", lang=ans_lang, text=answer,
                       translation=answer_en if ans_lang != "en" else None, at=at, sources=sources,
-                      grounded=bool(sources), channel=channel)  # type: ignore[arg-type]
+                      grounded=supported if supported is not None else bool(sources),
+                      channel=channel)  # type: ignore[arg-type]
     if keep:
         await deps.cases.put_many(case_id, "utterances", [u, reply])
         deps.changed(case_id, "utterances")

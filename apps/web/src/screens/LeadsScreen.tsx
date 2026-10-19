@@ -15,6 +15,7 @@ import { Button, ErrorNote, h1Class, h2Class, Sheet, Skeleton } from '@/componen
 import { Why } from '@/components/Why';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { api, unwrap } from '@/lib/api';
+import { perform } from '@/lib/changes';
 import { asDate, cls, countryName, intl, listOf, localText, personName } from '@/lib/format';
 import { useLeads, useMarkLead } from '@/lib/queries';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -64,7 +65,9 @@ function Evidence({ lv }: { lv: LeadView }) {
           className="grid grid-cols-[80px_minmax(0,1fr)_auto] gap-3 border-b border-rule bg-[#FFF8D6] px-3.5 py-2 text-[15px] tabular last:border-b-0 sm:grid-cols-[96px_minmax(0,1fr)_auto]"
         >
           <span>{shortDate(r.date, locale)}</span>
-          <span dir="auto" className="truncate font-bold">{r.narration}</span>
+          <span dir="auto" className="truncate font-bold">
+            {r.narration}
+          </span>
           <span className={cls('text-end font-bold', r.direction === 'credit' ? 'text-ledger' : '')}>{r.amount.text}</span>
         </div>
       ))}
@@ -89,9 +92,9 @@ function MarkButtons({ lv, big }: { lv: LeadView; big?: boolean }) {
   const { caseId, viewerId, readOnly } = useCase();
   const mark = useMarkLead(caseId);
   const off = mark.isPending || readOnly;
-  const done = () => toast.success(tt('marked'));
+  const done = () => tt('marked');
   const plural = /\b(bonds|shares|units|policies|accounts|certificates|deposits|funds)\b/i.test(lv.lead.title);
-  const run = (m: 'know' | 'check' | 'not_relevant') => mark.mutate({ leadId: lv.lead.id, mark: m, by: viewerId }, { onSuccess: done });
+  const run = (m: 'know' | 'check' | 'not_relevant') => perform(mark, { leadId: lv.lead.id, mark: m, by: viewerId }, { done });
   const debt = lv.lead.kind === 'debt';
   if (big) {
     return (
@@ -113,11 +116,7 @@ function MarkButtons({ lv, big }: { lv: LeadView; big?: boolean }) {
   const marked = lv.lead.family_mark;
   return (
     <div className="mt-4 flex flex-wrap items-center gap-2.5">
-      <Button
-        variant={marked === 'know' ? 'primary' : marked ? 'secondary' : 'primary'}
-        disabled={off}
-        onClick={() => run('know')}
-      >
+      <Button variant={marked === 'know' ? 'primary' : marked ? 'secondary' : 'primary'} disabled={off} onClick={() => run('know')}>
         {plural ? t('knowThese') : t('know')}
       </Button>
       <Button variant="secondary" disabled={off || marked === 'check'} onClick={() => run('check')}>
@@ -157,11 +156,11 @@ function LeadCard({ lv, view, first, tab }: { lv: LeadView; view: LeadsView; fir
       </div>
       {l.kind === 'debt' && lv.value ? (
         <p className="m-0 mt-1 text-[17px] font-bold text-debit">
-          {t('aboutLeft', { amount: lv.value.text })}
+          {t('aboutLeft', { amount: lv.value.short })}
           {l.family_mark ? <span className="ms-2 text-[14px] font-normal text-ink-soft">{t('valueFamily')}</span> : null}
         </p>
       ) : lv.value ? (
-        <p className="m-0 mt-1 text-[17px] font-bold tabular">{lv.value.text}</p>
+        <p className="m-0 mt-1 text-[17px] font-bold tabular">{lv.value.short}</p>
       ) : null}
       {!open || !l.investigator_note ? <p className="m-0 mt-2 text-[16px] text-ink-soft">{sentence}</p> : null}
       {open ? (

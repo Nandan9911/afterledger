@@ -96,18 +96,7 @@ class PersonPatch(BaseModel):
     by: str | None = None
 
 
-class PlanAnswerIn(BaseModel):
-    variable: str
-    value: str
-    by: str | None = None
-
-
 class ByIn(BaseModel):
-    by: str | None = None
-
-
-class ProcedureIn(BaseModel):
-    plan_key: str
     by: str | None = None
 
 
@@ -246,6 +235,7 @@ class NavCounts(BaseModel):
     packs: int = 0
     packs_ready: int = 0
     tracker_late: int = 0
+    tracker_confirm: int = 0          # what institutions said, waiting for the family to confirm
     sources: int = 0
     activity: int = 0
 
@@ -259,9 +249,10 @@ class CaseHeader(BaseModel):
     today: date
     nav: NavCounts
     mode: str = "scripted"
-    # what the case's background job is doing now: "reading" its new papers, then "finding" what they point to
-    # (people, accounts, loans, policies, payments to stop) and planning; None when nothing is running
-    working: Literal["reading", "finding"] | None = None
+    # what the case's background work is doing now: "reading" its new papers, "finding" what they point to (people,
+    # accounts, loans, policies, payments to stop) and planning, "planning" an answer or a change into the plans,
+    # "preparing" an approved plan's papers; None when nothing is running
+    working: Literal["reading", "finding", "planning", "preparing"] | None = None
     working_since: datetime | None = None
     # true on the public site for a sample case (everyone but the admin): its buttons are switched off, questions are
     # answered without being saved
@@ -560,7 +551,6 @@ class PlanRow(BaseModel):
     plan: CasePlanRecord | None = None
     institution: str = ""
     amount: Money | None = None
-    status_label: str = ""
     late: bool = False
     questions: int = 0
 
@@ -677,6 +667,8 @@ class TrackerView(BaseModel):
     expected: list[DeadlineView] = []
     escalation: dict[str, list[Escalation]] = {}
     cites: dict[str, CiteView] = {}
+    # what institutions said happened (in a reply, or on their desk), for the family to confirm before it is recorded
+    confirm: list[Checkpoint] = []
 
 
 # ---------------------------------------------------------------------------------------------
@@ -766,6 +758,9 @@ class DeskView(BaseModel):
     notes: list[str] = []
     checked_against: str = ""
     cites: dict[str, CiteView] = {}
+    # a payment the institution recorded on the desk, waiting for the family to confirm it arrived
+    awaiting_family: Money | None = None
+    awaiting_on: date | None = None
 
 
 class DeskSettleIn(BaseModel):
@@ -806,13 +801,6 @@ class DemoFamily(BaseModel):
     story_day: date | None = None
 
 
-class SeedOut(BaseModel):
-    case_id: str
-    events: int
-    warnings: list[str] = []
-    seconds: float = 0.0
-
-
 class ChallengePreset(BaseModel):
     key: str
     country: str
@@ -836,6 +824,7 @@ class ChallengeRow(BaseModel):
     status: str
     started_at: str | None = None
     stored_key: str | None = None
+    shared: bool = False                   # research a case's claim needed: it stays with the claim
 
 
 class ChallengeView(BaseModel):

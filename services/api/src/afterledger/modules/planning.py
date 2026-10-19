@@ -9,6 +9,8 @@ plan (checkpoint C5).
 """
 from __future__ import annotations
 
+import hashlib
+import json
 from datetime import date
 from decimal import Decimal
 from typing import Any
@@ -16,7 +18,6 @@ from typing import Any
 from ..agents.runner import call_agent
 from ..domain.case import CasePlan, Claim, DocumentView, StepView
 from ..domain.ids import stable_id
-from ..domain.money import format_amount
 from ..domain.plan_language import ProcedurePlan
 from ..domain.plan_runtime import documents_for, route, run
 from . import plan_facts, rules_research
@@ -25,6 +26,7 @@ from .packs import _have
 from .rules_research import is_interim, signature
 
 MODULE = "planning"
+FAMILY = "family"                         # who approved, when the screen did not say which person
 LEAD_KINDS = {"life_cover": "government_cover", "accident_cover": "accident_cover", "mutual_fund": "mutual_fund",
               "locker": "locker", "shares": "shares_physical", "pension": "family_pension", "loan": "loan",
               "premium_bonds": "premium_bonds", "social_security": "social_security", "employer": "employer_benefit",
@@ -382,27 +384,37 @@ async def plan_claim(deps: Any, case_id: str, claim_id: str, *, answers: dict | 
     claimant = snap.claimant(claim)
     if lang == "en" and claimant and claimant.languages and claimant.languages[0] != "en":
         lang = claimant.languages[0]      # the person who signs reads the plan in their own language
-    expl = await call_agent(deps, "explainer", {
-        "key": pack_key("explainer", case, claim_id, str(len(route_steps)), ",".join(route_steps)),
-        "case": case_block(case), "claim": {"id": claim.id, "title": claim.title,
-                                             "amount": str(claim.amount_due) if claim.amount_due else None,
-                                             "currency": claim.currency},
-        "plan": {"key": key, "title": plan.title, "route": route_steps, "questions": result.questions,
-                 "steps": [{"id": s.id, "text": s.text} for s in steps]}, "lang": lang,
-        "facts": [{"name": v.name, "asks": v.question or v.name.replace("_", " "), "value": facts.get(v.name)}
-                  for v in plan.variables if facts.get(v.name) not in (None, "unknown")],
-        "claimant": claimant.display_name if claimant else None,
-        "people": [{"name": p.display_name, "relationship": p.relationship, "roles": p.roles} for p in snap.family()]},
-        case_id=case_id)
-    cp.summary = expl.summary
-    cp.summary_local = expl.summary_local if lang != "en" else ""
-    cp.lang_local = lang if lang != "en" and (expl.summary_local or any(e.text_local for e in expl.steps)) else ""
-    plan_ids = {s.id for s in cp.steps}
-    known = {a.id for a in await k.assertions()}
-    cp.explained = [{"text": e.text, "text_local": e.text_local if lang != "en" else "", "who": e.who,
-                     "step_id": e.step_id if e.step_id in plan_ids else None,
-                     "cites": plan.step(e.step_id).cites if e.step_id in plan_ids else
-                     [c for c in e.cites if c in known]} for e in expl.steps]
+    brief = {"case": case_block(case), "claim": {"id": claim.id, "title": claim.title,
+                                                  "amount": str(claim.amount_due) if claim.amount_due else None,
+                                                  "currency": claim.currency},
+             "plan": {"key": key, "title": plan.title, "route": route_steps, "questions": result.questions,
+                      "steps": [{"id": s.id, "text": s.text} for s in steps]}, "lang": lang,
+             "facts": [{"name": v.name, "asks": v.question or v.name.replace("_", " "), "value": facts.get(v.name)}
+                       for v in plan.variables if facts.get(v.name) not in (None, "unknown")],
+             "claimant": claimant.display_name if claimant else None,
+             "people": [{"name": p.display_name, "relationship": p.relationship, "roles": p.roles}
+                        for p in snap.family()]}
+    basis = hashlib.sha256(json.dumps(brief, sort_keys=True, default=str, ensure_ascii=False).encode()).hexdigest()[:24]
+    cp.explained_basis = basis
+    if prev is not None and prev.explained_basis == basis and (prev.summary or prev.explained):
+        # nothing the explanation rests on changed (planning again after an answer elsewhere, a payment, a person):
+        # the one written stands, and no model is asked again (until 19 October 2026 every claim was explained
+        # again each time any claim was planned: 38 s for one answer on a case of six claims)
+        cp.summary, cp.summary_local, cp.lang_local = prev.summary, prev.summary_local, prev.lang_local
+        cp.explained = prev.explained
+    else:
+        expl = await call_agent(deps, "explainer", {
+            "key": pack_key("explainer", case, claim_id, str(len(route_steps)), ",".join(route_steps)), **brief},
+            case_id=case_id)
+        cp.summary = expl.summary
+        cp.summary_local = expl.summary_local if lang != "en" else ""
+        cp.lang_local = lang if lang != "en" and (expl.summary_local or any(e.text_local for e in expl.steps)) else ""
+        plan_ids = {s.id for s in cp.steps}
+        known = {a.id for a in await k.assertions()}
+        cp.explained = [{"text": e.text, "text_local": e.text_local if lang != "en" else "", "who": e.who,
+                         "step_id": e.step_id if e.step_id in plan_ids else None,
+                         "cites": plan.step(e.step_id).cites if e.step_id in plan_ids else
+                         [c for c in e.cites if c in known]} for e in expl.steps]
     if not route_steps and result.questions:
         cp.summary = cp.summary or "The route depends on a few answers; the plan covers every answer until then."
     claim.plan_id = pid
@@ -412,7 +424,10 @@ async def plan_claim(deps: Any, case_id: str, claim_id: str, *, answers: dict | 
     claim.next_action = ("Answer " + str(len(result.questions)) + " question" + ("s" if len(result.questions) != 1 else "")
                          if result.questions else claim.next_action)
     await deps.cases.put(case_id, "plans", cp)
+    # the plan as it now stands: an approval the family gave while it was being planned stays, and is not asked again
+    cp = await deps.cases.get(case_id, "plans", pid) or cp
     await deps.cases.put(case_id, "claims", claim)
+    claim = await deps.cases.get(case_id, "claims", claim_id) or claim
     await _clocks(deps, case_id, claim, plan, cp)
     for c in await deps.cases.list(case_id, "checkpoints"):
         # a question settled since it was asked (by another answer, a paper, or the situation) closes
@@ -437,7 +452,9 @@ async def plan_claim(deps: Any, case_id: str, claim_id: str, *, answers: dict | 
                 if c.subject_ref == f"plan:{pid}:approve" and c.status == "answered":
                     c.status, c.answer, c.answered_by, c.answered_at = "open", None, None, None
                     await deps.cases.put(case_id, "checkpoints", c)
-        await open_checkpoint(deps, case, code="C5", kind="plan_approval", title=f"Approve the plan: {claim.title}",
+        # "Approve the plan for LIC: life insurance policy", not "Approve the plan: LIC: life insurance policy"
+        title = f"Approve the plan for {claim.title}" if ": " in claim.title else f"Approve the plan: {claim.title}"
+        await open_checkpoint(deps, case, code="C5", kind="plan_approval", title=title,
                               question="Does this plan look right to you?",
                               options=[("approve", "Approve"), ("question", "I have a question")],
                               subject_ref=f"plan:{pid}:approve", why=cp.summary, payload={"claim_id": claim_id})
@@ -468,12 +485,46 @@ SITUATION_FACTS = {"situation_will": "will", "situation_dispute": "dispute"}
 """Answers about the family's situation rather than one claim: given once, they count for every plan."""
 
 
-async def answer_question(deps: Any, case_id: str, plan_id: str, variable: str, value: Any, *, by: str | None) -> CasePlan | None:
-    cp: CasePlan = await deps.cases.get(case_id, "plans", plan_id)
+async def answer_question(deps: Any, case_id: str, plan_id: str, variable: str, value: Any, *, by: str | None,
+                          rework: bool = True) -> CasePlan | None:
+    """The family answers a plan's question: the answer is kept at once (record_answer), then worked into the plan
+    and any plan it touches (apply_answer). An action passes rework=False and queues apply_answer, so the family
+    does not wait for the model that explains the new route."""
+    cp = await record_answer(deps, case_id, plan_id, variable, value, by=by)
+    if cp is None or not rework:
+        return cp
+    return await apply_answer(deps, case_id, plan_id, variable, value)
+
+
+async def record_answer(deps: Any, case_id: str, plan_id: str, variable: str, value: Any, *,
+                        by: str | None) -> CasePlan | None:
+    """The answer kept: its question closed, the value on the plan (where any later planning finds it), and a line."""
+    cp: CasePlan | None = await deps.cases.get(case_id, "plans", plan_id)
+    if cp is None:
+        return None
     for c in await deps.cases.list(case_id, "checkpoints"):
         if c.subject_ref == f"plan:{plan_id}:{variable}" and c.status == "open":
             c.status, c.answer, c.answered_by, c.answered_at = "answered", str(value), by, deps.now()
             await deps.cases.put(case_id, "checkpoints", c)
+    cp.facts = {**cp.facts, variable: value, f"__asked__{variable}": True}
+    await deps.cases.put(case_id, "plans", cp)
+    plan = await knowledge(deps).plan(cp.plan_key)
+    var = plan.variable(variable) if plan else None
+    person = await deps.cases.get(case_id, "people", by) if by else None
+    q = (var.question if var and var.question else variable.replace("_", " ")).rstrip("?")
+    label = dict(_options(var)).get(str(value), str(value)) if var is not None else str(value)
+    await deps.activity(case_id, MODULE, f"{person.display_name.split()[0] if person else 'The family'} answered "
+                        f"“{q}?”: {label.replace('_', ' ')}.", kind="decision")
+    deps.changed(case_id, "plans", "checkpoints")
+    return cp
+
+
+async def apply_answer(deps: Any, case_id: str, plan_id: str, variable: str, value: Any) -> CasePlan | None:
+    """An answer worked into its plan (the route, the papers, the explanation), the procedures it needs, and, when
+    it settles a fact of the situation, every other plan."""
+    cp: CasePlan | None = await deps.cases.get(case_id, "plans", plan_id)
+    if cp is None:
+        return None
     plan = await knowledge(deps).plan(cp.plan_key)
     var = plan.variable(variable) if plan else None
     field = SITUATION_FACTS.get(var.derive or "") if var else None
@@ -481,11 +532,6 @@ async def answer_question(deps: Any, case_id: str, plan_id: str, variable: str, 
         field, value_for_case = "death_cause", var.derive.split(":", 1)[1]
     else:
         value_for_case = value
-    person = await deps.cases.get(case_id, "people", by) if by else None
-    q = (var.question if var and var.question else variable.replace("_", " ")).rstrip("?")
-    label = dict(_options(var)).get(str(value), str(value)) if var is not None else str(value)
-    await deps.activity(case_id, MODULE, f"{person.display_name.split()[0] if person else 'The family'} answered "
-                        f"“{q}?”: {label.replace('_', ' ')}.", kind="decision")
     out = await plan_claim(deps, case_id, cp.claim_id, answers={variable: value})
     await sync_procedures(deps, case_id)
     if (field and value in ("yes", "no")) or field == "death_cause":
@@ -504,7 +550,9 @@ async def answer_question(deps: Any, case_id: str, plan_id: str, variable: str, 
 
 async def approve_plan(deps: Any, case_id: str, plan_id: str, *, by: str | None) -> CasePlan:
     cp: CasePlan = await deps.cases.get(case_id, "plans", plan_id)
-    cp.approved_by, cp.approved_on = by, deps.today_for(await deps.cases.get_case(case_id))
+    # approved by someone in the family, by name when the screen knows who is viewing ("family" otherwise): an
+    # approval with no name was taken for none until 19 October 2026, and the plan was asked for again
+    cp.approved_by, cp.approved_on = by or FAMILY, deps.today_for(await deps.cases.get_case(case_id))
     await deps.cases.put(case_id, "plans", cp)
     for c in await deps.cases.list(case_id, "checkpoints"):
         if c.subject_ref == f"plan:{plan_id}:approve" and c.status == "open":
@@ -571,7 +619,8 @@ async def ensure_procedures(deps: Any, case_id: str) -> list[Claim]:
     return made
 
 
-async def start_procedure(deps: Any, case_id: str, plan_key: str, *, by: str | None = None) -> Claim | None:
+async def start_procedure(deps: Any, case_id: str, plan_key: str, *, by: str | None = None,
+                          rework: bool = True) -> Claim | None:
     """The family starts a procedure from a plan before any claim strictly needs it (applying for
     Japan's heir information certificate early, say), so it is tracked like any other."""
     k = knowledge(deps)
@@ -594,7 +643,8 @@ async def start_procedure(deps: Any, case_id: str, plan_key: str, *, by: str | N
     if c.status == "closed":
         c.status, c.closed_reason = "planning", ""
     await deps.cases.put(case_id, "claims", c)
-    await plan_claim(deps, case_id, cid)
+    if rework:                            # an action plans it in the background
+        await plan_claim(deps, case_id, cid)
     person = await deps.cases.get(case_id, "people", by) if by else None
     await deps.activity(case_id, MODULE, f"{person.display_name.split()[0] if person else 'The family'} started: "
                         f"{plan.title.lower()}.", kind="decision")
@@ -609,5 +659,3 @@ async def sync_procedures(deps: Any, case_id: str) -> None:
             await plan_claim(deps, case_id, proc.id)
 
 
-def amount_text(amount: Decimal | None, currency: str) -> str:
-    return format_amount(amount, currency) if amount is not None else "an amount not known yet"

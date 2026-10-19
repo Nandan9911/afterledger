@@ -3,9 +3,9 @@
 import type { ChallengeIn } from '@afterledger/contracts';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { useAuth } from '@/lib/auth';
+import { perform } from '@/lib/changes';
 import { useMeta, usePresets, useStartChallenge } from '@/lib/queries';
 import { useSite } from '@/lib/site';
 import { CountryInput } from './CountryInput';
@@ -32,10 +32,7 @@ export function ChallengeForm() {
       router.push(`/signin?next=${encodeURIComponent(pathname)}`);
       return;
     }
-    start.mutate(body, {
-      onSuccess: (run) => router.push(`/challenge/${run.id}`),
-      onError: (e) => toast.error(e.message),
-    });
+    perform(start, body, { done: (run) => router.push(`/challenge/${run.id}`) });
   }
 
   const field = 'min-h-[52px] rounded-[10px] border-0 bg-white px-3.5 text-[18px] text-ink';

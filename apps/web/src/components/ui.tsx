@@ -69,7 +69,7 @@ export function ButtonLink({
   return <Link className={buttonClass(variant, size, className)} {...rest} />;
 }
 
-export type Certainty = 'sure' | 'check' | 'unknown';
+type Certainty = 'sure' | 'check' | 'unknown';
 
 /** Sure (solid), Please check (dashed pencil), We don't know yet (dotted blank). */
 export function CertaintyPill({ certainty, children, className }: { certainty: Certainty; children: ReactNode; className?: string }) {
@@ -189,7 +189,6 @@ export function ScrollX({ label, className, children }: { label: string; classNa
 export const h1Class = 'font-serif text-[30px] font-semibold leading-[1.12] tracking-[-0.015em] sm:text-[38px] m-0';
 export const h2Class = 'font-serif text-[22px] font-semibold leading-snug m-0';
 export const h2BigClass = 'font-serif text-[26px] font-semibold leading-snug m-0';
-export const sectionTitleClass = 'm-0 text-[17px] font-bold';
 
 export function Spinner({ label }: { label?: string }) {
   return (
@@ -209,8 +208,7 @@ export function ErrorNote({ error, retry }: { error: unknown; retry?: () => void
   // a request that never reached the service (it is stopped, or a phone cannot reach the laptop) fails with the
   // browser's own words ("Failed to fetch"); the API's own refusals carry its explanation
   const busy = error instanceof ApiError && [429, 502, 503, 504].includes(error.status);
-  const msg =
-    error instanceof TypeError ? t('unreachable') : busy ? t('busy') : error instanceof Error ? error.message : String(error);
+  const msg = error instanceof TypeError ? t('unreachable') : busy ? t('busy') : error instanceof Error ? error.message : String(error);
   return (
     <div role="alert" className="rounded-[14px] border border-debit bg-debit-tint p-4 text-[16px] text-debit">
       <p className="m-0 font-bold">{msg}</p>

@@ -150,7 +150,8 @@ error, instead of falling back to its offline stand-in, so a test cannot pass on
 - **Live challenge**: name a country, an institution and a situation, and watch the research.
 - **Watch it from the first paper** (a demo case's menu, or **Watch** on the home page) replays a family's whole
   story through Gemini. On 15 October a story took 15 to 45 minutes, 120 to 340 model calls and $0.80 to $2 of
-  model use ([evaluation.md](../evaluation.md), section 5); afterwards the case is a live case. **Reset this demo case** puts back the saved version: the offline one, unless you saved a live one with
+  model use ([evaluation.md](../evaluation.md), section 5); afterwards the case is a live case. A sample's claims use
+  the stored plans: research into rules no plan covers yet starts only for a family's own case. **Reset this demo case** puts back the saved version: the offline one, unless you saved a live one with
   `afterledger seed KEY --snapshot`.
 
 From the command line (in `services/api`):

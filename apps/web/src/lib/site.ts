@@ -6,6 +6,6 @@
  */
 import { createContext, useContext } from 'react';
 
-export type Site = { product: boolean; auth: boolean };
+type Site = { product: boolean; auth: boolean };
 export const SiteContext = createContext<Site>({ product: false, auth: false });
 export const useSite = () => useContext(SiteContext);

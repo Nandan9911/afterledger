@@ -205,7 +205,7 @@ expected_today:
   totals: {EUR: {known: "48215.60"}, JPY: {known: "3480000"}}
 
 today_greeting_local:
-  Anna: "Guten Morgen, Anna. Zwei Dinge brauchen die Familie."
+  Anna: "Anna, zwei Dinge brauchen die Familie."
 today_tasks:
   - kind: handoff
     institution_id: de_isarbank

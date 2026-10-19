@@ -55,23 +55,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/demo/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Demo Status */
-        get: operations["demo_status_v1_demo_status_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/demo/{key}/reset": {
         parameters: {
             query?: never;
@@ -523,57 +506,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/cases/{case_id}/plans/{plan_id}/answers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Answer Plan */
-        post: operations["answer_plan_v1_cases__case_id__plans__plan_id__answers_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/cases/{case_id}/plans/{plan_id}/approve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Approve Plan */
-        post: operations["approve_plan_v1_cases__case_id__plans__plan_id__approve_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/cases/{case_id}/procedures": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Start Procedure */
-        post: operations["start_procedure_v1_cases__case_id__procedures_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/cases/{case_id}/packs": {
         parameters: {
             query?: never;
@@ -602,40 +534,6 @@ export interface paths {
         get: operations["pack_v1_cases__case_id__packs__pack_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/cases/{case_id}/claims/{claim_id}/pack": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Prepare Pack */
-        post: operations["prepare_pack_v1_cases__case_id__claims__claim_id__pack_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/cases/{case_id}/packs/{pack_id}/approve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Approve Pack */
-        post: operations["approve_pack_v1_cases__case_id__packs__pack_id__approve_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -968,23 +866,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/knowledge/institutions/{institution_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Institution */
-        get: operations["institution_v1_knowledge_institutions__institution_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/challenges/presets": {
         parameters: {
             query?: never;
@@ -1036,7 +917,13 @@ export interface paths {
         get: operations["get_v1_challenges__run_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete
+         * @description Removes a question from its asker's list (the admin may remove anyone's): the question, its steps and its
+         *     letter. The rules its research found stay, with their sources, for every family. Research a case's claim
+         *     needed stays with the claim. A public site without accounts lists nobody's questions, and removes none.
+         */
+        delete: operations["delete_v1_challenges__run_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1108,7 +995,8 @@ export interface paths {
         put?: never;
         /**
          * Settle
-         * @description The institution records that it has paid. The family sees it at once.
+         * @description The institution records that it has paid. The family is asked to confirm the money arrived, and the claim is
+         *     settled once they do.
          */
         post: operations["settle_v1_desk__token__settle_post"];
         delete?: never;
@@ -1516,6 +1404,13 @@ export interface components {
                 [key: string]: components["schemas"]["TodayNote"];
             };
             /**
+             * Today Basis
+             * @default {}
+             */
+            today_basis: {
+                [key: string]: string;
+            };
+            /**
              * Shared With
              * @default []
              */
@@ -1554,7 +1449,7 @@ export interface components {
              */
             mode: string;
             /** Working */
-            working: ("reading" | "finding") | null;
+            working: ("reading" | "finding" | "planning" | "preparing") | null;
             /** Working Since */
             working_since: string | null;
             /**
@@ -1663,6 +1558,11 @@ export interface components {
             explained: {
                 [key: string]: unknown;
             }[];
+            /**
+             * Explained Basis
+             * @default
+             */
+            explained_basis: string;
             /**
              * Summary Local
              * @default
@@ -1818,6 +1718,11 @@ export interface components {
             started_at: string | null;
             /** Stored Key */
             stored_key: string | null;
+            /**
+             * Shared
+             * @default false
+             */
+            shared: boolean;
         };
         /** ChallengeView */
         ChallengeView: {
@@ -2706,6 +2611,9 @@ export interface components {
             cites: {
                 [key: string]: components["schemas"]["CiteView"];
             };
+            awaiting_family: components["schemas"]["Money"] | null;
+            /** Awaiting On */
+            awaiting_on: string | null;
         };
         /** DocumentView */
         DocumentView: {
@@ -3619,6 +3527,11 @@ export interface components {
              */
             tracker_late: number;
             /**
+             * Tracker Confirm
+             * @default 0
+             */
+            tracker_confirm: number;
+            /**
              * Sources
              * @default 0
              */
@@ -4180,15 +4093,6 @@ export interface components {
             /** By */
             by?: string | null;
         };
-        /** PlanAnswerIn */
-        PlanAnswerIn: {
-            /** Variable */
-            variable: string;
-            /** Value */
-            value: string;
-            /** By */
-            by?: string | null;
-        };
         /** PlanRow */
         PlanRow: {
             claim: components["schemas"]["Claim"];
@@ -4199,11 +4103,6 @@ export interface components {
              */
             institution: string;
             amount: components["schemas"]["Money"] | null;
-            /**
-             * Status Label
-             * @default
-             */
-            status_label: string;
             /**
              * Late
              * @default false
@@ -4262,13 +4161,6 @@ export interface components {
         PlansView: {
             /** Rows */
             rows: components["schemas"]["PlanRow"][];
-        };
-        /** ProcedureIn */
-        ProcedureIn: {
-            /** Plan Key */
-            plan_key: string;
-            /** By */
-            by?: string | null;
         };
         /** ReadValue */
         ReadValue: {
@@ -4920,6 +4812,11 @@ export interface components {
             cites: {
                 [key: string]: components["schemas"]["CiteView"];
             };
+            /**
+             * Confirm
+             * @default []
+             */
+            confirm: components["schemas"]["Checkpoint"][];
         };
         /** TurnIn */
         TurnIn: {
@@ -5185,28 +5082,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DemoFamily"][];
-                };
-            };
-        };
-    };
-    demo_status_v1_demo_status_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
                 };
             };
         };
@@ -6278,113 +6153,6 @@ export interface operations {
             };
         };
     };
-    answer_plan_v1_cases__case_id__plans__plan_id__answers_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                case_id: string;
-                plan_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PlanAnswerIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CasePlan"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    approve_plan_v1_cases__case_id__plans__plan_id__approve_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                case_id: string;
-                plan_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ByIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CasePlan"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    start_procedure_v1_cases__case_id__procedures_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                case_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProcedureIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Claim"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     packs_v1_cases__case_id__packs_get: {
         parameters: {
             query?: never;
@@ -6435,74 +6203,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PackView"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    prepare_pack_v1_cases__case_id__claims__claim_id__pack_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                case_id: string;
-                claim_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Pack"] | null;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    approve_pack_v1_cases__case_id__packs__pack_id__approve_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                case_id: string;
-                pack_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ByIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Pack"];
                 };
             };
             /** @description Validation Error */
@@ -7161,37 +6861,6 @@ export interface operations {
             };
         };
     };
-    institution_v1_knowledge_institutions__institution_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                institution_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Institution"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_presets_v1_challenges_presets_get: {
         parameters: {
             query?: never;
@@ -7283,6 +6952,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChallengeView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_v1_challenges__run_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

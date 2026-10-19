@@ -11,7 +11,7 @@ import { createPortal } from 'react-dom';
 import { cls, longDate, openable } from '@/lib/format';
 import { Chip } from './ui';
 
-export function levelTone(level: string): 'ledger' | 'pencil' | 'blank' | 'plain' {
+function levelTone(level: string): 'ledger' | 'pencil' | 'blank' | 'plain' {
   if (level === 'gold' || level === 'dual_verified' || level === 'adjudicated' || level === 'outcome_confirmed') return 'ledger';
   if (level === 'sourced') return 'pencil';
   return 'blank';

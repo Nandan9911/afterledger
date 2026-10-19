@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 
+from afterledger.concurrency import work_now
 from afterledger.domain.case import PaymentGroup
 from afterledger.modules import discovery, reading
 from conftest import api_client, offline_settings
@@ -600,7 +601,11 @@ async def test_removing_a_paper_takes_what_was_found_only_in_it_and_keeps_the_re
     assert await ids("transactions") == {"tx_pp_kept"} and await ids("groups") == {"g_pp_kept"}
     assert await ids("values") == {"rv_pp_kept"} and await ids("facts") == {"f_pp_kept"}
     assert len(await ids("lines")) == 700                                 # the other paper's text lines, untouched
-    assert dropped == ["cases/c1/papers/pp_gone/"] and queued == [{"kind": "after_papers", "case_id": "c1", "paper_ids": []}]
+    assert dropped == ["cases/c1/papers/pp_gone/"]
+    assert [{k: v for k, v in q.items() if k != "work"} for q in queued] == [
+        {"kind": "after_papers", "case_id": "c1", "paper_ids": []}]
+    # the header says the case is being worked through again from the moment the paper is gone
+    assert work_now(deps, "c1") == {"step": "finding", "since": work_now(deps, "c1")["since"]}
     with pytest.raises(actions.NotFound):
         await actions.delete_paper(deps, "c1", "pp_gone")
     reading = m.Paper(id="pp_busy", case_id="c1", title="t", status="reading", synthetic=False)
@@ -620,7 +625,7 @@ async def test_the_case_says_what_its_background_job_is_doing(tmp_path: Path, mo
     seen: list[Any] = []
 
     def work() -> Any:
-        return (deps.extras.get("case_work") or {}).get("c1", {}).get("step")
+        return (work_now(deps, "c1") or {}).get("step")
 
     async def read_papers(deps_: Any, case_id: str, paper_ids: list[str]) -> None:
         seen.append(work())
@@ -638,3 +643,165 @@ async def test_the_case_says_what_its_background_job_is_doing(tmp_path: Path, mo
     assert seen == ["reading", "finding"] and work() is None
     await deps.tasks._handlers["after_papers"]({"case_id": "c1", "paper_ids": []})   # after a paper was removed
     assert seen[2:] == ["finding"] and work() is None
+
+
+def test_a_payment_after_the_death_says_who_was_paid(deps: Any) -> None:
+    """Live, the payments after the death were listed with their raw lines ("Debit on 5 September: Nach Dr Bajaj
+    Finance Ltd Car Loan 4Xx1187")."""
+    import asyncio
+
+    from afterledger.domain import case as m
+    from afterledger.domain.ids import stable_id
+    from afterledger.modules.discovery import name_later_payments
+    from afterledger.modules.reading import after_death_label, payee_of
+
+    d = date(2026, 9, 5)
+    assert payee_of("NACH DR BAJAJ FINANCE LTD CAR LOAN 4XX1187") == "Bajaj Finance Ltd Car Loan"
+    assert payee_of("TO TRANSFER-UPI/DR/628431/RAJESH KUMAR/HDFC/rajesh@okhdfc/Payment") == "Rajesh Kumar"
+    assert payee_of("NEFT DR LIC OF INDIA PREMIUM 123456789") == "LIC of India Premium"
+    assert payee_of("ﾌﾘｺﾐ ﾔﾏﾀﾞ ﾀﾛｳ") == "ヤマダ タロウ" and payee_of("UPI/123/456") is None
+    assert after_death_label("UPI/PRIYA DESHPANDE/BENGALURU", d) == "Paid to Priya Deshpande on 5 September"
+    assert after_death_label("ATM WDL KOTHRUD 0417", d) == "Cash taken on 5 September"
+    assert after_death_label("123456", d) == "Debit on 5 September"
+
+    async def go() -> str:
+        store = deps.cases
+        await store.put_case(m.CaseFile(id="c1", title="t"))
+        tx = m.Transaction(id=stable_id("tx", "pp1", "7"), case_id="c1", paper_id="pp1", date=d,
+                           narration="NACH DR BAJAJ FINANCE LTD CAR LOAN 4XX1187", amount=Decimal("14230"),
+                           direction="debit", currency="INR", after_death=True)
+        await store.put("c1", "transactions", tx)
+        await store.put("c1", "values", m.ReadValue(
+            id=stable_id("rv", "pp1", "row7", "after_death"), case_id="c1", paper_id="pp1", field="row_7_debit",
+            label=after_death_label(tx.narration, d), kind="amount", value="14230.00"))
+        group = PaymentGroup(id="g1", case_id="c1", key="k", label=tx.narration, direction="debit", count=1,
+                             cadence="once", amount_typical=Decimal("14230"), amount_stable=True, first=d, last=d,
+                             transaction_ids=[tx.id], counterparty="Bajaj Finance")
+        await name_later_payments(deps, "c1", [group])
+        return (await store.list("c1", "values"))[0].label
+
+    assert asyncio.run(go()) == "Paid to Bajaj Finance on 5 September"
+
+
+async def test_today_shows_only_what_code_offered_and_keeps_its_facts(tmp_path: Path,
+                                                                      monkeypatch: pytest.MonkeyPatch) -> None:
+    """The supervisor chooses and words Today's tasks; what they rest on is worked out by code. A task none of the
+    candidates offered is not shown, a figure the candidate does not have sends the candidate's own words, the date,
+    the claim and the sources stay the candidate's, and a greeting with a figure Today does not have is left out
+    for the page's own plain hello."""
+    from afterledger.agents.schemas import SupervisorOut, TaskOut
+    from afterledger.domain import case as m
+    from afterledger.domain.ids import stable_id
+    from afterledger.modules import followup
+    from afterledger.runtime import build_deps
+
+    deps = build_deps(offline_settings(tmp_path))
+    await deps.cases.put_case(m.CaseFile(id="c1", title="Anil Deshpande", died_on=date(2026, 8, 28)))
+    offered: list[dict] = []
+    real = followup.call_agent
+
+    async def supervisor(deps_: Any, agent: str, payload: dict, **kw: Any) -> Any:
+        if agent != "supervisor":
+            return await real(deps_, agent, payload, **kw)
+        offered.extend(payload["candidates"])
+        first = payload["candidates"][0]
+        return SupervisorOut(greeting="Meera, ₹5,00,000 is waiting for you.", tasks=[
+            TaskOut(key="sell_the_house", kind="decide", title="Sell the house", body="It is worth ₹90,00,000."),
+            TaskOut(key=first["key"], kind="handoff", title="Claim ₹7,77,777 today", body="Before 3 March.",
+                    due_on="2026-03-03", claim_id="claim_invented", cites=["made_up"], owner_person_ids=["p_nobody"])])
+
+    monkeypatch.setattr(followup, "call_agent", supervisor)
+    tasks = await followup.plan_today(deps, "c1")
+    first = offered[0]
+    assert [t.id for t in tasks] == [stable_id("task", "c1", first["key"])]
+    t = tasks[0]
+    assert (t.title, t.body) == (first["title"], first.get("body", ""))
+    assert t.kind == first["kind"] and t.claim_id == first.get("claim_id") and t.cites == first.get("cites", [])
+    assert (t.due_on.isoformat() if t.due_on else None) == first.get("due_on")
+    assert "p_nobody" not in t.owner_person_ids
+    case = await deps.cases.get_case("c1")
+    assert case.today_note == ""
+
+
+async def test_a_settled_debt_is_paid_off_everywhere(tmp_path: Path) -> None:
+    """Live-like, a car loan settled on the tracker still showed as owed on Today and the money map, its next
+    instalment stayed among the deadlines, and the activity said the lender had paid the family."""
+    from afterledger.app.views import money as money_view
+    from afterledger.domain import case as m
+    from afterledger.modules import followup
+    from afterledger.runtime import build_deps
+
+    deps = build_deps(offline_settings(tmp_path))
+    await deps.cases.put_case(m.CaseFile(id="c1", title="Anil Deshpande", died_on=date(2026, 8, 28)))
+    await deps.cases.put("c1", "holdings", m.Holding(id="h1", case_id="c1", institution_id="in_bajaj_finance",
+                                                     kind="loan", direction="debt", label="Loan",
+                                                     value=Decimal("120000"), claim_id="k1"))
+    await deps.cases.put("c1", "claims", m.Claim(id="k1", case_id="c1", institution_id="in_bajaj_finance", kind="debt",
+                                                 holding_ids=["h1"], title="Bajaj Finance: loan", status="submitted"))
+    await deps.cases.put("c1", "groups", PaymentGroup(
+        id="g1", case_id="c1", key="k", label="NACH DR BAJAJ FINANCE LTD CAR LOAN", direction="debit", count=6,
+        cadence="monthly", amount_typical=Decimal("14230"), amount_stable=True, first=date(2026, 3, 5),
+        last=date(2026, 9, 5)))
+    await deps.cases.put("c1", "leads", m.Lead(id="l1", case_id="c1", kind="debt", category="loan",
+                                               title="A loan with monthly instalments at Bajaj Finance", sentence="",
+                                               group_ids=["g1"], status="confirmed", holding_id="h1",
+                                               institution_id="in_bajaj_finance"))
+    await deps.cases.put("c1", "correspondence", m.Correspondence(
+        id="corr1", case_id="c1", claim_id="k1", direction="out", on=date(2026, 10, 12), title="Request to Bajaj Finance",
+        letter_text="Please tell me in writing what you still need.", status="sent", expected_on=date(2026, 11, 12),
+        expected_title="Reply from Bajaj Finance"))
+    before = await followup.deadlines(deps, "c1", refresh=False)
+    assert [d["title"] for d in before if d["kind"] == "debt"] == ["Next instalment of ₹14,230"]
+    assert [d["title"] for d in before if d["kind"] == "expected"] == ["Reply from Bajaj Finance"]
+    assert (await followup.totals(deps, "c1"))["currencies"]["INR"]["owed"] == "120000"
+
+    await followup.record_claim_event(deps, "c1", "k1", "settled", date(2026, 10, 19), amount="120000", rework=False)
+    assert not [d for d in await followup.deadlines(deps, "c1", refresh=False) if d["kind"] in ("debt", "expected")]
+    from afterledger.app.views import tracker as tracker_view
+    track = await tracker_view.tracker(deps, "c1")
+    assert not track.letters and not track.expected and [lv.letter.id for lv in track.received] == ["corr1"]
+    assert (await followup.totals(deps, "c1"))["currencies"]["INR"]["owed"] == "0"
+    view = await money_view.money_map(deps, "c1")
+    loan = view.countries[0].institutions[0].holdings[0]
+    assert loan.tag == "paid" and not view.countries[0].owed
+    said = [a.text for a in await deps.cases.list("c1", "activity")]
+    assert any(t.startswith("The debt to") and t.endswith("was settled: ₹1,20,000 paid.") for t in said), said
+
+
+async def test_what_an_institution_said_waits_for_the_family_and_ends_when_recorded(tmp_path: Path) -> None:
+    """A reply or a desk entry proposes an event; nothing changes until the family says yes. A later word on the same
+    event replaces the earlier one, and a payment the family records themselves settles every proposal still waiting
+    on the claim."""
+    from afterledger.domain import case as m
+    from afterledger.modules import followup
+    from afterledger.modules.common import snapshot
+    from afterledger.runtime import build_deps
+
+    deps = build_deps(offline_settings(tmp_path))
+    await deps.cases.put_case(m.CaseFile(id="c1", title="Anil Deshpande", died_on=date(2026, 8, 28)))
+    claim = m.Claim(id="k1", case_id="c1", institution_id="in_test_bank", title="Test Bank: savings account",
+                    status="submitted")
+    await deps.cases.put("c1", "claims", claim)
+    paid = await followup.propose_claim_event(deps, "c1", claim, "settled", date(2026, 10, 19), amount="5000.00",
+                                              source="desk", correspondence_id="corr1")
+    every = await followup.propose_claim_event(deps, "c1", claim, "complete_set_confirmed", date(2026, 10, 10),
+                                               source="reply", correspondence_id="corr2")
+    assert paid.title.startswith("Did ") and "₹5,000 on 19 October 2026" in paid.question
+    assert paid.payload["amount_text"] == "₹5,000" and every.payload["amount_text"] is None
+    assert (await deps.cases.get("c1", "claims", "k1")).status == "submitted"
+    # the desk corrects its amount: the family is asked once, about the new one
+    fixed = await followup.propose_claim_event(deps, "c1", claim, "settled", date(2026, 10, 19), amount="5500.50",
+                                               source="desk", correspondence_id="corr3")
+    snap = await snapshot(deps, "c1")
+    assert [(c.id, c.payload["amount_text"]) for c in followup.to_confirm(snap) if c.payload["event"] == "settled"] \
+        == [(fixed.id, "₹5,500.50")]
+    await followup.record_claim_event(deps, "c1", "k1", "settled", date(2026, 10, 19), amount="5500.50", rework=False)
+    statuses = {c.id: c.status for c in await deps.cases.list("c1", "checkpoints")}
+    assert statuses == {paid.id: "expired", every.id: "expired", fixed.id: "expired"}
+    assert not followup.to_confirm(await snapshot(deps, "c1"))
+    # a question still open about a claim that is finished records nothing, whatever the answer
+    stale = await followup.propose_claim_event(deps, "c1", claim, "complete_set_confirmed", date(2026, 10, 10),
+                                               source="reply", correspondence_id="corr4")
+    assert await followup.confirm_claim_event(deps, "c1", stale, "yes") is None
+    assert (await deps.cases.get("c1", "checkpoints", stale.id)).status == "expired"
+    assert (await deps.cases.get("c1", "claims", "k1")).complete_set_on is None

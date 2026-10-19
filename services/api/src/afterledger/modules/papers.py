@@ -7,6 +7,7 @@ offline.
 """
 from __future__ import annotations
 
+import asyncio
 import io
 import re
 from typing import Any
@@ -19,6 +20,7 @@ from ..domain.case import OcrLine, PageRef, Paper
 from ..domain.ids import new_id
 
 PDF_DPI = 110
+PAGES_AT_ONCE = 4                   # an upload's pages stored and read side by side
 SHOWN = {"JPEG", "PNG", "WEBP"}     # what every browser shows and every reader takes
 
 register_heif_opener()              # an iPhone's photos are HEIC
@@ -59,6 +61,9 @@ async def add_upload(deps: Any, case_id: str, files: list[tuple[str, bytes, str]
     lines: list[OcrLine] = []
     origin = "upload"
     first_ref = None
+    # each page drawn here, then stored and read (OCR) side by side, a few at a time (until 19 October 2026 one
+    # after another: three pages kept the family waiting 7.4 s)
+    todo: list[dict] = []
     for name, data, mime in files:
         safe = re.sub(r"[^\w.\-]+", "_", name).strip("._") or "upload"   # safe on every file system
         ref = await deps.blobs.put(f"cases/{case_id}/papers/{paper_id}/original/{safe}", data, mime)
@@ -67,24 +72,29 @@ async def add_upload(deps: Any, case_id: str, files: list[tuple[str, bytes, str]
             doc = pymupdf.open(stream=data, filetype="pdf")
             for page in doc:
                 pix = page.get_pixmap(dpi=PDF_DPI, alpha=False)
-                n = len(pages) + 1
-                img_ref = await deps.blobs.put(f"cases/{case_id}/papers/{paper_id}/p{n}.png", pix.tobytes("png"),
-                                               "image/png")
-                page_id = f"{paper_id}-p{n}"
-                pages.append(PageRef(id=page_id, number=n, image=img_ref, width=pix.width, height=pix.height))
-                found = await deps.ocr.read_page(case_id=case_id, paper_id=paper_id, page_id=page_id,
-                                                 image=pix.tobytes("png"), mime="image/png",
-                                                 pdf_page_text=_pdf_lines(page))
-                lines.extend(found)
+                n = len(todo) + 1
+                todo.append({"n": n, "image": pix.tobytes("png"), "mime": "image/png", "ext": ".png",
+                             "width": pix.width, "height": pix.height, "text": _pdf_lines(page)})
         else:
             origin = "photo"
             data, mime, img = viewable(data, mime)
-            n = len(pages) + 1
-            page_id = f"{paper_id}-p{n}"
-            img_ref = await deps.blobs.put(f"cases/{case_id}/papers/{paper_id}/p{n}{_ext(mime)}", data, mime)
-            pages.append(PageRef(id=page_id, number=n, image=img_ref, width=img.width, height=img.height))
-            lines.extend(await deps.ocr.read_page(case_id=case_id, paper_id=paper_id, page_id=page_id, image=data,
-                                                  mime=mime))
+            todo.append({"n": len(todo) + 1, "image": data, "mime": mime, "ext": _ext(mime), "width": img.width,
+                         "height": img.height, "text": None})
+    gate = asyncio.Semaphore(PAGES_AT_ONCE)
+
+    async def store_and_read(pg: dict) -> tuple[PageRef, list[OcrLine]]:
+        async with gate:
+            page_id = f"{paper_id}-p{pg['n']}"
+            img_ref = await deps.blobs.put(f"cases/{case_id}/papers/{paper_id}/p{pg['n']}{pg['ext']}", pg["image"],
+                                           pg["mime"])
+            extra = {"pdf_page_text": pg["text"]} if pg["text"] is not None else {}
+            found = await deps.ocr.read_page(case_id=case_id, paper_id=paper_id, page_id=page_id, image=pg["image"],
+                                             mime=pg["mime"], **extra)
+            return PageRef(id=page_id, number=pg["n"], image=img_ref, width=pg["width"], height=pg["height"]), found
+
+    for ref_, found in await asyncio.gather(*(store_and_read(pg) for pg in todo)):
+        pages.append(ref_)
+        lines.extend(found)
     paper = Paper(id=paper_id, case_id=case_id, title=title or files[0][0].rsplit(".", 1)[0],
                   file=first_ref, pages=pages, origin=origin, status="queued", stage="Waiting to be read",
                   uploaded_by=uploaded_by, uploaded_at=deps.now(), synthetic=False)

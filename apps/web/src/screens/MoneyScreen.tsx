@@ -13,7 +13,7 @@ import { cls, countryName, intl, localText, personName } from '@/lib/format';
 import { useMoney } from '@/lib/queries';
 
 /** "Indian rupees", "Singapore dollars": the currency's plural name in the reader's language. */
-export function currencyName(code: string, locale: string): string {
+function currencyName(code: string, locale: string): string {
   try {
     const parts = new Intl.NumberFormat(intl(locale), { style: 'currency', currency: code, currencyDisplay: 'name' }).formatToParts(2);
     return parts.find((p) => p.type === 'currency')?.value ?? code;
@@ -30,7 +30,7 @@ const TAG_LOOK: Record<HoldingView['tag'], string> = {
   closed: 'bg-sheet text-blank border-[1.5px] border-dotted border-blank',
 };
 
-export function TagPill({ tag, className }: { tag: HoldingView['tag']; className?: string }) {
+function TagPill({ tag, className }: { tag: HoldingView['tag']; className?: string }) {
   const t = useTranslations('money');
   return <span className={cls('inline-block rounded-full px-2 py-px text-[13px] font-bold', TAG_LOOK[tag], className)}>{t(tag)}</span>;
 }
@@ -97,12 +97,12 @@ function CountrySheet({ group, locale }: { group: CountryGroup; locale: string }
           <h2 id={id} className="m-0 font-serif text-[26px] font-semibold">
             {countryName(group.country, locale)}
           </h2>
-          <p className="m-0 text-[22px] font-bold tabular">{group.total_known.text}</p>
+          <p className="m-0 text-[22px] font-bold tabular">{group.total_known.short}</p>
         </div>
         <p className="m-0 mt-1 text-[15px] text-ink-soft">
           {currencyName(group.currency, locale)}. {who}
         </p>
-        {group.owed ? <p className="m-0 mt-0.5 text-[15px] font-bold text-debit">{t('owedTotal', { amount: group.owed.text })}</p> : null}
+        {group.owed ? <p className="m-0 mt-0.5 text-[15px] font-bold text-debit">{t('owedTotal', { amount: group.owed.short })}</p> : null}
       </div>
       {group.institutions.map((g, i) => (
         <div key={`${g.institution_id ?? g.name}-${i}`}>
@@ -159,6 +159,11 @@ export function MoneyScreen({ caseId }: { caseId: string }) {
   const view = q.data;
   const deceased = header?.deceased;
   const name = deceased ? personName(deceased, locale) : null;
+  // the key explains the marks this map shows (paid and closed only once something is)
+  const shown = new Set(view?.countries.flatMap((g) => g.institutions.flatMap((i) => i.holdings.map((h) => h.tag))) ?? []);
+  const keys = (['confirmed', 'lead', 'owed', 'paid', 'closed'] as const).filter(
+    (k) => shown.has(k) || k === 'confirmed' || k === 'lead' || k === 'owed',
+  );
   if (q.isError) return <ErrorNote error={q.error} retry={() => q.refetch()} />;
   return (
     <div className="flex flex-col gap-6">
@@ -168,7 +173,7 @@ export function MoneyScreen({ caseId }: { caseId: string }) {
           <p className="m-0 mt-2 max-w-[44em] text-ink-soft">{name ? t('lede', { name }) : t('ledeShort')}</p>
         </div>
         <div role="list" aria-label={t('key')} className="flex flex-wrap gap-2.5">
-          {(['confirmed', 'lead', 'owed'] as const).map((k) => (
+          {keys.map((k) => (
             <span role="listitem" key={k}>
               <TagPill tag={k} className="px-2.5 py-0.5 text-[14px]" />
             </span>

@@ -177,6 +177,8 @@ class CaseFile(BaseModel):
     today_note_for: str | None = None     # the person that greeting was written for
     replay_on: date | None = None         # while a demo story is being replayed, the day it has reached
     today_notes: dict[str, TodayNote] = {}  # each family member's own greeting, by person id
+    # what each viewer's Today was last planned from: unchanged, the model is not asked again (by person id)
+    today_basis: dict[str, str] = {}
     shared_with: list[dict[str, Any]] = []   # institution desk shares: {institution_id, until, claim_id}
     challenge_id: str | None = None       # set when the case was saved from a live challenge
     owner_id: str | None = None           # the account that started it, where sign-in is required
@@ -490,6 +492,7 @@ class CasePlan(BaseModel):
     verified_on: date | None = None       # when the plan's rules were last verified (None: researched just now)
     unverified: bool = False              # the plan starts by asking the institution in writing
     explained: list[dict[str, Any]] = []  # the plan in plain words: [{text, text_local, who, step_id, cites}]
+    explained_basis: str = ""             # what the explanation was written from: unchanged, it is not written again
     summary_local: str = ""
     lang_local: str = ""                  # the language of the *_local texts
 

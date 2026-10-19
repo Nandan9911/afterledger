@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import Any
 
+from ...modules import followup
 from ...modules.common import knowledge, snapshot
 from ..schemas import ClockRow, DeadlineView, Escalation, LetterView, TrackerView
 from .common import chip, cite_views, institution_name, money
@@ -98,10 +99,14 @@ async def tracker(deps: Any, case_id: str, lang: str = "en") -> TrackerView:
                           to_line=to_line, signer=chip(signer),
                           fidelity=ledger.get(f"claim:{corr.claim_id}:letter:{kind}") if corr.direction == "out" else None)
         cite_ids |= set(corr.cites)
-        (letters if corr.direction == "out" and corr.letter_text else received).append(view)
+        # a letter is to act on until its claim is settled or closed; after that it is part of the history
+        done = claim is not None and claim.status in ("settled", "closed")
+        (letters if corr.direction == "out" and corr.letter_text and not done else received).append(view)
+    # a reply is no longer awaited once its claim is settled or closed
+    finished = {c.id for c in snap.claims if c.status in ("settled", "closed")}
     expected = [DeadlineView(date=c.expected_on, title=c.expected_title or c.title, note=c.expected_note or "",
                              kind="expected", claim_id=c.claim_id)
-                for c in snap.correspondence if c.expected_on and c.expected_on >= day]
+                for c in snap.correspondence if c.expected_on and c.expected_on >= day and c.claim_id not in finished]
     escalation: dict[str, list[Escalation]] = {}
     for r in rows:
         if r.late:
@@ -113,9 +118,10 @@ async def tracker(deps: Any, case_id: str, lang: str = "en") -> TrackerView:
     for r in rows:
         for c in r.clocks:
             cite_ids |= set(c.cites)
+    confirm = [cp.model_copy() for cp in followup.to_confirm(snap)]
     view = TrackerView(today=day, start=min(starts), end=max(ends), rows=rows, letters=letters, received=received,
                        expected=sorted(expected, key=lambda d: d.date), escalation=escalation,
-                       cites=await cite_views(deps, cite_ids, day))
+                       cites=await cite_views(deps, cite_ids, day), confirm=confirm)
     # the words the server wrote, in the page's language; a letter's own text stays as it was written (its
     # family copy is the mirror beside it)
     await localize(deps, lang, [(r, f) for r in view.rows for f in ("status_text", "title")]

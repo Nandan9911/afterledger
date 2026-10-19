@@ -68,31 +68,44 @@ class LocalCaseStore:
         self.root = root / "cases"
         self.root.mkdir(parents=True, exist_ok=True)
         self._cache: dict[tuple[str, str], dict[str, dict]] = {}
+        self._cases: dict[str, dict] = {}          # each case file as stored, read once
         self._locks: dict[tuple[str, str], asyncio.Lock] = defaultdict(asyncio.Lock)
 
     def _dir(self, case_id: str) -> Path:
         return self.root / case_id
 
     async def put_case(self, case: CaseFile) -> None:
+        data = case.model_dump(mode="json")
         async with self._locks[(case.id, "__case__")]:
-            _atomic_write(self._dir(case.id) / "case.json", case.model_dump_json(indent=1))
+            _atomic_write(self._dir(case.id) / "case.json", json.dumps(data, ensure_ascii=False, indent=1))
+            self._cases[case.id] = data
+
+    async def raw_case(self, case_id: str) -> dict | None:
+        """The case file as stored (the store's own copy: never changed in place)."""
+        data = self._cases.get(case_id)
+        if data is None:
+            path = self._dir(case_id) / "case.json"
+            if not path.exists():
+                return None
+            data = self._cases[case_id] = json.loads(path.read_text(encoding="utf-8"))
+        return data
 
     async def get_case(self, case_id: str) -> CaseFile | None:
-        path = self._dir(case_id) / "case.json"
-        if not path.exists():
-            return None
-        return CaseFile.model_validate_json(path.read_text(encoding="utf-8"))
+        data = await self.raw_case(case_id)
+        return CaseFile.model_validate(data) if data is not None else None
 
     async def list_cases(self) -> list[CaseFile]:
         out = []
         for d in sorted(self.root.iterdir()) if self.root.exists() else []:
-            p = d / "case.json"
-            if p.exists():
-                out.append(CaseFile.model_validate_json(p.read_text(encoding="utf-8")))
+            if (d / "case.json").exists():
+                data = await self.raw_case(d.name)
+                if data is not None:
+                    out.append(CaseFile.model_validate(data))
         return out
 
     async def delete_case(self, case_id: str) -> None:
         shutil.rmtree(self._dir(case_id), ignore_errors=True)
+        self._cases.pop(case_id, None)
         for key in [k for k in self._cache if k[0] == case_id]:
             self._cache.pop(key, None)
 
@@ -121,6 +134,10 @@ class LocalCaseStore:
             for r in records:
                 data[r.id] = r.model_dump(mode="json")
             self._flush(case_id, collection)
+
+    async def raw_records(self, case_id: str, collection: str) -> dict[str, dict]:
+        """A collection as stored, by id (the store's own copies: never changed in place)."""
+        return self._load(case_id, collection)
 
     async def get(self, case_id: str, collection: str, record_id: str) -> Any | None:
         raw = self._load(case_id, collection).get(record_id)

@@ -10,12 +10,8 @@ from typing import Any
 from ...domain.calendars import format_date
 from ...modules.common import knowledge, snapshot
 from ..schemas import Compensation, PlanRow, PlansView, PlanView
-from .common import chip, cite_views, institution_name, money, tidy_text
+from .common import approver, cite_views, institution_name, money, tidy_text
 from .localize import localize
-
-STATUS = {"planning": "Being planned", "ready": "Papers ready to sign", "submitted": "Handed in",
-          "acknowledged": "Every paper received", "settled": "Paid", "returned": "Returned by the institution",
-          "escalated": "Escalated", "handed_off": "With a professional", "closed": "Nothing to claim"}
 
 
 async def compensation_views(deps: Any, claim: Any, plan_key: str | None, today: date) -> list[Compensation]:
@@ -78,8 +74,7 @@ async def plans(deps: Any, case_id: str) -> PlansView:
         q = sum(1 for c in snap.checkpoints if c.status == "open" and c.code == "C5" and c.kind == "plan_question"
                 and (c.payload or {}).get("claim_id") == claim.id)
         rows.append(PlanRow(claim=claim, plan=cp, institution=institution_name(inst, claim.institution_id),
-                            amount=money(claim.amount_due, claim.currency), status_label=STATUS.get(claim.status, claim.status),
-                            late=late, questions=q))
+                            amount=money(claim.amount_due, claim.currency), late=late, questions=q))
     return PlansView(rows=rows)
 
 
@@ -127,7 +122,7 @@ async def plan(deps: Any, case_id: str, plan_id: str, lang: str = "en") -> PlanV
     cp = cp.model_copy(update={"documents": _document_states(cp.documents, claim, pack),
                                "summary": await tidy_text(deps, cp.summary), "explained": explained}, deep=True)
     view = PlanView(plan=cp, claim=claim, institution=inst, amount=money(claim.amount_due, claim.currency),
-                    questions=questions, approval=approval, approved_by=chip(snap.person(cp.approved_by)),
+                    questions=questions, approval=approval, approved_by=approver(snap, cp.approved_by),
                     compensation=await compensation_views(deps, claim, cp.plan_key, today),
                     cites=await cite_views(deps, ids, today), pack_id=pack.id if pack else None,
                     needed_by=needed_by, procedures=procedures,

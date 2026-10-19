@@ -60,7 +60,6 @@ class Doc:
     counter: int = 0
     watermark: bool = True
     footer: str | None = None
-    header_repeat: list[dict] | None = None
 
     def __post_init__(self) -> None:
         self.pdf = pymupdf.open()
@@ -197,7 +196,7 @@ class Doc:
 
     def table(self, columns: list[dict], rows: list[dict], *, size: float | None = None, row_h: float | None = None,
               header_fill: str = "#E8EEF3", zebra: str | None = "#F7F9FB", gap: float = 8,
-              lang: str | None = None, before_rows: list[dict] | None = None,
+              lang: str | None = None,
               repeat_header: bool = True, grid: bool = True,
               page_header: Any = None) -> list[dict[str, Line]]:
         """columns: [{key, label, width (fraction), align}]; rows: [{key: text, '_field': {...}}].

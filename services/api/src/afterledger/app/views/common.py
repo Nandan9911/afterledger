@@ -16,10 +16,12 @@ LEVEL_LABEL = {"gold": "Gold", "outcome_confirmed": "Confirmed by an outcome", "
 
 
 def money(amount: Any, currency: str | None) -> Money | None:
+    """An amount for a screen: text exact, written without paise or cents when it has none ("₹8,00,000", not
+    "₹8,00,000.00"; "₹41,870.50" keeps them), and short rounded to whole units, for totals and estimates."""
     if amount is None or amount == "" or not currency:
         return None
     value = Decimal(str(amount))
-    return Money(amount=str(value), currency=currency, text=format_amount(value, currency),
+    return Money(amount=str(value), currency=currency, text=format_amount(value, currency, decimals=value % 1 != 0),
                  short=format_amount(value, currency, decimals=False))
 
 
@@ -78,6 +80,13 @@ def chip(p: Person | None) -> PersonChip | None:
     return PersonChip(id=p.id, name=p.display_name, name_en=p.name_en, initials=p.initials or p.display_name[:1],
                       color=p.color, relationship=p.relationship, languages=p.languages, city=p.city, country=p.country,
                       roles=list(p.roles))
+
+
+def approver(snap: Snapshot, who: str | None) -> PersonChip | None:
+    """Who approved: the person, or "family" when the screen did not say which (the web says "the family")."""
+    if not who:
+        return None
+    return chip(snap.person(who)) or PersonChip(id="family", name="", initials="")
 
 
 def chips(snap: Snapshot, ids: list[str]) -> list[PersonChip]:
@@ -167,5 +176,3 @@ def institution_name(inst: Any, fallback: str = "") -> str:
     return inst.short_name or inst.name
 
 
-def plural(n: int, noun: str, many: str | None = None) -> str:
-    return f"{n} {noun if n == 1 else (many or noun + 's')}"

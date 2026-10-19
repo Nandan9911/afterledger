@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from ..adapters.llm.models import OracleRequest, ToolCalls
+from ..domain.countries import country_name
 from . import Ctx, oracle
 
 _SUCCESSION_RULES = {
@@ -84,7 +85,8 @@ def jurisdiction_planner(ctx: Ctx, req: OracleRequest) -> dict:
         countries.add(c)
         legs.append({"holding_id": h["id"], "label": h["label"], "succession_law": c, "procedure_jurisdiction": c,
                      "papers_from": [c], "certification": [], "cites": [], "contested": False, "note": ""})
-    summary = (f"{', '.join(sorted(countries))}, for every holding so far." if countries else
+    names = sorted(country_name(c) if len(c) == 2 else c for c in countries)
+    summary = (f"{', '.join(names)}, for every holding so far." if countries else
                "No holdings yet; whose rules apply is worked out as they are found.")
     return {"legs": legs, "succession_law": next(iter(countries)) if len(countries) == 1 else None,
             "contested": False, "summary": summary, "cites": []}

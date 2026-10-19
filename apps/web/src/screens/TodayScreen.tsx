@@ -134,7 +134,7 @@ function Unsure({ today }: { today: TodayView }) {
 }
 
 /** The phone view of Today: the big ask button, the viewer's own tasks, others' work, and what has come in. */
-function PhoneToday({ today, locale }: { today: TodayView; locale: string }) {
+function PhoneToday({ today, locale, greeting }: { today: TodayView; locale: string; greeting: string }) {
   const t = useTranslations('today');
   const { caseId, header } = useCase();
   const speech = useSpeech();
@@ -148,6 +148,7 @@ function PhoneToday({ today, locale }: { today: TodayView; locale: string }) {
       <div>
         <p className="m-0 text-[15px] text-ink-faint">{header?.case.title}</p>
         <h1 className="m-0 font-serif text-[28px] font-semibold leading-snug">{weekdayDate(today.date, locale)}</h1>
+        <p className="m-0 mt-1 text-[17px] text-ink-soft">{greeting}</p>
       </div>
       <Link
         href={`/cases/${caseId}/ask`}
@@ -258,10 +259,11 @@ export function TodayScreen({ caseId }: { caseId: string }) {
       </div>
     );
   }
-  const greeting = localText(today.greeting, today.greeting_local, today.greeting_lang, locale) || t('greetingFallback');
+  // someone else's greeting is not shown while this person's own is written (it arrives by itself)
+  const greeting = (!stale && localText(today.greeting, today.greeting_local, today.greeting_lang, locale)) || t('greetingFallback');
   return (
     <>
-      <PhoneToday today={today} locale={locale} />
+      <PhoneToday today={today} locale={locale} greeting={greeting} />
       <div className="hidden flex-col gap-7 lg:flex">
         <header>
           <h1 className={h1Class}>{weekdayDate(today.date, locale)}</h1>

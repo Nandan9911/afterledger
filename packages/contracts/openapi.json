@@ -75,29 +75,6 @@
     }
    }
   },
-  "/v1/demo/status": {
-   "get": {
-    "tags": [
-     "meta"
-    ],
-    "summary": "Demo Status",
-    "operationId": "demo_status_v1_demo_status_get",
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "additionalProperties": true,
-         "type": "object",
-         "title": "Response Demo Status V1 Demo Status Get"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
   "/v1/demo/{key}/reset": {
    "post": {
     "tags": [
@@ -1670,180 +1647,6 @@
     }
    }
   },
-  "/v1/cases/{case_id}/plans/{plan_id}/answers": {
-   "post": {
-    "tags": [
-     "cases"
-    ],
-    "summary": "Answer Plan",
-    "operationId": "answer_plan_v1_cases__case_id__plans__plan_id__answers_post",
-    "parameters": [
-     {
-      "name": "case_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Case Id"
-      }
-     },
-     {
-      "name": "plan_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Plan Id"
-      }
-     }
-    ],
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/PlanAnswerIn"
-       }
-      }
-     }
-    },
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/CasePlan"
-        }
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/v1/cases/{case_id}/plans/{plan_id}/approve": {
-   "post": {
-    "tags": [
-     "cases"
-    ],
-    "summary": "Approve Plan",
-    "operationId": "approve_plan_v1_cases__case_id__plans__plan_id__approve_post",
-    "parameters": [
-     {
-      "name": "case_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Case Id"
-      }
-     },
-     {
-      "name": "plan_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Plan Id"
-      }
-     }
-    ],
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/ByIn"
-       }
-      }
-     }
-    },
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/CasePlan"
-        }
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/v1/cases/{case_id}/procedures": {
-   "post": {
-    "tags": [
-     "cases"
-    ],
-    "summary": "Start Procedure",
-    "operationId": "start_procedure_v1_cases__case_id__procedures_post",
-    "parameters": [
-     {
-      "name": "case_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Case Id"
-      }
-     }
-    ],
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/ProcedureIn"
-       }
-      }
-     }
-    },
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/Claim"
-        }
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
   "/v1/cases/{case_id}/packs": {
    "get": {
     "tags": [
@@ -1920,126 +1723,6 @@
        "application/json": {
         "schema": {
          "$ref": "#/components/schemas/PackView"
-        }
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/v1/cases/{case_id}/claims/{claim_id}/pack": {
-   "post": {
-    "tags": [
-     "cases"
-    ],
-    "summary": "Prepare Pack",
-    "operationId": "prepare_pack_v1_cases__case_id__claims__claim_id__pack_post",
-    "parameters": [
-     {
-      "name": "case_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Case Id"
-      }
-     },
-     {
-      "name": "claim_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Claim Id"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "anyOf": [
-          {
-           "$ref": "#/components/schemas/Pack"
-          },
-          {
-           "type": "null"
-          }
-         ],
-         "title": "Response Prepare Pack V1 Cases  Case Id  Claims  Claim Id  Pack Post"
-        }
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/v1/cases/{case_id}/packs/{pack_id}/approve": {
-   "post": {
-    "tags": [
-     "cases"
-    ],
-    "summary": "Approve Pack",
-    "operationId": "approve_pack_v1_cases__case_id__packs__pack_id__approve_post",
-    "parameters": [
-     {
-      "name": "case_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Case Id"
-      }
-     },
-     {
-      "name": "pack_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Pack Id"
-      }
-     }
-    ],
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/ByIn"
-       }
-      }
-     }
-    },
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/Pack"
         }
        }
       }
@@ -3115,48 +2798,6 @@
     }
    }
   },
-  "/v1/knowledge/institutions/{institution_id}": {
-   "get": {
-    "tags": [
-     "knowledge"
-    ],
-    "summary": "Institution",
-    "operationId": "institution_v1_knowledge_institutions__institution_id__get",
-    "parameters": [
-     {
-      "name": "institution_id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "title": "Institution Id"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/Institution"
-        }
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
   "/v1/challenges/presets": {
    "get": {
     "tags": [
@@ -3272,6 +2913,49 @@
        "application/json": {
         "schema": {
          "$ref": "#/components/schemas/ChallengeView"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "challenge"
+    ],
+    "summary": "Delete",
+    "description": "Removes a question from its asker's list (the admin may remove anyone's): the question, its steps and its\nletter. The rules its research found stay, with their sources, for every family. Research a case's claim\nneeded stays with the claim. A public site without accounts lists nobody's questions, and removes none.",
+    "operationId": "delete_v1_challenges__run_id__delete",
+    "parameters": [
+     {
+      "name": "run_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Run Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Delete V1 Challenges  Run Id  Delete"
         }
        }
       }
@@ -3445,7 +3129,7 @@
      "desk"
     ],
     "summary": "Settle",
-    "description": "The institution records that it has paid. The family sees it at once.",
+    "description": "The institution records that it has paid. The family is asked to confirm the money arrived, and the claim is\nsettled once they do.",
     "operationId": "settle_v1_desk__token__settle_post",
     "parameters": [
      {
@@ -4393,6 +4077,14 @@
       "title": "Today Notes",
       "default": {}
      },
+     "today_basis": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "type": "object",
+      "title": "Today Basis",
+      "default": {}
+     },
      "shared_with": {
       "items": {
        "additionalProperties": true,
@@ -4453,6 +4145,7 @@
      "today_note_for",
      "replay_on",
      "today_notes",
+     "today_basis",
      "shared_with",
      "challenge_id",
      "owner_id"
@@ -4519,7 +4212,9 @@
         "type": "string",
         "enum": [
          "reading",
-         "finding"
+         "finding",
+         "planning",
+         "preparing"
         ]
        },
        {
@@ -4750,6 +4445,11 @@
       "title": "Explained",
       "default": []
      },
+     "explained_basis": {
+      "type": "string",
+      "title": "Explained Basis",
+      "default": ""
+     },
      "summary_local": {
       "type": "string",
       "title": "Summary Local",
@@ -4787,6 +4487,7 @@
      "verified_on",
      "unverified",
      "explained",
+     "explained_basis",
      "summary_local",
      "lang_local"
     ],
@@ -5229,6 +4930,11 @@
        }
       ],
       "title": "Stored Key"
+     },
+     "shared": {
+      "type": "boolean",
+      "title": "Shared",
+      "default": false
      }
     },
     "type": "object",
@@ -5239,7 +4945,8 @@
      "lang",
      "status",
      "started_at",
-     "stored_key"
+     "stored_key",
+     "shared"
     ],
     "title": "ChallengeRow"
    },
@@ -7450,6 +7157,28 @@
       "type": "object",
       "title": "Cites",
       "default": {}
+     },
+     "awaiting_family": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Money"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "awaiting_on": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Awaiting On"
      }
     },
     "type": "object",
@@ -7470,7 +7199,9 @@
      "compensation",
      "notes",
      "checked_against",
-     "cites"
+     "cites",
+     "awaiting_family",
+     "awaiting_on"
     ],
     "title": "DeskView"
    },
@@ -9701,6 +9432,11 @@
       "title": "Tracker Late",
       "default": 0
      },
+     "tracker_confirm": {
+      "type": "integer",
+      "title": "Tracker Confirm",
+      "default": 0
+     },
      "sources": {
       "type": "integer",
       "title": "Sources",
@@ -9726,6 +9462,7 @@
      "packs",
      "packs_ready",
      "tracker_late",
+     "tracker_confirm",
      "sources",
      "activity"
     ]
@@ -11294,35 +11031,6 @@
     "type": "object",
     "title": "PersonPatch"
    },
-   "PlanAnswerIn": {
-    "properties": {
-     "variable": {
-      "type": "string",
-      "title": "Variable"
-     },
-     "value": {
-      "type": "string",
-      "title": "Value"
-     },
-     "by": {
-      "anyOf": [
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "By"
-     }
-    },
-    "type": "object",
-    "required": [
-     "variable",
-     "value"
-    ],
-    "title": "PlanAnswerIn"
-   },
    "PlanRow": {
     "properties": {
      "claim": {
@@ -11353,11 +11061,6 @@
        }
       ]
      },
-     "status_label": {
-      "type": "string",
-      "title": "Status Label",
-      "default": ""
-     },
      "late": {
       "type": "boolean",
       "title": "Late",
@@ -11375,7 +11078,6 @@
      "plan",
      "institution",
      "amount",
-     "status_label",
      "late",
      "questions"
     ],
@@ -11522,30 +11224,6 @@
      "rows"
     ],
     "title": "PlansView"
-   },
-   "ProcedureIn": {
-    "properties": {
-     "plan_key": {
-      "type": "string",
-      "title": "Plan Key"
-     },
-     "by": {
-      "anyOf": [
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "By"
-     }
-    },
-    "type": "object",
-    "required": [
-     "plan_key"
-    ],
-    "title": "ProcedureIn"
    },
    "ReadValue": {
     "properties": {
@@ -13067,6 +12745,14 @@
       "type": "object",
       "title": "Cites",
       "default": {}
+     },
+     "confirm": {
+      "items": {
+       "$ref": "#/components/schemas/Checkpoint"
+      },
+      "type": "array",
+      "title": "Confirm",
+      "default": []
      }
     },
     "type": "object",
@@ -13079,7 +12765,8 @@
      "received",
      "expected",
      "escalation",
-     "cites"
+     "cites",
+     "confirm"
     ],
     "title": "TrackerView"
    },

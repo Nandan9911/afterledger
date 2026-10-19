@@ -13,6 +13,7 @@ import { useCase } from '@/components/CaseShell';
 import { useListening } from '@/components/Voice';
 import { Button, ButtonLink, ErrorNote, h1Class, Logo, Skeleton, Spinner } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
+import { perform } from '@/lib/changes';
 import { cls, dayMonth, languageName, personName } from '@/lib/format';
 import { useAnswer, useConversation, useTurn } from '@/lib/queries';
 
@@ -147,9 +148,10 @@ function Summary({ conv }: { conv: ConversationView }) {
           onSubmit={(e) => {
             e.preventDefault();
             if (!note.trim()) return;
-            answer.mutate(
+            perform(
+              answer,
               { checkpointId: cp.id, answer: 'change', note: note.trim(), by: viewerId },
-              { onSuccess: () => (setChanging(false), setNote(''), toast.success(t('changeSent'))) },
+              { done: () => (setChanging(false), setNote(''), t('changeSent')) },
             );
           }}
         >
@@ -177,9 +179,7 @@ function Summary({ conv }: { conv: ConversationView }) {
           <Button
             size="lg"
             disabled={answer.isPending || readOnly}
-            onClick={() =>
-              answer.mutate({ checkpointId: cp.id, answer: 'yes', by: viewerId }, { onSuccess: () => toast.success(t('confirmed')) })
-            }
+            onClick={() => perform(answer, { checkpointId: cp.id, answer: 'yes', by: viewerId }, { done: () => t('confirmed') })}
           >
             {t('yesRight')}
           </Button>
@@ -259,7 +259,6 @@ function Composer({
 
 export function StoryScreen({ caseId }: { caseId: string }) {
   const t = useTranslations('story');
-  const tc = useTranslations('common');
   const locale = useLocale();
   const { header, viewerId, readOnly } = useCase();
   const q = useConversation(caseId);
@@ -268,6 +267,8 @@ export function StoryScreen({ caseId }: { caseId: string }) {
   const [pendingText, setPendingText] = useState<string | null>(null);
   const conv = q.data;
   const bare = header?.case.stage === 'intake';
+  // the family is still telling the story (or correcting its summary): they can say more, and correct by saying so
+  const telling = !readOnly && (!conv?.summary || conv.summary.status === 'open' || conv.summary.answer === 'change');
 
   if (q.isError) return <ErrorNote error={q.error} retry={() => q.refetch()} />;
 
@@ -279,12 +280,12 @@ export function StoryScreen({ caseId }: { caseId: string }) {
 
   function send(text: string, channel: 'voice' | 'text', seconds?: number) {
     setPendingText(text);
-    turn.mutate(
+    perform(
+      turn,
       { text, person_id: viewerId, lang: spoken || locale, channel, seconds },
       {
-        onSettled: () => setPendingText(null),
-        onSuccess: () => setTimeout(() => end.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 80),
-        onError: (e) => toast.error(tc('error', { message: e.message })),
+        done: () => void setTimeout(() => end.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 80),
+        after: () => setPendingText(null),
       },
     );
   }
@@ -320,9 +321,7 @@ export function StoryScreen({ caseId }: { caseId: string }) {
         </div>
       )}
       <div ref={end} />
-      {readOnly ? null : !conv?.summary || conv.summary.status === 'open' || conv.summary.answer === 'change' ? (
-        <Composer onSend={send} pending={turn.isPending} lang={spoken || locale} />
-      ) : null}
+      {telling ? <Composer onSend={send} pending={turn.isPending} lang={spoken || locale} /> : null}
     </div>
   );
 
@@ -330,7 +329,7 @@ export function StoryScreen({ caseId }: { caseId: string }) {
     <div className="flex flex-col gap-[22px]">
       <div>
         <h2 className="m-0 font-serif text-[26px] font-semibold">{t('known')}</h2>
-        <p className="m-0 mt-1.5 text-[15px] text-ink-faint">{t('knownLede')}</p>
+        <p className="m-0 mt-1.5 text-[15px] text-ink-faint">{telling ? t('knownLede') : t('knownLedeDone')}</p>
       </div>
       {conv ? <Known conv={conv} /> : <Skeleton className="h-60" />}
       {conv?.urgent.length ? (

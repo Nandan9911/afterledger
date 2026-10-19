@@ -17,13 +17,6 @@ Level = Literal["draft", "sourced", "dual_verified", "adjudicated", "outcome_con
 LEVEL_ORDER: dict[str, int] = {
     "draft": 0, "sourced": 1, "dual_verified": 2, "adjudicated": 3, "outcome_confirmed": 4, "gold": 5,
 }
-TIER_NAMES = {
-    1: "Law, regulator or government",
-    2: "The institution's own page or form",
-    3: "Court, ombudsman or public body",
-    4: "Professional body or established firm",
-    5: "News or forum (never evidence)",
-}
 
 
 class Source(BaseModel):
@@ -53,11 +46,6 @@ class Assertion(BaseModel):
     researchers: list[str] = []          # which researcher paths reached it
     contested_with: list[str] = []       # ids of assertions that disagree
     notes: str = ""
-
-
-class AssertionSet(BaseModel):
-    question_ids: list[str] = []
-    assertions: list[Assertion] = []
 
 
 class Cond(BaseModel):

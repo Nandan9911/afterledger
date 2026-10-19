@@ -8,7 +8,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-export type Account = { id: string; name: string; email: string; role: 'user' | 'admin' };
+type Account = { id: string; name: string; email: string; role: 'user' | 'admin' };
 
 type AuthState = {
   token: string | null;

@@ -83,9 +83,11 @@ def _said(u: Utterance) -> dict:
 
 
 async def family_turn(deps: Any, case_id: str, text: str, *, person_id: str | None = None, lang: str | None = None,
-                      channel: str = "text", seconds: int | None = None, translation: str | None = None) -> dict:
+                      channel: str = "text", seconds: int | None = None, translation: str | None = None,
+                      replan: bool = True) -> dict:
     """translation: an English translation that came with the words (a ready-made question), checked by the
-    listener rather than trusted."""
+    listener rather than trusted. A date or a will heard once claims exist can change their plans: with replan they
+    are planned again here, otherwise the result says so ("replan") and the caller has it done in the background."""
     case = await deps.cases.get_case(case_id)
     history = await _utterances(deps, case_id)
     base = {"case": case_block(case)}
@@ -110,18 +112,21 @@ async def family_turn(deps: Any, case_id: str, text: str, *, person_id: str | No
         "situation": case.situation.model_dump(mode="json") if case.situation else {},
         "utterances": [_said(x) for x in history]},
         case_id=case_id)
-    await apply_situation(deps, case, sit, speaker_id=person_id, speaker_lang=heard.lang, channel=channel,
-                          utterance_id=u.id)
+    await apply_situation(deps, case, sit, speaker_id=person_id, speaker_lang=heard.lang, channel=channel)
+    later = False
     if await deps.cases.list(case_id, "claims"):   # a date or a will heard now can change a plan already made
-        from .pipeline import refresh_claims
-        await refresh_claims(deps, case_id)
+        if replan:
+            from .pipeline import refresh_claims
+            await refresh_claims(deps, case_id)
+        else:
+            later = True
     reply = await _next_question(deps, case, history, (case.languages or ["en"])[0])
     deps.changed(case_id, "utterances", "people")
-    return {"heard": u, "reply": reply, "situation": case.situation}
+    return {"heard": u, "reply": reply, "situation": case.situation, "replan": later}
 
 
 async def apply_situation(deps: Any, case: CaseFile, sit: Any, *, speaker_id: str | None = None,
-                          speaker_lang: str | None = None, channel: str = "text", utterance_id: str | None = None) -> None:
+                          speaker_lang: str | None = None, channel: str = "text") -> None:
     """Updates the case and its people from the situation model."""
     from ..domain.calendars import parse_date
     model = SituationModel(**{k: v for k, v in sit.model_dump().items() if k in SituationModel.model_fields
@@ -252,16 +257,15 @@ async def _offer_summary(deps: Any, case: CaseFile) -> None:
     await deps.activity(case.id, MODULE, "The summary is ready for the family to confirm.", kind="question")
 
 
-async def change_summary(deps: Any, case_id: str, note: str, *, by: str | None) -> dict:
-    """The family said what is wrong with the summary. Their words are heard like anything else they say, so the
-    situation is corrected from them; the summary is set aside meanwhile, and offered again, rebuilt, once nothing
-    more needs asking."""
+async def change_summary(deps: Any, case_id: str, note: str, *, by: str | None) -> None:
+    """The family said what is wrong with the summary: it is set aside, and offered again, rebuilt, once nothing more
+    needs asking. Their words are then heard like anything else they say (family_turn, which the caller runs), so the
+    situation is corrected from them."""
     for cp in await deps.cases.list(case_id, "checkpoints"):
         if cp.code == "C1" and cp.status == "open":
             cp.status, cp.answer, cp.answer_note, cp.answered_by, cp.answered_at = "answered", "change", note, by, deps.now()
             await deps.cases.put(case_id, "checkpoints", cp)
     await deps.activity(case_id, MODULE, f"The family asked for a change to the summary: “{note}”", kind="question")
-    return await family_turn(deps, case_id, note, person_id=by)
 
 
 async def confirm_summary(deps: Any, case_id: str, *, by: str | None, answer: str = "yes") -> CaseFile:

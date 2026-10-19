@@ -9,16 +9,39 @@ import { authToken, useAuth } from './auth';
 let base = (process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8080').replace(/\/$/, '');
 let uiLocale = 'en';
 
+const AGAIN = new Set([502, 503, 504]); // the service, or the way to it, did not answer this time
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** A request whose connection dropped, or that a gateway could not deliver, is sent again (twice at most). A change
+ * carries an Idempotency-Key, and the API answers a repeat with what it did the first time, so a change whose
+ * answer was lost is learnt about instead of being made twice. */
+export async function patientFetch(request: Request, tries = 3): Promise<Response> {
+  for (let n = 1; ; n++) {
+    try {
+      const res = await fetch(request.clone());
+      if (n < tries && AGAIN.has(res.status)) {
+        await sleep(1000 * n);
+        continue;
+      }
+      return res;
+    } catch (e) {
+      if (n >= tries || (e as Error).name === 'AbortError') throw e;
+      await sleep(1000 * n);
+    }
+  }
+}
+
 /** Every request says which language the page is in, so the words the server writes come back in it, and carries
  * the sign-in of whoever is signed in. A sign-in the server no longer accepts (expired, or the password changed)
- * is dropped, so the page asks to sign in again. */
+ * is dropped, so the page asks to sign in again. Every change is sent with a key of its own (patientFetch). */
 function make(baseUrl: string) {
-  const c = createClient<paths>({ baseUrl });
+  const c = createClient<paths>({ baseUrl, fetch: (request) => patientFetch(request) });
   c.use({
     onRequest({ request }) {
       request.headers.set('Accept-Language', uiLocale);
       const token = authToken();
       if (token) request.headers.set('Authorization', `Bearer ${token}`);
+      if (request.method !== 'GET') request.headers.set('Idempotency-Key', newKey());
       return request;
     },
     onResponse({ request, response }) {
@@ -97,6 +120,12 @@ export async function unwrap<T>(call: Promise<{ data?: T; error?: unknown; respo
   return data as T;
 }
 
+function newKey(): string {
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
 /** Uploads papers (multipart), which openapi-fetch does not type well. */
 export async function uploadPapers(
   caseId: string,
@@ -108,7 +137,12 @@ export async function uploadPapers(
   if (opts.by) form.append('by', opts.by);
   if (opts.title) form.append('title', opts.title);
   form.append('together', opts.together ? 'true' : 'false');
-  const res = await fetch(apiUrl(`/v1/cases/${encodeURIComponent(caseId)}/papers`), { method: 'POST', body: form });
+  const request = new Request(apiUrl(`/v1/cases/${encodeURIComponent(caseId)}/papers`), {
+    method: 'POST',
+    body: form,
+    headers: { 'Accept-Language': uiLocale, 'Idempotency-Key': newKey() },
+  });
+  const res = await patientFetch(request);
   if (!res.ok) {
     let detail = res.statusText;
     try {

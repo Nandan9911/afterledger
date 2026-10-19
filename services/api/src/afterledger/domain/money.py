@@ -4,7 +4,6 @@ from __future__ import annotations
 from decimal import ROUND_HALF_UP, Decimal
 
 from babel.numbers import format_decimal
-from num2words import num2words
 
 # Locale whose digit grouping each currency is written in (Indian lakh grouping for INR).
 _GROUPING_LOCALE = {"INR": "en_IN", "JPY": "ja_JP", "GBP": "en_GB", "USD": "en_US", "SGD": "en_SG",
@@ -35,21 +34,3 @@ def format_amount(amount: Decimal | int | float | str, currency: str = "INR", *,
     return f"{_SYMBOL.get(currency, currency + ' ')}{text}" if symbol else text
 
 
-def amount_in_words(amount: Decimal | int, currency: str = "INR", lang: str = "en") -> str:
-    """'Rupees Six Lakh Forty-One Thousand Eight Hundred and Seventy only' for Indian forms."""
-    value = Decimal(str(amount))
-    whole = int(value)
-    paise = int((value - whole) * 100)
-    if currency == "INR" and lang.startswith("en"):
-        words = num2words(whole, lang="en_IN").replace(",", "")
-        text = "Rupees " + words.title().replace(" And ", " and ")
-        if paise:
-            text += " and " + num2words(paise, lang="en_IN").title() + " Paise"
-        return text + " only"
-    if currency == "JPY" and lang.startswith("ja"):
-        return f"金{whole:,}円也"
-    return num2words(whole, lang=lang.split("-")[0] if lang else "en")
-
-
-def per_day_interest(amount: Decimal, annual_rate_pct: Decimal) -> Decimal:
-    return (Decimal(amount) * Decimal(annual_rate_pct) / 100 / 365).quantize(Decimal("0.01"), ROUND_HALF_UP)

@@ -26,6 +26,7 @@ class CloudTasksQueue:
         self.api_url = api_url.rstrip("/")
         self.token = token
         self._handlers: dict[str, Handler] = {}
+        self.on_failure: Any = None       # async (kind, payload, error): told when a task fails its last try
 
     def register(self, kind: str, handler: Handler) -> None:
         self._handlers[kind] = handler

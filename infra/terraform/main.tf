@@ -91,8 +91,8 @@ resource "google_cloud_tasks_queue" "work" {
   name     = "afterledger-work"
   location = var.region
   rate_limits {
-    max_concurrent_dispatches = 4
-    max_dispatches_per_second = 5
+    max_concurrent_dispatches = 32   # a task waits only for its own case's work (infra/scripts/deploy.sh)
+    max_dispatches_per_second = 10
   }
   retry_config {
     max_attempts  = 3
@@ -184,7 +184,9 @@ resource "google_cloud_run_v2_service" "api" {
   template {
     service_account                  = google_service_account.api.email
     timeout                          = "3600s" # event streams, voice and long background work
-    max_instance_request_concurrency = 80
+    # every open case page holds one live update stream (AL_SSE_MAX_STREAMS, 300 by default), so plain requests
+    # keep at least 200 slots; with 80, a visitor's open pages once filled the one instance
+    max_instance_request_concurrency = 500
     session_affinity                 = true
     scaling {
       min_instance_count = var.keep_one_instance_warm ? 1 : 0

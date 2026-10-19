@@ -19,7 +19,6 @@ from .ports import (
     BlobStore,
     CaseStore,
     Clock,
-    EventBus,
     Grounding,
     KnowledgeStore,
     Ocr,
@@ -76,7 +75,6 @@ class Deps:
     cases: CaseStore
     knowledge: KnowledgeStore
     blobs: BlobStore
-    bus: EventBus
     tasks: TaskQueue
     ocr: Ocr
     translator: Translator
@@ -136,7 +134,6 @@ def build_deps(settings: Settings | None = None) -> Deps:
         FixturePages,
         FixtureSearch,
         GlossaryTranslator,
-        InProcessBus,
         InProcessTaskQueue,
         LexicalGrounding,
         LocalOcr,
@@ -161,7 +158,6 @@ def build_deps(settings: Settings | None = None) -> Deps:
         cases=LocalCaseStore(s.state_dir),
         knowledge=LocalKnowledgeStore(s.knowledge_dir, s.state_dir),
         blobs=LocalBlobStore(s.state_dir, s.data_dir),
-        bus=InProcessBus(),
         tasks=InProcessTaskQueue(),
         ocr=LocalOcr(),
         translator=GlossaryTranslator(s.knowledge_dir),
@@ -194,7 +190,17 @@ def build_deps(settings: Settings | None = None) -> Deps:
     from .agents.meter import Meter
     deps.meter = Meter(deps)
     deps.models = ModelProvider(deps)
+    guard_cases(deps)
     return deps
+
+
+def guard_cases(deps: Deps) -> None:
+    """Every write to a case goes through the rules in concurrency.py: a family's action never waits for a model, and
+    background work never writes over a change made while it worked."""
+    from .concurrency import GuardedCases
+    if not isinstance(deps.cases, GuardedCases):
+        deps.cases = GuardedCases(deps.cases)
+    deps.cases.deps = deps
 
 
 _TRACING_ON = False

@@ -9,13 +9,13 @@ import type { ChallengeView, CiteView } from '@afterledger/contracts';
 import { useLocale, useTranslations } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
 import { ChallengeForm } from '@/components/ChallengeForm';
 import { LanguageSelect } from '@/components/CaseShell';
 import { Button, ButtonLink, Chip, ErrorNote, Logo, Skeleton, Spinner } from '@/components/ui';
 import { ApiError } from '@/lib/api';
 import { Why } from '@/components/Why';
 import { Link, useRouter } from '@/i18n/navigation';
+import { perform } from '@/lib/changes';
 import { useEventStream } from '@/lib/events';
 import { asDate, cls, countryName, intl, languageName } from '@/lib/format';
 import { useChallenge, useSaveChallenge } from '@/lib/queries';
@@ -303,15 +303,14 @@ function LetterCard({ view, onChecks, checks }: { view: ChallengeView; onChecks:
         <Button
           disabled={save.isPending || !view.finished}
           onClick={() =>
-            save.mutate(view.id, {
-              onSuccess: (out) => {
+            perform(save, view.id, {
+              done: (out) => {
                 const id = (out as { case_id?: string }).case_id;
                 if (id) {
                   rememberCase(id);
                   router.push(`/cases/${id}/story`);
                 }
               },
-              onError: (e) => toast.error(e.message),
             })
           }
         >
@@ -500,13 +499,26 @@ export function ChallengeRunScreen({ runId }: { runId: string }) {
                   </div>
                 )}
 
-                {!finished || gaps.length ? (
+                {!finished ? (
                   <section className="flex items-start gap-3.5 rounded-[14px] border-[1.5px] border-dotted border-blank bg-sheet px-5 py-4">
                     <span aria-hidden="true" className="mt-1.5 h-3 w-3 shrink-0 animate-pulse-soft rounded-full bg-blank" />
                     <div>
-                      <h2 className="m-0 text-[16px] font-bold">{finished ? t('stillRunning') : t('running')}</h2>
-                      <p className="m-0 mt-1 text-[15px] text-ink-soft">{finished ? t('searchGoesOn') : t('stillRunningText')}</p>
+                      <h2 className="m-0 text-[16px] font-bold">{t('running')}</h2>
+                      <p className="m-0 mt-1 text-[15px] text-ink-soft">{t('stillRunningText')}</p>
                     </div>
+                  </section>
+                ) : gaps.length ? (
+                  // a finished question searches no more: what it could not settle is said, not promised for later
+                  <section aria-labelledby="gaps" className="rounded-[14px] border-[1.5px] border-dotted border-blank bg-sheet px-5 py-4">
+                    <h2 id="gaps" className="m-0 text-[16px] font-bold">
+                      {t('gapsTitle')}
+                    </h2>
+                    <ul className="m-0 mt-2 list-disc ps-5 text-[15px]">
+                      {[...new Set(gaps)].map((g) => (
+                        <li key={g}>{g}</li>
+                      ))}
+                    </ul>
+                    <p className="m-0 mt-2 text-[15px] text-ink-soft">{t('gapsNote')}</p>
                   </section>
                 ) : null}
 

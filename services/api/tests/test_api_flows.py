@@ -63,7 +63,9 @@ def test_a_letter_is_approved_sent_and_its_pdf_served(client: Any, amit: str) ->
     assert next(x for x in tracker["letters"] if x["letter"]["id"] == letter["id"])["letter"]["status"] == "sent"
 
 
-def test_the_banks_reply_is_read_against_the_plan(client: Any) -> None:
+def test_the_banks_reply_is_read_against_the_plan(client: Any, amit: str) -> None:
+    """A reply that says the claim was paid is not recorded by itself: the family is asked first, and a no records
+    nothing."""
     rows = client.get(f"/v1/cases/{CID}/tracker").json()["rows"]
     narmada = next(r for r in rows if "Narmada" in r["title"])
     r = client.post(f"/v1/cases/{CID}/claims/{narmada['claim_id']}/replies", json={
@@ -71,6 +73,18 @@ def test_the_banks_reply_is_read_against_the_plan(client: Any) -> None:
         "text": "We have settled the claim of Rs 6,41,870 plus compensation of Rs 835.31 for the delay, credited "
                 "on 14 October 2026."})
     assert r.status_code == 200 and r.json()["summary"]
+    tracker = client.get(f"/v1/cases/{CID}/tracker").json()
+    asked = [c for c in tracker["confirm"] if c["payload"]["claim_id"] == narmada["claim_id"]]
+    assert [(c["payload"]["event"], c["payload"]["amount"], c["payload"]["source"]) for c in asked] == \
+        [("settled", "641870.00", "reply")]
+    assert next(x for x in tracker["rows"] if x["claim_id"] == narmada["claim_id"])["status"] != "settled"
+    assert client.get(f"/v1/cases/{CID}").json()["nav"]["tracker_confirm"] == 1
+    no = client.post(f"/v1/cases/{CID}/checkpoints/{asked[0]['id']}/answer", json={"answer": "no", "by": amit})
+    assert no.status_code == 200 and no.json()["answer"] == "no"
+    client.settle()
+    tracker = client.get(f"/v1/cases/{CID}/tracker").json()
+    assert not tracker["confirm"]
+    assert next(x for x in tracker["rows"] if x["claim_id"] == narmada["claim_id"])["status"] != "settled"
 
 
 def test_a_claim_is_shared_with_the_banks_desk(client: Any, amit: str) -> None:
@@ -82,7 +96,49 @@ def test_a_claim_is_shared_with_the_banks_desk(client: Any, amit: str) -> None:
     assert desk.status_code == 200
     view = desk.json()
     assert view["deceased"] and view["requirements"] and view["claim"]["id"] == claim_id
+    # a clock says what started it: "every document confirmed" only once the bank has confirmed it
+    clocks = [r for r in view["requirements"]
+              if r["in_pack"].startswith(("Every document confirmed", "Claim received", "Counted from"))]
+    assert clocks and all(view["claim"]["complete_set_on"] or not r["in_pack"].startswith("Every document")
+                          for r in clocks)
     assert client.get("/v1/desk/not-a-token").status_code == 404
+    # the bank records its payment on the desk: the family is asked, and the claim is settled when they say yes
+    token = share.json()["token"]
+    assert client.post(f"/v1/desk/{token}/settle", json={"amount": "about six lakh"}).status_code == 422
+    assert client.post(f"/v1/desk/{token}/settle", json={"amount": "0"}).status_code == 422
+    first = client.post(f"/v1/desk/{token}/settle", json={"amount": "6,14,870"})
+    assert first.status_code == 200 and first.json()["awaiting_family"]["text"] == "₹6,14,870"
+    # the family says it has not come: the desk is told, and can record the payment again
+    asked = client.get(f"/v1/cases/{CID}/tracker").json()["confirm"]
+    assert [c["payload"]["amount_text"] for c in asked] == ["₹6,14,870"]
+    no = client.post(f"/v1/cases/{CID}/checkpoints/{asked[0]['id']}/answer", json={"answer": "no", "by": amit})
+    assert no.status_code == 200
+    client.settle()
+    told = client.get(f"/v1/desk/{token}").json()
+    assert told["awaiting_family"] is None and any("₹6,14,870" in n and "not reached" in n for n in told["notes"])
+    # the same payment twice is one; a mistyped amount is corrected on the desk, and the family is asked once,
+    # about the new one (the entry it replaces says so)
+    def entries() -> list[str]:
+        return [x["letter"]["summary"] for x in client.get(f"/v1/cases/{CID}/tracker").json()["received"]
+                if x["letter"]["title"].endswith("recorded a payment on its desk")]
+    client.post(f"/v1/desk/{token}/settle", json={"amount": "6,14,870"})
+    assert client.post(f"/v1/desk/{token}/settle", json={"amount": "6,14,870"}).status_code == 200
+    assert len(entries()) == 2
+    paid = client.post(f"/v1/desk/{token}/settle", json={"amount": "6,41,870"})
+    assert paid.status_code == 200
+    assert paid.json()["awaiting_family"]["text"] == "₹6,41,870" and paid.json()["claim"]["status"] != "settled"
+    assert not any("not reached" in n for n in paid.json()["notes"])
+    asked = [c for c in client.get(f"/v1/cases/{CID}/tracker").json()["confirm"] if c["payload"]["source"] == "desk"]
+    assert len(asked) == 1 and asked[0]["payload"]["claim_id"] == claim_id
+    assert asked[0]["payload"]["amount_text"] == "₹6,41,870"
+    assert len(entries()) == 3 and sum("It corrected this to ₹6,41,870." in e for e in entries()) == 1
+    yes = client.post(f"/v1/cases/{CID}/checkpoints/{asked[0]['id']}/answer", json={"answer": "yes", "by": amit})
+    assert yes.status_code == 200
+    client.settle()
+    after = client.get(f"/v1/desk/{token}").json()
+    assert after["claim"]["status"] == "settled" and after["claim"]["settled_amount"] in ("641870", "641870.00")
+    assert after["awaiting_family"] is None
+    assert client.post(f"/v1/desk/{token}/settle", json={"amount": "100"}).status_code == 409
 
 
 def test_a_question_is_answered_from_the_case(client: Any, amit: str) -> None:

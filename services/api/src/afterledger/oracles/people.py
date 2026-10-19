@@ -66,7 +66,7 @@ def _case_person(people: list[dict], truth: dict, deceased_id: str | None, truth
     return None
 
 
-def _evidence(form: dict, identifiers: dict, papers_ids: dict, canonical: str) -> tuple[str, float]:
+def _evidence(form: dict, identifiers: dict, canonical: str) -> tuple[str, float]:
     pid = form["seen_on"]
     mine = identifiers.get(pid, {})
     for key in ("pan", "id_number"):
@@ -120,7 +120,7 @@ def identity_resolver(ctx: Ctx, req: OracleRequest) -> dict:
                                "why": ask.get("why")})
                 continue
             pid = _case_person(people, truth, deceased_id, fam.deceased["id"])
-            evidence, conf = _evidence(form, identifiers, {}, canonical if truth["id"] == fam.deceased["id"]
+            evidence, conf = _evidence(form, identifiers, canonical if truth["id"] == fam.deceased["id"]
                                        else truth["display_name"])
             merges.append({"name_text": form["text"], "seen_on": form["seen_on"], "person_id": pid,
                            "new_person": None if pid else truth["display_name"],

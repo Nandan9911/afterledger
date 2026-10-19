@@ -250,8 +250,6 @@ class Knowledge:
         raw = await self.store.get("coverage", country)
         return raw.get("items", []) if raw else []
 
-    async def profile(self, collection: str, key: str) -> dict | None:
-        return await self.store.get(collection, key)
 
     async def form(self, key: str) -> dict | None:
         return await self.store.get("forms", key)

@@ -8,7 +8,7 @@ from fastapi.responses import Response
 from sse_starlette.sse import EventSourceResponse
 
 from ...accounts import User
-from ...domain.case import CasePlan, Checkpoint, Claim, Correspondence, Lead, Pack, Paper, Person, Utterance
+from ...domain.case import Checkpoint, Claim, Correspondence, Lead, Paper, Person, Utterance
 from ...runtime import Deps
 from .. import actions
 from ..schemas import (
@@ -34,10 +34,8 @@ from ..schemas import (
     PeopleView,
     PersonIn,
     PersonPatch,
-    PlanAnswerIn,
     PlansView,
     PlanView,
-    ProcedureIn,
     ReplyIn,
     SentIn,
     ShareIn,
@@ -310,21 +308,6 @@ async def plan(case_id: str, plan_id: str, request: Request, deps: Deps = Depend
     return view
 
 
-@router.post("/{case_id}/plans/{plan_id}/answers", response_model=CasePlan)
-async def answer_plan(case_id: str, plan_id: str, body: PlanAnswerIn, deps: Deps = Depends(get_deps)) -> CasePlan:
-    return await actions.answer_plan(deps, case_id, plan_id, variable=body.variable, value=body.value, by=body.by)
-
-
-@router.post("/{case_id}/plans/{plan_id}/approve", response_model=CasePlan)
-async def approve_plan(case_id: str, plan_id: str, body: ByIn, deps: Deps = Depends(get_deps)) -> CasePlan:
-    return await actions.approve_plan(deps, case_id, plan_id, by=body.by)
-
-
-@router.post("/{case_id}/procedures", response_model=Claim)
-async def start_procedure(case_id: str, body: ProcedureIn, deps: Deps = Depends(get_deps)) -> Claim:
-    return await actions.start_procedure(deps, case_id, body.plan_key, by=body.by)
-
-
 # ---- packs ----------------------------------------------------------------------------------
 
 @router.get("/{case_id}/packs", response_model=PacksView)
@@ -340,16 +323,6 @@ async def pack(case_id: str, pack_id: str, request: Request, deps: Deps = Depend
     if view is None:
         raise HTTPException(404, f"No pack {pack_id}")
     return view
-
-
-@router.post("/{case_id}/claims/{claim_id}/pack", response_model=Pack | None)
-async def prepare_pack(case_id: str, claim_id: str, deps: Deps = Depends(get_deps)) -> Pack | None:
-    return await actions.prepare_pack(deps, case_id, claim_id)
-
-
-@router.post("/{case_id}/packs/{pack_id}/approve", response_model=Pack)
-async def approve_pack(case_id: str, pack_id: str, body: ByIn, deps: Deps = Depends(get_deps)) -> Pack:
-    return await actions.approve_pack(deps, case_id, pack_id, by=body.by)
 
 
 @router.get("/{case_id}/packs/{pack_id}/items/{item_id}/file")

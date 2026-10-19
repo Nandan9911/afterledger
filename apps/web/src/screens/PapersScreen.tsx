@@ -9,18 +9,18 @@ import { Camera, ChevronLeft, ChevronRight, ExternalLink, Trash2 } from 'lucide-
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useRef, useState, type ReactNode } from 'react';
-import { toast } from 'sonner';
 import { useCase } from '@/components/CaseShell';
 import { Button, ErrorNote, h1Class, h2Class, Sheet, Skeleton, Spinner } from '@/components/ui';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { apiUrl } from '@/lib/api';
+import { perform } from '@/lib/changes';
 import { cls, dayMonth } from '@/lib/format';
 import { useAnswer, useDeletePaper, useMoney, usePaper, usePapers, useUpload } from '@/lib/queries';
 
 type Variant = 'primary' | 'secondary' | 'dark';
 
 /** A button that opens the file chooser (or the camera) and adds what is chosen to the case. */
-export function AddPapers({
+function AddPapers({
   variant = 'primary',
   photo = false,
   label,
@@ -50,14 +50,7 @@ export function AddPapers({
           const files = Array.from(e.target.files ?? []);
           e.target.value = '';
           if (!files.length) return;
-          const id = toast.loading(t('uploading'));
-          upload.mutate(
-            { files, by: viewerId },
-            {
-              onSuccess: () => toast.success(t('uploaded', { count: files.length }), { id }),
-              onError: (err) => toast.error(err.message, { id }),
-            },
-          );
+          perform(upload, { files, by: viewerId }, { working: t('uploading'), done: () => t('uploaded', { count: files.length }) });
         }}
       />
       <Button
@@ -138,7 +131,7 @@ function CheckCard({ v, cp }: { v: ValueView; cp: Checkpoint }) {
   const [no, setNo] = useState(false);
   const [value, setValue] = useState('');
   const question = cp.question_local && cp.language.split('-')[0] === locale ? cp.question_local : cp.question;
-  const done = () => toast.success(t('thanks'));
+  const done = () => t('thanks');
   return (
     <div className="mt-3.5 rounded-xl border-[1.5px] border-dashed border-pencil bg-pencil-tint p-4">
       <p className="m-0 text-[14px] font-bold text-pencil">{t('checkThis')}</p>
@@ -152,7 +145,7 @@ function CheckCard({ v, cp }: { v: ValueView; cp: Checkpoint }) {
           onSubmit={(e) => {
             e.preventDefault();
             if (!value.trim()) return;
-            answer.mutate({ checkpointId: cp.id, answer: 'no', value: value.trim(), by: viewerId }, { onSuccess: done });
+            perform(answer, { checkpointId: cp.id, answer: 'no', value: value.trim(), by: viewerId }, { done });
           }}
         >
           <label className="flex flex-col gap-1 text-[15px] font-bold">
@@ -178,7 +171,7 @@ function CheckCard({ v, cp }: { v: ValueView; cp: Checkpoint }) {
           <Button
             variant="dark"
             disabled={answer.isPending || readOnly}
-            onClick={() => answer.mutate({ checkpointId: cp.id, answer: 'yes', by: viewerId }, { onSuccess: done })}
+            onClick={() => perform(answer, { checkpointId: cp.id, answer: 'yes', by: viewerId }, { done })}
           >
             {tc('yes')}
           </Button>
@@ -206,7 +199,9 @@ function ValueItem({ v, focused, onFocus }: { v: ValueView; focused: boolean; on
           ? t('onePath')
           : rv.status === 'disagree'
             ? t('checkThis')
-            : t('sureNote');
+            : rv.reading_b == null && rv.checks.includes('balance')
+              ? t('sureBalance')
+              : t('sureNote');
   return (
     <li
       className={cls('border-t border-rule py-3', focused && 'bg-hl/20')}
@@ -374,12 +369,8 @@ function Viewer({ caseId, paperId, pageNo, setPage }: { caseId: string; paperId:
                 variant="secondary"
                 disabled={remove.isPending}
                 onClick={() =>
-                  remove.mutate(view.paper.id, {
-                    onSuccess: () => {
-                      setConfirming(false);
-                      toast.success(t('removed', { title: view.paper.title }));
-                    },
-                    onError: (e) => toast.error(e.message),
+                  perform(remove, view.paper.id, {
+                    done: () => (setConfirming(false), t('removed', { title: view.paper.title })),
                   })
                 }
               >
@@ -571,6 +562,7 @@ export function PapersScreen({ caseId }: { caseId: string }) {
         </ul>
         {selected ? (
           <Viewer
+            key={selected.paper.id}
             caseId={caseId}
             paperId={selected.paper.id}
             pageNo={wanted === selected.paper.id || !wanted ? pageNo : 1}

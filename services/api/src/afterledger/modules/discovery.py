@@ -234,6 +234,32 @@ _TELLING = re.compile(r"PREM|POLICY|INSUR|LIC\b|ASSUR|LIFE|PMJJBY|PMSBY|SIP|MUTU
                       r"NPS|CPF|BOND|FD\b|DEPOSIT|SECURITIES|STANDING", re.I)
 
 
+async def name_later_payments(deps: Any, case_id: str, groups: list[PaymentGroup]) -> None:
+    """A debit after the death was labelled from its own line when the statement was read; once its payee is named
+    (by the narration interpreter or the payee screener), the label says who was paid ("Paid to Bajaj Finance on
+    5 September")."""
+    from .reading import after_death_label, payee_name
+    payee = {t: payee_name(g.counterparty) for g in groups if payee_name(g.counterparty) and g.direction == "debit"
+             for t in g.transaction_ids}
+    if not payee:
+        return
+    txns = {t.id: t for t in await deps.cases.list(case_id, "transactions")}
+    renamed = []
+    for v in await deps.cases.list(case_id, "values"):
+        row = re.fullmatch(r"row_(\d+)_debit", v.field or "")
+        if row is None or v.id != stable_id("rv", v.paper_id, f"row{row.group(1)}", "after_death"):
+            continue
+        t = txns.get(stable_id("tx", v.paper_id, row.group(1)))
+        if t is None or t.id not in payee:
+            continue
+        label = after_death_label(t.narration, t.date, payee[t.id])
+        if label != v.label:
+            v.label = label
+            renamed.append(v)
+    if renamed:
+        await deps.cases.put_many(case_id, "values", renamed)
+
+
 def worth_reading(groups: list[PaymentGroup]) -> list[PaymentGroup]:
     """All the groups when they are few; above MAX_GROUPS, the most telling ones, in their original order."""
     if len(groups) <= MAX_GROUPS:
@@ -420,6 +446,7 @@ async def discover(deps: Any, case_id: str) -> list[Lead]:
             g.counterparty, g.counterparty_kind = it.counterparty, it.counterparty_kind
             g.interpretation, g.alternatives = it.interpretation, it.alternatives
     await deps.cases.put_many(case_id, "groups", list(by_group.values()))
+    await name_later_payments(deps, case_id, all_groups)
 
     hyps = hyps_model.hypotheses if hyps_model else []
     cov_items = [it for c in countries for it in await k.coverage(c)]

@@ -163,12 +163,13 @@ def test_a_real_case_goes_through_every_stage(client: Any) -> None:
                  "heirship_proof": "annex_ix"}.get(q["payload"]["variable"], q["options"][0]["value"])
         assert client.post(f"/v1/cases/{cid}/checkpoints/{q['id']}/answer",
                            json={"answer": value}).status_code == 200
+        settle(client)                   # the answer is worked into the plan in the background
     plan = plans_by_claim(client, cid)[deccan_claim.id]
-    assert client.post(f"/v1/cases/{cid}/plans/{plan.id}/approve", json={}).status_code == 200
+    approve(client, cid, "plan", plan.id)
     settle(client)
     packs = [p for p in client.portal.call(deps.cases.list, cid, "packs") if p.claim_id == deccan_claim.id]
     assert packs and packs[0].plan_key == "IN/bank_deposit" and any(i.kind == "letter" for i in packs[0].items)
-    assert client.post(f"/v1/cases/{cid}/packs/{packs[0].id}/approve", json={}).status_code == 200
+    approve(client, cid, "pack", packs[0].id)
     handed = date(2026, 10, 19)
     assert client.post(f"/v1/cases/{cid}/claims/{deccan_claim.id}/events",
                        json={"event": "submitted", "on": handed.isoformat()}).status_code == 200
@@ -207,6 +208,15 @@ def test_a_real_case_goes_through_every_stage(client: Any) -> None:
     assert row["status"] == "settled" and row["status_text"].startswith("Paid")
 
 
+def approve(client: Any, cid: str, kind: str, record_id: str) -> None:
+    """Approves a plan or a pack the way the screens do: by answering its approval question (C5 or C6)."""
+    cp = next(c for c in client.get(f"/v1/cases/{cid}/checkpoints").json()
+              if c["status"] == "open" and c["kind"] == {"plan": "plan_approval", "pack": "pack_approval"}[kind]
+              and c["subject_ref"].split(":")[1] == record_id)
+    r = client.post(f"/v1/cases/{cid}/checkpoints/{cp['id']}/answer", json={"answer": "approve"})
+    assert r.status_code == 200, r.text
+
+
 def claims_by_id(client: Any, cid: str) -> dict:
     return {c.id: c for c in client.portal.call(client.deps.cases.list, cid, "claims")}
 
@@ -234,11 +244,11 @@ def test_an_interim_letter_is_chased_when_no_reply_comes(client: Any) -> None:
     loan = next(c for c in claims_by_id(client, cid).values() if c.kind == "debt")
     plan = plans_by_claim(client, cid)[loan.id]
     assert plan.plan_key == "XX/interim_debt" and plan.unverified and loan.research.get("status") == "off"
-    assert client.post(f"/v1/cases/{cid}/plans/{plan.id}/approve", json={}).status_code == 200
+    approve(client, cid, "plan", plan.id)
     settle(client)
     pack = next(p for p in client.portal.call(deps.cases.list, cid, "packs") if p.claim_id == loan.id)
     assert pack.plan_key == "XX/interim_debt" and pack.id.endswith(pack.id[-12:])
-    client.post(f"/v1/cases/{cid}/packs/{pack.id}/approve", json={})
+    approve(client, cid, "pack", pack.id)
     sent = date(2026, 10, 19)
     client.post(f"/v1/cases/{cid}/claims/{loan.id}/events", json={"event": "submitted", "on": sent.isoformat()})
     loan = claims_by_id(client, cid)[loan.id]

@@ -8,12 +8,11 @@ when the snapshot was taken) and clearly fictional pages for the demo's invented
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import math
 import re
 import unicodedata
-from collections import Counter, defaultdict, deque
+from collections import Counter, deque
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -26,21 +25,6 @@ from ...domain.ids import sha256_text
 from ...ports import GroundingResult, Handler, PageSnapshot, ScreenResult, SearchHit
 
 log = logging.getLogger(__name__)
-
-
-class InProcessBus:
-    def __init__(self) -> None:
-        self._subs: dict[str, list[Handler]] = defaultdict(list)
-
-    async def publish(self, topic: str, event: dict) -> None:
-        for handler in list(self._subs.get(topic, [])) + list(self._subs.get("*", [])):
-            try:
-                await handler(event | {"topic": topic})
-            except Exception:  # an event handler must never break the publisher
-                log.exception("event handler failed for %s", topic)
-
-    def subscribe(self, topic: str, handler: Handler) -> None:
-        self._subs[topic].append(handler)
 
 
 class InProcessTaskQueue:
@@ -66,6 +50,9 @@ class InProcessTaskQueue:
         task_id = f"t{self._counter}"
 
         async def runner() -> None:
+            # a task starts with no writer of its own: it does not inherit the one of the request that queued it
+            from ...concurrency import WRITER
+            WRITER.set(None)
             if delay_seconds:
                 await asyncio.sleep(delay_seconds)
             for attempt in range(1, self.attempts + 1):
@@ -330,9 +317,6 @@ def _load_list(path: Path) -> list[dict]:
         return data
     return [data] if data else []
 
-
-def dump_json(obj) -> str:
-    return json.dumps(obj, ensure_ascii=False, default=str)
 
 # ---- screening outside text for planted instructions ------------------------------------------------------------
 

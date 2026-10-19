@@ -15,6 +15,7 @@ import { useListening, useLiveVoice, useSpeech } from '@/components/Voice';
 import { Why } from '@/components/Why';
 import { Button, ErrorNote, Skeleton, Spinner } from '@/components/ui';
 import { localeNames, type Locale } from '@/i18n/routing';
+import { perform } from '@/lib/changes';
 import { cls, personName } from '@/lib/format';
 import { useAsk, useConversation, useMeta } from '@/lib/queries';
 
@@ -42,6 +43,12 @@ function SourceChips({ u, cites, today }: { u: Utterance; cites: Record<string, 
       </Why>
       {official ? <span className="rounded-full bg-chip px-2.5 py-0.5 text-ink-soft">{t('official')}</span> : null}
       {checkedToday ? <span className="rounded-full bg-chip px-2.5 py-0.5 text-ink-soft">{t('checkedToday')}</span> : null}
+      {u.grounded === false ? (
+        // the grounding check did not find the answer in the sources it cites
+        <span className="rounded-full border border-dashed border-pencil bg-pencil-tint px-2.5 py-0.5 font-bold text-pencil">
+          {t('unsupported')}
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -76,7 +83,6 @@ function Bubble({ u, conv, today, locale }: { u: Utterance; conv: ConversationVi
 
 export function AskScreen({ caseId }: { caseId: string }) {
   const t = useTranslations('ask');
-  const tc = useTranslations('common');
   const locale = useLocale();
   const params = useSearchParams();
   const { header, viewerId } = useCase();
@@ -132,10 +138,11 @@ export function AskScreen({ caseId }: { caseId: string }) {
     setPending(q);
     setFollowUps([]);
     setResearch(false);
-    ask.mutate(
+    perform(
+      ask,
       { question: q, person_id: viewerId, lang: locale, channel },
       {
-        onSuccess: (out) => {
+        done: (out) => {
           setFollowUps(out.follow_ups ?? []);
           setResearch(!!out.research_started);
           if (out.kept === false) {
@@ -144,8 +151,7 @@ export function AskScreen({ caseId }: { caseId: string }) {
           }
           if (channel === 'voice') speech.speak(out.answer.text, out.answer.lang.split('-')[0]);
         },
-        onError: (e) => toast.error(tc('error', { message: e.message })),
-        onSettled: () => setPending(null),
+        after: () => setPending(null),
       },
     );
     setText('');
@@ -176,7 +182,22 @@ export function AskScreen({ caseId }: { caseId: string }) {
       ) : (
         <ol aria-label={t('conversation')} className="m-0 flex flex-1 list-none flex-col gap-3 p-0">
           {!qa.length && !pending && !unsaved.length ? (
-            <li className="rounded-[14px] border border-dashed border-rule-strong bg-sheet px-4 py-3 text-ink-soft">{t('empty')}</li>
+            <>
+              <li className="rounded-[14px] border border-dashed border-rule-strong bg-sheet px-4 py-3 text-ink-soft">{t('empty')}</li>
+              {/* a first question to start from, for a family that does not know what to ask */}
+              <li className="flex flex-wrap gap-2">
+                {(['example1', 'example2', 'example3'] as const).map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => send(t(k), 'text')}
+                    className="rounded-full border border-rule-strong bg-sheet px-3 py-1.5 text-[15px] hover:border-ink"
+                  >
+                    {t(k)}
+                  </button>
+                ))}
+              </li>
+            </>
           ) : null}
           {qa.map((u) => (
             <Bubble key={u.id} u={u} conv={conv.data} today={header?.today} locale={locale} />
@@ -184,7 +205,12 @@ export function AskScreen({ caseId }: { caseId: string }) {
           {unsaved.map((x, i) => (
             <Fragment key={`unsaved-${i}`}>
               <Bubble u={x.question} conv={conv.data} today={header?.today} locale={locale} />
-              <Bubble u={x.answer} conv={{ ...conv.data, cites: { ...conv.data.cites, ...x.cites } }} today={header?.today} locale={locale} />
+              <Bubble
+                u={x.answer}
+                conv={{ ...conv.data, cites: { ...conv.data.cites, ...x.cites } }}
+                today={header?.today}
+                locale={locale}
+              />
             </Fragment>
           ))}
           {unsaved.length ? <li className="text-[14px] text-ink-faint">{t('notSaved')}</li> : null}

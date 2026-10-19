@@ -809,7 +809,9 @@ def test_wiring_swaps_what_is_configured(settings: Any, monkeypatch: pytest.Monk
                         "pages": "live_web", "search": "agent_search", "screen": "patterns", "llm": "gemini",
                         "models": "gemini-3.8-flash, gemini-3.1-pro-preview, gemini-3.5-flash-lite",
                         "voice": "gemini_live"}
-    assert type(deps.cases).__name__ == "FirestoreCaseStore" and type(deps.search).__name__ == "AgentSearch"
+    # the case store is wrapped by the rules on concurrent work (concurrency.GuardedCases)
+    assert type(deps.cases).__name__ == "GuardedCases" and type(deps.cases.inner).__name__ == "FirestoreCaseStore"
+    assert type(deps.search).__name__ == "AgentSearch"
 
     _stub(monkeypatch, "modelarmor", "ModelArmorScreen")
     armored = build_deps(s.model_copy(update={"model_armor_template": "projects/proj/locations/us-central1/templates/t"}))

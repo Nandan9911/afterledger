@@ -20,9 +20,6 @@ from ..forms.render import readback_pdf, render_form
 from .common import case_block, knowledge, open_checkpoint, pack_key, snapshot
 
 MODULE = "forms"
-ROLE_LABEL = {"claimant": "the claimant", "other_heirs": "the other legal heirs", "nominee": "the nominee",
-              "independent_person": "an independent person who knows the family", "executor": "the executor",
-              "beneficiary": "the beneficiary", "witness": "two witnesses"}
 
 
 def _signers(snap: Any, roles: list[str], claim: Any = None) -> list[str]:
@@ -174,11 +171,13 @@ async def prepare_pack(deps: Any, case_id: str, claim_id: str) -> Pack | None:
         letter.status = "draft"
         letter.note = ("A person must check this letter before it is sent: " + ", ".join(sorted(viol))
                        + " is not in the case. " + letter.note)
-    checks.append(CheckResult(name="readback", result="pass" if total_matched == total_checked else "fail",
-                              detail=f"{total_matched} of {total_checked} values match"
-                              + (f" ({layout_only} in scripts PDF text cannot carry, checked against the layout)"
-                                 if layout_only else ""),
-                              params={"matched": total_matched, "checked": total_checked, "layout_only": layout_only}))
+    if total_checked:                     # a pack of letters alone has no filled form to read back
+        checks.append(CheckResult(name="readback", result="pass" if total_matched == total_checked else "fail",
+                                  detail=f"{total_matched} of {total_checked} values match"
+                                  + (f" ({layout_only} in scripts PDF text cannot carry, checked against the layout)"
+                                     if layout_only else ""),
+                                  params={"matched": total_matched, "checked": total_checked,
+                                          "layout_only": layout_only}))
     checks.append(CheckResult(name="letter_fidelity", result="pass" if not viol else "fail",
                               detail=("no number or date that is not in the case" if not viol else ", ".join(sorted(viol)))
                               + (f" (after {repairs} repair{'s' if repairs != 1 else ''})" if repairs else ""),
@@ -285,10 +284,6 @@ def _name_variance(ctx: dict) -> str | None:
 def _facts_text(ctx: dict, claim: Any) -> str:
     import json
     return json.dumps(ctx, default=str) + f" {claim.amount_due}"
-
-
-def _short_title(title: str) -> str:
-    return title.split(" (")[0]
 
 
 def _summary(cp: Any, items: list[PackItem], snap: Any) -> str:
@@ -399,7 +394,9 @@ async def _covering_letter(deps: Any, snap: Any, claim: Any, cp: Any, inst: dict
                            enclosures: list[Enclosure], allowed: str) -> tuple[PackItem, Any, int]:
     case = snap.case
     claimant = snap.claimant(claim)
-    lang = {"JP": "ja", "DE": "de", "FR": "fr"}.get((claim.country or "").split("-")[0], "en")
+    from .challenge import COUNTRY_LANG
+    # the institution's language: Spanish to a bank in Spain, Japanese in Japan, English in India
+    lang = COUNTRY_LANG.get((claim.country or "").split("-")[0], "en")
     through = await _through_bank(deps, snap, claim, inst)
     out, _still, repairs = await repair_loop(deps, "letter_writer", {
         "key": pack_key("letter_writer", case, claim.id), "case": case_block(case), "lang": lang,
@@ -445,7 +442,7 @@ def mirror_check(original: str, mirror: str, lang: str, back: Any) -> CheckResul
 async def approve_pack(deps: Any, case_id: str, pack_id: str, *, by: str | None) -> Pack:
     pack: Pack = await deps.cases.get(case_id, "packs", pack_id)
     case = await deps.cases.get_case(case_id)
-    pack.status, pack.approved_by, pack.approved_on = "approved", by, deps.today_for(case)
+    pack.status, pack.approved_by, pack.approved_on = "approved", by or "family", deps.today_for(case)
     await deps.cases.put(case_id, "packs", pack)
     for c in await deps.cases.list(case_id, "checkpoints"):
         if c.subject_ref == f"pack:{pack_id}" and c.status == "open":

@@ -102,6 +102,42 @@ async def test_a_flagged_reply_is_still_read_with_a_warning(demo_copy: Any) -> N
     assert any("addressed to the software" in a.text for a in activity)
 
 
+@pytest.mark.slow
+async def test_what_a_reply_says_is_checked_against_its_own_words(demo_copy: Any,
+                                                                  monkeypatch: pytest.MonkeyPatch) -> None:
+    """The reader proposes a date and an amount; code keeps only what the reply itself has, and the family confirms
+    it before it is the claim's. A confirmation with a day the reply does not give counts from the reply's date, and
+    a payment whose amount is not in the reply is not proposed at all."""
+    from afterledger.agents.schemas import CorrespondenceOut
+    from afterledger.modules import followup
+    from afterledger.runtime import build_deps
+    deps = build_deps(offline_settings(demo_copy))
+    case_id = "demo-verma"
+    claim = next(c for c in await deps.cases.list(case_id, "claims")
+                 if c.plan_id and c.status not in ("settled", "closed"))
+    real = followup.call_agent
+
+    async def reader(deps_: Any, agent: str, payload: dict, **kw: Any) -> Any:
+        if agent != "correspondence_reader":
+            return await real(deps_, agent, payload, **kw)
+        return CorrespondenceOut(summary="They have every paper, and the money was paid.",
+                                 complete_set_confirmed_on="2026-10-03", settled_amount="₹9,99,999")
+
+    monkeypatch.setattr(followup, "call_agent", reader)
+    text = "Dear Madam, we confirm that we now hold every document for this claim. The amount has been credited."
+    await followup.record_reply(deps, case_id, claim.id, title="Narmada Bank: reply", text=text, on=date(2026, 10, 14))
+    after = await deps.cases.get(case_id, "claims", claim.id)
+    assert after.complete_set_on == claim.complete_set_on and after.status == claim.status   # nothing recorded yet
+    assert any("is not in the reply" in a.text for a in await deps.cases.list(case_id, "activity"))
+    asked = [c for c in await deps.cases.list(case_id, "checkpoints")
+             if c.status == "open" and c.code == "C7" and (c.payload or {}).get("claim_id") == claim.id]
+    assert [((c.payload or {})["event"], (c.payload or {})["on"]) for c in asked] == \
+        [("complete_set_confirmed", "2026-10-14")]
+    await followup.confirm_claim_event(deps, case_id, asked[0], "yes", by=None)
+    after = await deps.cases.get(case_id, "claims", claim.id)
+    assert after.complete_set_on == date(2026, 10, 14) and after.status != "settled"
+
+
 # ---- Model Armor, live --------------------------------------------------------------------------------------------
 
 class FakeArmor:

@@ -5,7 +5,7 @@ from typing import Any
 
 from ...modules.common import knowledge, snapshot
 from ..schemas import PackItemView, PackRow, PacksView, PackView
-from .common import chip, chips, cite_views, institution_name, money
+from .common import approver, chips, cite_views, institution_name, money
 from .localize import localize
 
 
@@ -54,7 +54,7 @@ async def pack(deps: Any, case_id: str, pack_id: str, lang: str = "en") -> PackV
         for s in plan.steps:
             ids |= set(s.cites)
     view = PackView(pack=p, claim=claim, institution=inst, amount=money(claim.amount_due, claim.currency) if claim else None,
-                    items=items, checkpoint=cp, approved_by=chip(snap.person(p.approved_by)),
+                    items=items, checkpoint=cp, approved_by=approver(snap, p.approved_by),
                     download_url=f"/v1/cases/{case_id}/packs/{p.id}/download",
                     cites=await cite_views(deps, ids, deps.today_for(snap.case)))
     # the words the server wrote, in the page's language; the forms and the letter stay as they will be sent

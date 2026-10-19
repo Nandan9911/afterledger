@@ -6,10 +6,11 @@ import asyncio
 import logging
 from typing import Any
 
+from ..concurrency import job
 from ..seed import snapshot
 from ..seed.families import family_keys, load_family
 from ..seed.seeder import demo_case_id, seed_family
-from .actions import Conflict, case_lock
+from .actions import Conflict
 from .schemas import DemoFamily
 
 log = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ async def prepare(deps: Any, key: str, *, force: bool = False) -> dict:
     """Makes the demo case exist: from its snapshot when there is one, otherwise by playing its timeline."""
     st = status(deps)
     case_id = demo_case_id(key)
-    async with case_lock(deps, case_id):
+    async with job(deps, case_id):
         if not force and await deps.cases.get_case(case_id) is not None:
             st[key] = {"state": "ready"}
             return st[key]
@@ -110,7 +111,7 @@ async def watch(deps: Any, key: str, *, delay: float) -> None:
         for q in list(listeners(deps, key)):
             await q.put(item)
 
-    async with case_lock(deps, case_id):
+    async with job(deps, case_id):
         st[key] = {"state": "watching", "events": 0}
         try:
             async def progress(ev: dict) -> None:

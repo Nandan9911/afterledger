@@ -23,9 +23,7 @@ dependencies = [
   "python-stdnum==2.2",
   "holidays==0.106",
   "rapidfuzz==3.14.6",
-  "num2words==0.5.14",
   "babel==2.18.0",
-  "convertdate==2.5.1",
   "tzdata==2026.5",            # the time zone database, for zoneinfo on Windows
 ]
 

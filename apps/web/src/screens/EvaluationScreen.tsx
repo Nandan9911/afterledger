@@ -7,10 +7,10 @@
 import type { UsageView } from '@afterledger/contracts';
 import { Check, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { toast } from 'sonner';
 import { LanguageSelect } from '@/components/CaseShell';
 import { Button, ErrorNote, Logo, ScrollX, Skeleton, Spinner } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
+import { perform } from '@/lib/changes';
 import { clockTime, cls, count, intl, longDate, usd } from '@/lib/format';
 import { useEvaluation, useMeta, useRunEvaluation, useUsage } from '@/lib/queries';
 
@@ -365,12 +365,7 @@ export function EvaluationScreen() {
           <div className="flex flex-col items-end gap-1.5">
             <Button
               disabled={running}
-              onClick={() =>
-                run.mutate(undefined, {
-                  onSuccess: (out) => toast((out as { note?: string }).note ?? t('started')),
-                  onError: (e) => toast.error(e.message),
-                })
-              }
+              onClick={() => perform(run, undefined, { done: (out) => (out as { note?: string }).note ?? t('started') })}
             >
               {running ? t('running') : t('run')}
             </Button>
