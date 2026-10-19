@@ -68,11 +68,14 @@ async def header(deps: Any, case_id: str, viewer_id: str | None = None) -> CaseH
         if p.city and p.city not in places:
             places.append(p.city)
     work = (getattr(deps, "extras", None) or {}).get("case_work", {}).get(snap.case.id) or {}
+    researching = [{"claim_id": c.id, "title": c.title, "run_id": c.research.get("run_id"),
+                    "started": c.research.get("started")}
+                   for c in snap.claims if (c.research or {}).get("status") == "running" and c.status != "closed"]
     return CaseHeader(case=snap.case, deceased=snap.deceased, viewer=chip(viewer),
                       family=[c for c in (chip(p) for p in snap.family()) if c], family_places=places,
                       today=deps.today_for(snap.case), nav=nav_counts(snap, activity),
                       mode=snap.case.model_mode or deps.models.label,   # what prepared this case's content
-                      working=work.get("step"), working_since=work.get("since"))
+                      working=work.get("step"), working_since=work.get("since"), researching=researching)
 
 
 def summary(case: CaseFile) -> CaseSummary:

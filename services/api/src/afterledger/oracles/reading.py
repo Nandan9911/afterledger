@@ -42,8 +42,14 @@ def triage(ctx: Ctx, req: OracleRequest) -> dict:
     text = " ".join(ln.get("text", "") for ln in p.get("lines", [])).lower()
     doc_type = next((t for t, words in _KEYWORDS if any(w in text for w in words)), "other")
     scripts = [s for s, rx in _SCRIPTS if re.search(rx, text)]
+    # the issuer: an organisation's name printed near the top (a statement's letterhead)
+    from ..modules.institutions import looks_like_org
+    issuer = next((ln.get("text", "").strip() for ln in p.get("lines", [])[:6]
+                   if looks_like_org(ln.get("text", "")) and len(ln.get("text", "")) <= 80
+                   and not re.search(r"statement|account holder|account number", ln.get("text", ""), re.I)), None)
     return {"doc_type": doc_type, "country": None, "languages": [_LANG[s] for s in scripts] or ["en"],
-            "scripts": scripts or ["Latn"], "issuer": None, "is_photo": (p.get("paper") or {}).get("origin") == "photo",
+            "scripts": scripts or ["Latn"], "issuer": issuer,
+            "is_photo": (p.get("paper") or {}).get("origin") == "photo",
             "quality": "fair", "title": "", "known_schema": doc_type != "other"}
 
 

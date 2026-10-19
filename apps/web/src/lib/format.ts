@@ -183,3 +183,15 @@ export function usd(amount: number | null | undefined, locale: string): string {
     maximumFractionDigits: digits,
   }).format(v);
 }
+
+/** A page that exists on the web. The sample cases' institutions are fictional and their "pages" sit on reserved
+ * names (example, invalid, test), which would open an error page; they are shown without a link. */
+export function openable(url: string | null | undefined): boolean {
+  if (!url) return false;
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return !/(^|\.)(example|invalid|test|localhost)$/.test(host) && !/(^|\.)example\.(com|org|net)$/.test(host);
+  } catch {
+    return false;
+  }
+}

@@ -1,7 +1,7 @@
 """Offline answers for the people and institution agents."""
 from __future__ import annotations
 
-from ..adapters.llm.models import OracleRequest
+from ..adapters.llm.models import OracleRequest, ToolCalls
 from ..domain.checks import normalise
 from ..domain.names import initials_compatible, name_similarity, script_of, strip_honorifics, tokens
 from . import Ctx, oracle
@@ -178,3 +178,30 @@ def institution_resolver(ctx: Ctx, req: OracleRequest) -> dict:
     return {"matches": [{"text": t.get("text", ""), "institution_id": None, "confidence": 0.0,
                          "reason": "Not in the institution directory; a live run searches the web."}
                         for t in ctx.payload(req).get("texts", [])]}
+
+
+@oracle("institution_researcher")
+def institution_researcher(ctx: Ctx, req: OracleRequest) -> dict | ToolCalls:
+    """Offline the web is the saved page snapshots: the name is searched for there and the first page read, as a
+    live lookup would; a snapshot never shows a real institution, so nothing is marked as found, the name is taken
+    as printed with its kind from its words, and the institution stays with the case, labelled as not checked."""
+    from ..modules.institutions import bank_type_of, display_name, kind_from_name, looks_like_org
+    p = ctx.payload(req)
+    name = str(p.get("name") or "")
+    country = str(p.get("country") or "")
+    if not looks_like_org(name) and (p.get("kind_hint") or "") not in ("bank", "insurer", "lender", "fund_house",
+                                                                          "employer", "pension", "government"):
+        return {"found": False, "is_person": True, "note": "Offline: this reads as a person's name, so nothing is "
+                "looked up."}
+    done = {r["name"] for r in req.tool_results}
+    if "web_search" not in done:
+        return ToolCalls([("web_search", {"query": f"{name} official site"})])
+    hits = next((r["response"] or {} for r in req.tool_results if r["name"] == "web_search"), {}).get("results") or []
+    if hits and "fetch_page" not in done:
+        return ToolCalls([("fetch_page", {"url": hits[0]["url"]})])
+    kind = kind_from_name(name, p.get("kind_hint"))
+    return {"found": False, "is_person": False, "official_name": display_name(name), "short_name": "",
+            "kind": kind if kind in ("bank", "insurer", "lender", "depository", "fund_house", "registrar", "pension",
+                                     "government", "employer", "company") else "other",
+            "country": country, "bank_type": bank_type_of(name, country) if kind == "bank" else None,
+            "note": "Offline: named as printed; a live run checks it on the web.", "sources": []}

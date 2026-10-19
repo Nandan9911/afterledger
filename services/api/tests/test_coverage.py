@@ -45,6 +45,21 @@ async def test_a_paper_of_an_unknown_kind_gets_a_schema_first(deps: Any) -> None
     assert any("No stored layout" in a.text for a in await deps.cases.list("case-u", "activity"))
 
 
+async def _long_statement(deps: Any) -> None:
+    """A statement with more payees than are read closely: the rest are screened (payee_screener)."""
+    from datetime import date
+    from decimal import Decimal
+
+    from afterledger.domain.case import CaseFile, Transaction
+    from afterledger.modules.discovery import MAX_GROUPS, discover
+    await deps.cases.put_case(CaseFile(id="case-long", title="Test", created_at=deps.now(), country_codes=["IN"]))
+    rows = [Transaction(id=f"tx{i}", case_id="case-long", paper_id="pp", date=date(2026, 1 + i % 9, 1 + i % 27),
+                        narration=f"UPI/SHOP {chr(65 + i // 26)}{chr(65 + i % 26)} STORES/PUNE",
+                        amount=Decimal(100 + i), direction="debit") for i in range(MAX_GROUPS + 15)]
+    await deps.cases.put_many("case-long", "transactions", rows)
+    await discover(deps, "case-long")
+
+
 def _called(root: Path) -> tuple[set[str], set[tuple[str, str]]]:
     agents: set[str] = set()
     tools: set[tuple[str, str]] = set()
@@ -87,6 +102,7 @@ def test_every_agent_and_every_tool_is_used(demo_state: DemoState, tmp_path: Pat
         await deps.cases.put_case(CaseFile(id="case-u", title="Test", created_at=deps.now()))
         paper = await add_upload(deps, "case-u", [("club.pdf", _pdf(MEMBERSHIP), "application/pdf")], uploaded_by=None)
         await read_paper(deps, "case-u", paper.id)
+        await _long_statement(deps)
         await deps.tasks.drain()
 
     asyncio.run(go())

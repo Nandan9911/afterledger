@@ -34,7 +34,7 @@ export function AddPapers({
   className?: string;
 }) {
   const t = useTranslations('papers');
-  const { caseId, viewerId } = useCase();
+  const { caseId, viewerId, readOnly } = useCase();
   const upload = useUpload(caseId);
   const input = useRef<HTMLInputElement>(null);
   return (
@@ -60,7 +60,13 @@ export function AddPapers({
           );
         }}
       />
-      <Button variant={variant} size={size} className={className} disabled={upload.isPending} onClick={() => input.current?.click()}>
+      <Button
+        variant={variant}
+        size={size}
+        className={className}
+        disabled={upload.isPending || readOnly}
+        onClick={() => input.current?.click()}
+      >
         {photo ? <Camera size={20} aria-hidden="true" /> : null}
         {label}
       </Button>
@@ -127,7 +133,7 @@ function CheckCard({ v, cp }: { v: ValueView; cp: Checkpoint }) {
   const t = useTranslations('papers');
   const tc = useTranslations('common');
   const locale = useLocale();
-  const { caseId, viewerId } = useCase();
+  const { caseId, viewerId, readOnly } = useCase();
   const answer = useAnswer(caseId);
   const [no, setNo] = useState(false);
   const [value, setValue] = useState('');
@@ -171,12 +177,12 @@ function CheckCard({ v, cp }: { v: ValueView; cp: Checkpoint }) {
         <div className="mt-2 flex flex-wrap gap-2.5">
           <Button
             variant="dark"
-            disabled={answer.isPending}
+            disabled={answer.isPending || readOnly}
             onClick={() => answer.mutate({ checkpointId: cp.id, answer: 'yes', by: viewerId }, { onSuccess: done })}
           >
             {tc('yes')}
           </Button>
-          <Button variant="secondary" onClick={() => setNo(true)}>
+          <Button variant="secondary" disabled={readOnly} onClick={() => setNo(true)}>
             {t('itSaysElse')}
           </Button>
         </div>

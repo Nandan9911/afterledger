@@ -44,7 +44,9 @@ async def _read_once(deps: Any, case_id: str, paper_id: str) -> None:
 
 async def after_reading(deps: Any, case_id: str) -> None:
     """What the papers lead to, across the case: who and what they name, what they point to, the claims and plans."""
+    await reading.death_from_certificate(deps, case_id)
     await people.resolve_institutions(deps, case_id)
+    await discovery.holdings_from_family(deps, case_id)
     await people.resolve_people(deps, case_id)
     await discovery.discover(deps, case_id)
     await people.payees(deps, case_id)

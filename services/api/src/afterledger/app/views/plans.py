@@ -10,7 +10,7 @@ from typing import Any
 from ...domain.calendars import format_date
 from ...modules.common import knowledge, snapshot
 from ..schemas import Compensation, PlanRow, PlansView, PlanView
-from .common import chip, cite_views, institution_name, money
+from .common import chip, cite_views, institution_name, money, tidy_text
 from .localize import localize
 
 STATUS = {"planning": "Being planned", "ready": "Papers ready to sign", "submitted": "Handed in",
@@ -119,8 +119,13 @@ async def plan(deps: Any, case_id: str, plan_id: str, lang: str = "en") -> PlanV
     procedures = [c.title for c in snap.claims if c.kind == "procedure" and claim.id in c.needed_by
                   and c.status != "closed"]
     needed_by = [c.title for c in snap.claims if c.id in claim.needed_by]
-    pack = next((p for p in snap.packs if p.claim_id == claim.id), None)
-    cp = cp.model_copy(update={"documents": _document_states(cp.documents, claim, pack)}, deep=True)
+    # the papers for the plan shown (an interim plan's letter is a pack of its own)
+    pack = next((p for p in snap.packs if p.claim_id == claim.id and p.plan_key in (None, cp.plan_key)), None) or \
+        next((p for p in snap.packs if p.claim_id == claim.id), None)
+    explained = [{**e, "text": await tidy_text(deps, e.get("text")),
+                  "text_local": await tidy_text(deps, e.get("text_local"), ids_only=True)} for e in cp.explained]
+    cp = cp.model_copy(update={"documents": _document_states(cp.documents, claim, pack),
+                               "summary": await tidy_text(deps, cp.summary), "explained": explained}, deep=True)
     view = PlanView(plan=cp, claim=claim, institution=inst, amount=money(claim.amount_due, claim.currency),
                     questions=questions, approval=approval, approved_by=chip(snap.person(cp.approved_by)),
                     compensation=await compensation_views(deps, claim, cp.plan_key, today),
@@ -128,7 +133,7 @@ async def plan(deps: Any, case_id: str, plan_id: str, lang: str = "en") -> PlanV
                     needed_by=needed_by, procedures=procedures,
                     family_clocks=[c.model_copy() for c in family_clocks])
     # the words the server wrote, in the page's language (the plan's own *_local texts are already there)
-    await localize(deps, lang, [(s, "text") for s in view.plan.steps]
+    await localize(deps, lang, [(q, "question") for q in view.questions] + [(s, "text") for s in view.plan.steps]
                    + [(c, f) for c in [*view.plan.clocks, *view.family_clocks] for f in ("label", "notes")]
                    + [(d, f) for d in view.plan.documents for f in ("name", "note")]
                    + [(view.plan, "must_not_be_asked"), (view.plan, "contested"), (view, "procedures"),

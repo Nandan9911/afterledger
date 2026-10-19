@@ -11,6 +11,9 @@ CASE_ID: ContextVar[str | None] = ContextVar("afterledger_case_id", default=None
 # extra rounds, which a case's budget can stop.
 PURPOSE: ContextVar[str] = ContextVar("afterledger_purpose", default="core")
 OPTIONAL_PURPOSES = frozenset({"research", "repair"})
+# The research run a model call belongs to, so one run's cost can be capped (AL_RESEARCH_BUDGET_USD) whichever case,
+# or none, it works for.
+RESEARCH_RUN: ContextVar[str | None] = ContextVar("afterledger_research_run", default=None)
 
 
 @contextmanager
@@ -25,3 +28,13 @@ def working_on(case_id: str | None = None, purpose: str | None = None) -> Iterat
     finally:
         for var, tok in reversed(tokens):
             var.reset(tok)
+
+
+@contextmanager
+def researching(run_id: str) -> Iterator[None]:
+    """Every model call inside counts towards this research run's cost."""
+    tok = RESEARCH_RUN.set(run_id)
+    try:
+        yield
+    finally:
+        RESEARCH_RUN.reset(tok)

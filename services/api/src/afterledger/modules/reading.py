@@ -796,3 +796,69 @@ async def answer_value_check(deps: Any, case_id: str, value_id: str, answer: str
 
 def normalised_name(text: str) -> str:
     return normalise(text)
+
+
+async def death_from_certificate(deps: Any, case_id: str) -> bool:
+    """A death certificate the family added settles the date of death when nobody has said it, and names the person
+    who died when the conversation has not: every claim's time limits count from that date. Runs under the case's
+    lock, after reading (reading itself writes only each paper's own records). Returns True when the case changed."""
+    from ..domain.case import NameForm, Person
+    from ..domain.names import script_of
+    case = await deps.cases.get_case(case_id)
+    if case is None:
+        return False
+    papers = [p for p in await deps.cases.list(case_id, "papers")
+              if p.doc_type == "death_certificate" and p.status in ("read", "needs_check")]
+    if not papers:
+        return False
+    values = [v for v in await deps.cases.list(case_id, "values") if v.paper_id in {p.id for p in papers}]
+
+    def best(field: str) -> Any:
+        sure = [v for v in values if v.field == field and v.value and v.certainty == "sure"]
+        return (sure or [v for v in values if v.field == field and v.value])[0] if any(
+            v.field == field and v.value for v in values) else None
+
+    changed = False
+    dod = best("date_of_death")
+    died: date | None = None
+    if dod is not None:
+        try:
+            died = date.fromisoformat(dod.value)
+        except ValueError:
+            died = parse_date(dod.value)
+    if died is not None and case.died_on is None:
+        case.died_on = died
+        changed = True
+        await deps.activity(case_id, MODULE, f"The death certificate gives the date of death: {died.day} "
+                            f"{died.strftime('%B %Y')}. Every claim's time limits now count from it.", kind="step")
+    place = best("place_of_death")
+    if place is not None and not case.died_in:
+        case.died_in = place.value
+        changed = True
+    name = best("deceased_name")
+    if name is not None and (not case.deceased_id or case.title in ("New case", "")):
+        did = case.deceased_id or stable_id("p", case_id, "deceased")
+        person = await deps.cases.get(case_id, "people", did) or Person(
+            id=did, case_id=case_id, display_name=name.value, roles=["deceased"], color="#D9D2C5",
+            initials=(name.value[:1] if script_of(name.value) != "Latn" else
+                      "".join(w[0] for w in name.value.split()[:2]).upper()))
+        if not any(normalise(n.text) == normalise(name.value) for n in person.names):
+            person.names.append(NameForm(text=name.value, script=script_of(name.value), seen_on=name.paper_id))
+        person.death_date = case.died_on or person.death_date
+        person.death_place = case.died_in or person.death_place
+        await deps.cases.put(case_id, "people", person)
+        case.deceased_id = did
+        if case.title in ("New case", ""):
+            case.title = name.value
+        changed = True
+    if not changed:
+        return False
+    await deps.cases.put_case(case)
+    if case.died_on is not None:                 # rows read before the date was known: which came after it
+        txns = await deps.cases.list(case_id, "transactions")
+        moved = [t for t in txns if t.after_death != (t.date > case.died_on)]
+        for t in moved:
+            t.after_death = t.date > case.died_on
+        await deps.cases.put_many(case_id, "transactions", moved)
+    deps.changed(case_id, "case", "people", "transactions")
+    return True

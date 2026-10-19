@@ -354,7 +354,7 @@ function Questions({ view }: { view: PlanView }) {
   const t = useTranslations('plan');
   const tt = useTranslations('task');
   const locale = useLocale();
-  const { caseId, viewerId } = useCase();
+  const { caseId, viewerId, readOnly } = useCase();
   const answer = useAnswer(caseId);
   if (!view.questions.length) return null;
   return (
@@ -373,7 +373,7 @@ function Questions({ view }: { view: PlanView }) {
               <Button
                 key={o.value}
                 variant={i === 0 ? 'dark' : 'secondary'}
-                disabled={answer.isPending}
+                disabled={answer.isPending || readOnly}
                 onClick={() =>
                   answer.mutate({ checkpointId: q.id, answer: o.value, by: viewerId }, { onSuccess: () => toast.success(tt('answered')) })
                 }
@@ -388,9 +388,40 @@ function Questions({ view }: { view: PlanView }) {
   );
 }
 
+/** A claim no stored plan covered: its interim plan, and the research that will replace it. */
+function ResearchNote({ view }: { view: PlanView }) {
+  const t = useTranslations('plan');
+  if (!isInterim(view.plan.plan_key)) return null;
+  const r = (view.claim.research ?? {}) as { status?: string; run_id?: string };
+  const running = r.status === 'running';
+  return (
+    <section
+      role="status"
+      className="flex items-start gap-3.5 rounded-[14px] border-[1.5px] border-dotted border-blank bg-sheet px-5 py-4"
+    >
+      {running ? <span aria-hidden="true" className="mt-1.5 h-3 w-3 shrink-0 animate-pulse-soft rounded-full bg-blank" /> : null}
+      <div className="min-w-0">
+        <p className="m-0 text-[17px] font-bold">{running ? t('interim.runningTitle') : t('interim.waitingTitle')}</p>
+        <p className="m-0 mt-1 text-[15px] text-ink-soft">
+          {running ? t('interim.runningNote') : r.status === 'off' ? t('interim.offNote') : t('interim.waitingNote')}
+        </p>
+        {r.run_id ? (
+          <Link href={`/challenge/${r.run_id}`} className="mt-1.5 inline-block text-[15px] font-bold">
+            {running ? t('interim.watch') : t('interim.see')}
+          </Link>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+export function isInterim(planKey: string | null | undefined): boolean {
+  return Boolean(planKey && planKey.startsWith('XX/'));
+}
+
 function Approval({ view }: { view: PlanView }) {
   const t = useTranslations('plan');
-  const { caseId, viewerId } = useCase();
+  const { caseId, viewerId, readOnly } = useCase();
   const answer = useAnswer(caseId);
   const router = useRouter();
   const a = view.approval;
@@ -404,7 +435,7 @@ function Approval({ view }: { view: PlanView }) {
       <div className="flex flex-wrap gap-2.5">
         <Button
           size="lg"
-          disabled={answer.isPending}
+          disabled={answer.isPending || readOnly}
           onClick={() =>
             answer.mutate({ checkpointId: a.id, answer: 'approve', by: viewerId }, { onSuccess: () => toast.success(t('approved')) })
           }
@@ -531,12 +562,17 @@ export function PlanScreen({ caseId, planId }: { caseId: string; planId: string 
             ) : view.approval ? (
               <Chip tone="pencil">{t('notApproved')}</Chip>
             ) : null}
-            {p.research_label ? (
-              <Chip>{p.verified_on ? t('verifiedOn', { date: longDate(p.verified_on, locale) }) : t('researchedNow')}</Chip>
+            {p.research_label && !isInterim(p.plan_key) ? (
+              <Chip>
+                {p.verified_on
+                  ? t(p.unverified || p.level === 'draft' ? 'researchedOn' : 'verifiedOn', { date: longDate(p.verified_on, locale) })
+                  : t('researchedNow')}
+              </Chip>
             ) : null}
           </div>
         </header>
 
+        <ResearchNote view={view} />
         <FamilyDeadlines view={view} />
         <Questions view={view} />
         <Approval view={view} />
@@ -646,7 +682,9 @@ export function PlanScreen({ caseId, planId }: { caseId: string; planId: string 
               {t('contested')}
             </p>
           ) : null}
-          {p.level === 'draft' ? <p className="m-0 mt-3 rounded-[10px] bg-blank-tint px-3.5 py-3 text-[16px]">{t('unverified')}</p> : null}
+          {p.level === 'draft' && !isInterim(p.plan_key) ? (
+            <p className="m-0 mt-3 rounded-[10px] bg-blank-tint px-3.5 py-3 text-[16px]">{t('unverified')}</p>
+          ) : null}
         </Sheet>
 
         {instClocks.map((c) => (
@@ -657,6 +695,12 @@ export function PlanScreen({ caseId, planId }: { caseId: string; planId: string 
           <ButtonLink href={`/cases/${caseId}/packs/${view.pack_id}`} className="self-start">
             {t('openPack')}
           </ButtonLink>
+        ) : view.approved_by && view.claim.kind !== 'procedure' ? (
+          // approved: the papers are prepared in the background, and appear here by themselves
+          <p role="status" className="m-0 flex items-center gap-2.5 text-[16px] text-ink-soft">
+            <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 animate-pulse-soft rounded-full bg-ledger" />
+            {t('preparingPack')}
+          </p>
         ) : null}
       </div>
       {wide ? (

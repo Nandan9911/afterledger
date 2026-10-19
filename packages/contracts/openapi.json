@@ -4014,6 +4014,11 @@
       "type": "boolean",
       "title": "Research Started",
       "default": false
+     },
+     "kept": {
+      "type": "boolean",
+      "title": "Kept",
+      "default": true
      }
     },
     "type": "object",
@@ -4022,7 +4027,8 @@
      "answer",
      "sources",
      "follow_ups",
-     "research_started"
+     "research_started",
+     "kept"
     ],
     "title": "AskOut"
    },
@@ -4533,6 +4539,20 @@
        }
       ],
       "title": "Working Since"
+     },
+     "read_only": {
+      "type": "boolean",
+      "title": "Read Only",
+      "default": false
+     },
+     "researching": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Researching",
+      "default": []
      }
     },
     "type": "object",
@@ -4546,7 +4566,9 @@
      "nav",
      "mode",
      "working",
-     "working_since"
+     "working_since",
+     "read_only",
+     "researching"
     ],
     "title": "CaseHeader"
    },
@@ -5680,6 +5702,11 @@
       "title": "Source Url",
       "default": ""
      },
+     "read_url": {
+      "type": "string",
+      "title": "Read Url",
+      "default": ""
+     },
      "publisher": {
       "type": "string",
       "title": "Publisher",
@@ -5782,6 +5809,7 @@
      "quote_translation",
      "source_title",
      "source_url",
+     "read_url",
      "publisher",
      "tier",
      "tier_label",
@@ -6033,6 +6061,12 @@
       "type": "object",
       "title": "Signers",
       "default": {}
+     },
+     "research": {
+      "additionalProperties": true,
+      "type": "object",
+      "title": "Research",
+      "default": {}
      }
     },
     "type": "object",
@@ -6062,7 +6096,8 @@
      "next_action",
      "country",
      "events",
-     "signers"
+     "signers",
+     "research"
     ],
     "title": "Claim"
    },
@@ -6401,6 +6436,16 @@
       "type": "array",
       "title": "Cites",
       "default": []
+     },
+     "rule": {
+      "type": "boolean",
+      "title": "Rule",
+      "default": true
+     },
+     "starts_on": {
+      "type": "string",
+      "title": "Starts On",
+      "default": ""
      }
     },
     "type": "object",
@@ -6426,7 +6471,9 @@
      "spread_pct",
      "amount",
      "currency",
-     "cites"
+     "cites",
+     "rule",
+     "starts_on"
     ],
     "title": "ClockState"
    },
@@ -6799,6 +6846,11 @@
       "type": "array",
       "title": "Cites",
       "default": []
+     },
+     "kind": {
+      "type": "string",
+      "title": "Kind",
+      "default": ""
      }
     },
     "type": "object",
@@ -6823,7 +6875,8 @@
      "letter_mirror",
      "letter_lang",
      "status",
-     "cites"
+     "cites",
+     "kind"
     ],
     "title": "Correspondence"
    },
@@ -8232,6 +8285,7 @@
       "enum": [
        "bank",
        "insurer",
+       "lender",
        "depository",
        "fund_house",
        "registrar",
@@ -8286,6 +8340,38 @@
       "type": "string",
       "title": "Note",
       "default": ""
+     },
+     "bank_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Bank Type"
+     },
+     "branch": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Branch"
+     },
+     "learned": {
+      "type": "boolean",
+      "title": "Learned",
+      "default": false
+     },
+     "source": {
+      "type": "string",
+      "title": "Source",
+      "default": ""
      }
     },
     "type": "object",
@@ -8300,7 +8386,11 @@
      "domain",
      "bereavement_url",
      "fictional",
-     "note"
+     "note",
+     "bank_type",
+     "branch",
+     "learned",
+     "source"
     ],
     "title": "Institution"
    },
@@ -9089,8 +9179,10 @@
       "type": "string",
       "enum": [
        "reminder",
+       "chase",
        "objection",
-       "grievance"
+       "grievance",
+       "request"
       ],
       "title": "Kind",
       "default": "reminder"
@@ -9670,6 +9762,17 @@
       "type": "string",
       "title": "Claim Id"
      },
+     "plan_key": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Plan Key"
+     },
      "title": {
       "type": "string",
       "title": "Title"
@@ -9748,6 +9851,7 @@
      "id",
      "case_id",
      "claim_id",
+     "plan_key",
      "title",
      "summary",
      "items",
@@ -12133,6 +12237,15 @@
       "title": "Holdings Mentioned",
       "default": []
      },
+     "holdings": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Holdings",
+      "default": []
+     },
      "papers_at_hand": {
       "items": {
        "type": "string"
@@ -12241,6 +12354,7 @@
      "country_codes",
      "family",
      "holdings_mentioned",
+     "holdings",
      "papers_at_hand",
      "urgent",
      "will",

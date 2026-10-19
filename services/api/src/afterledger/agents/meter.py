@@ -15,7 +15,7 @@ from typing import Any
 import yaml
 
 from ..domain.ids import new_id
-from .context import OPTIONAL_PURPOSES
+from .context import OPTIONAL_PURPOSES, RESEARCH_RUN
 
 log = logging.getLogger(__name__)
 
@@ -100,6 +100,7 @@ class Meter:
         self.by_case: dict[str, Usage] = {}
         self.by_agent: dict[str, Usage] = {}
         self.by_model: dict[str, Usage] = {}
+        self.by_run: dict[str, Usage] = {}       # research runs, whose cost is capped (AL_RESEARCH_BUDGET_USD)
         self._since_activity: dict[str, Usage] = {}
         self._loaded: set[str] = set()
         self._warned: set[str] = set()
@@ -116,6 +117,9 @@ class Meter:
         if case_id:
             self.by_case.setdefault(case_id, Usage()).add(u)
             self._since_activity.setdefault(case_id, Usage()).add(u)
+        run_id = RESEARCH_RUN.get()
+        if run_id:
+            self.by_run.setdefault(run_id, Usage()).add(u)
         try:
             await self.deps.trace.record({
                 "type": "model_call", "id": new_id("mc"), "agent": agent, "case_id": case_id, "model": model,
@@ -153,6 +157,13 @@ class Meter:
         spent = self.by_case.get(case_id, Usage()).cost_usd
         if spent >= self.budget:
             raise BudgetExceeded(case_id, spent, self.budget)
+
+    def run_cost(self, run_id: str) -> float:
+        """What one research run's model calls have cost so far."""
+        return self.by_run.get(run_id, Usage()).cost_usd
+
+    def forget_run(self, run_id: str) -> None:
+        self.by_run.pop(run_id, None)
 
     def near_budget(self, case_id: str) -> bool:
         return bool(self.budget) and self.by_case.get(case_id, Usage()).cost_usd >= 0.8 * float(self.budget or 0)

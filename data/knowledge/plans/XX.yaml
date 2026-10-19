@@ -1,0 +1,112 @@
+# Interim plans, the same in every country. A claim whose situation has no stored plan starts on one of these while
+# the research agents work out the actual rules (modules/rules_research.py); the researched plan then replaces it.
+# They state no rule: only the first step any family can take anywhere, which is to tell the institution in writing
+# and ask what it holds and how to claim. Hence unverified, with nothing cited.
+plans:
+  # ===============================================================================================
+  - key: XX/interim_claim
+    title: Tell the institution and ask how to claim
+    jurisdiction: XX
+    holding_kinds: []
+    level: draft
+    unverified: true
+    variables: []
+    documents:
+      - id: death_cert
+        name: Death certificate (a copy)
+      - id: claimant_id
+        name: The claimant's identity and address proof
+      - id: relationship_proof
+        name: Proof of the claimant's relationship to the person who died, if the institution asks for it
+        note: A nomination, a legal heir certificate or another paper the institution accepts.
+    clocks:
+      - id: reply_expected
+        short: reply expected
+        label: A reply is expected within 30 days of the letter. This is AfterLedger's own date to follow up, not a rule.
+        owner: institution
+        kind: wait
+        starts_on: notified
+        ends_on: reply_received
+        length: 30
+        unit: calendar_days
+        rule: false
+        cites: []
+    steps:
+      - id: notify
+        kind: submit
+        actor: family
+        text: Write to the institution about the death, with a copy of the death certificate and the claimant's identity proof, and ask it to record the death, to say what it holds and how much, and to send its claim procedure and forms.
+        documents: [death_cert, claimant_id]
+        clocks: [reply_expected]
+        done_on: notified
+      - id: wait_reply
+        kind: wait
+        actor: institution
+        text: The institution replies with what it holds and how to claim. Add its reply here when it comes.
+        clocks: [reply_expected]
+        after: [notify]
+        done_on: reply_received
+      - id: follow_up
+        kind: follow_up
+        actor: family
+        text: If no reply comes, write again; AfterLedger drafts the reminder.
+        after: [wait_reply]
+      - id: claim
+        kind: follow_up
+        actor: family
+        text: Claim as the institution directs, with the papers it lists.
+        documents: [relationship_proof]
+        after: [wait_reply]
+    notes: An interim plan, used until research on the actual rules finishes; it cites no rule because it states none.
+
+  # ===============================================================================================
+  - key: XX/interim_debt
+    title: Tell the lender about the death
+    jurisdiction: XX
+    holding_kinds: []
+    level: draft
+    unverified: true
+    variables: []
+    documents:
+      - id: death_cert
+        name: Death certificate (a copy)
+      - id: claimant_id
+        name: Identity proof of the family member writing
+    clocks:
+      - id: reply_expected
+        short: reply expected
+        label: A reply is expected within 30 days of the letter. This is AfterLedger's own date to follow up, not a rule.
+        owner: institution
+        kind: wait
+        starts_on: notified
+        ends_on: reply_received
+        length: 30
+        unit: calendar_days
+        rule: false
+        cites: []
+    steps:
+      - id: notify
+        kind: submit
+        actor: family
+        text: Write to the lender about the death, with a copy of the death certificate. Ask it to stop taking instalments from the account of the person who died, to say what is owed as on the date of death, and whether any insurance covers the loan or card.
+        documents: [death_cert, claimant_id]
+        clocks: [reply_expected]
+        done_on: notified
+      - id: wait_reply
+        kind: wait
+        actor: institution
+        text: The lender replies with what is owed and any insurance cover. Add its reply here when it comes.
+        clocks: [reply_expected]
+        after: [notify]
+        done_on: reply_received
+      - id: follow_up
+        kind: follow_up
+        actor: family
+        text: If no reply comes, write again; AfterLedger drafts the reminder.
+        after: [wait_reply]
+      - id: settle
+        kind: follow_up
+        actor: family
+        text: Agree with the lender how what is owed is settled from what the person who died left, once its reply or the researched rules say how. Pay nothing from the family's own money until then.
+        after: [wait_reply]
+    notes: An interim plan, used until research on the actual rules finishes; it cites no rule because it states none.

@@ -33,6 +33,7 @@ plans:
       - name: bank_type
         type: choice
         options: [commercial, urban_coop, other]
+        question: Is this a commercial bank (most banks, including small finance and payments banks), an urban co-operative bank, or another kind, such as a rural co-operative bank?
         derive: institution:bank_type
         cites: [in_rbi_threshold, in_rbi_ucb_threshold]
       - name: has_will
@@ -1066,7 +1067,7 @@ plans:
     variables:
       - name: member_paid_premium
         type: tri
-        question: Was the PMJJBY premium of ₹436 debited from his account this year?
+        question: Was the PMJJBY premium of ₹436 debited from the account of the person who died this year?
         derive: lead_evidence:pmjjby
         cites: [in_pmjjby_premium]
       - name: within_age

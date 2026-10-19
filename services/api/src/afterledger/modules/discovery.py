@@ -93,7 +93,8 @@ async def holdings_from_papers(deps: Any, case_id: str) -> list[Holding]:
         h = existing.get(hid) or next((x for x in existing.values() if paper.id in x.paper_ids and x.kind == kind), None)
         if h is None:
             # a lead that a paper now proves keeps its place on the money map
-            h = next((x for x in existing.values() if x.lead_id and x.institution_id == paper.institution_id
+            h = next((x for x in existing.values() if (x.lead_id or x.source == "family")
+                      and x.institution_id == paper.institution_id
                       and x.kind == kind and not x.account_mask and not x.paper_ids), None)
             if h is not None:
                 h.label = _label(kind)
@@ -132,6 +133,60 @@ async def holdings_from_papers(deps: Any, case_id: str) -> list[Holding]:
             await deps.activity(case_id, MODULE, f"Added to the money map: {inst.name if inst else 'an institution'}, "
                                 f"{h.label.lower()}{' ending ' + h.account_mask if h.account_mask else ''}, {amount}.",
                                 kind="step")
+    return out
+
+
+DEBT_KINDS = {"loan", "card_loan", "credit_card"}
+
+
+async def holdings_from_family(deps: Any, case_id: str) -> list[Holding]:
+    """What the family named in the conversation ("his SBI account", "an LIC policy", "a loan from Bajaj Finance")
+    goes onto the money map as theirs, with its institution identified (looked up on the web when the directory does
+    not have it), so it is planned and claimed like anything a paper shows. A kind of holding named without its
+    institution waits: the coverage questions ask where it is held. A paper that later shows the same thing takes
+    the holding over."""
+    from typing import get_args
+
+    from ..domain.case import HoldingKind
+    from .institutions import Lookups, resolve
+    case = await deps.cases.get_case(case_id)
+    sit = case.situation if case else None
+    if case is None or case.demo_key or sit is None or not sit.holdings:
+        return []
+    allowed = set(get_args(HoldingKind))
+    existing = await deps.cases.list(case_id, "holdings")
+    lookups = Lookups(8)
+    out: list[Holding] = []
+    for m in sit.holdings:
+        name = str(m.get("institution") or "").strip()
+        if not name:
+            continue
+        kind = m.get("kind") if m.get("kind") in allowed else "other"
+        inst = await resolve(deps, case, name, kind=_HOLDER_KIND.get(kind), lookups=lookups, must_be_org=False,
+                             context=f"the family said the person who died had: {m.get('said') or name}",
+                             source="named by the family")
+        if inst is None:
+            continue
+        if any(h.institution_id == inst.id and h.kind == kind and h.status != "closed" for h in existing):
+            continue                      # already on the money map, from a paper, a lead or an earlier turn
+        country = (inst.country or (case.country_codes or ["IN"])[0]).split("-")[0]
+        h = Holding(id=stable_id("h", case_id, "family", inst.id, kind), case_id=case_id, institution_id=inst.id,
+                    kind=kind, direction="debt" if kind in DEBT_KINDS or m.get("direction") == "debt" else "asset",  # type: ignore[arg-type]
+                    label=_label(kind), status="confirmed", source="family", country=country,
+                    currency=CURRENCY.get(country, "INR"), note=f"The family said: “{m.get('said') or name}”.")
+        out.append(h)
+        existing.append(h)
+        await ensure_institution_id(deps, case_id, inst.id)
+    if out:
+        await deps.cases.put_many(case_id, "holdings", out)
+        k = knowledge(deps)
+        names = []
+        for h in out:
+            inst = await k.institution(h.institution_id)
+            names.append(f"{(inst.short_name or inst.name) if inst else 'an institution'}, {h.label.lower()}")
+        await deps.activity(case_id, MODULE, "Added to the money map from what the family said: " + "; ".join(names)
+                            + ".", kind="step")
+        deps.changed(case_id, "holdings")
     return out
 
 
@@ -190,14 +245,59 @@ def worth_reading(groups: list[PaymentGroup]) -> list[PaymentGroup]:
     return [g for g in groups if g.id in keep]
 
 
+SCREEN_BATCH = 80          # payees one quick screening call looks at
+SCREEN_EXTRA = 40          # the most a screening adds to the closer reading
+
+
+async def screen_payees(deps: Any, case: Any, rest: list[PaymentGroup], rails: dict | None) -> list[PaymentGroup]:
+    """Every payee beyond the first MAX_GROUPS gets a quick look, in batches, by a small model: what it is, and whether
+    it may point to something to claim, owe or stop. Those that may are read closely too (at most SCREEN_EXTRA), so a
+    policy paid once a year or a loan paid by UPI is not missed for being one payee among hundreds."""
+    batches = [rest[i:i + SCREEN_BATCH] for i in range(0, len(rest), SCREEN_BATCH)]
+
+    async def one(n: int, batch: list[PaymentGroup]) -> list:
+        try:
+            out = await call_agent(deps, "payee_screener", {
+                "key": pack_key("payee_screener", case, str(n)), "case": case_block(case), "rails": rails,
+                "groups": [{"id": g.id, "label": g.label, "direction": g.direction, "count": g.count,
+                            "cadence": g.cadence, "amount": str(g.amount_typical), "currency": g.currency}
+                           for g in batch]}, case_id=case.id)
+            return list(out.items)
+        except (AgentError, Unusable, ValidationError, json.JSONDecodeError) as e:
+            log.warning("payee screening batch %d for %s failed: %s", n, case.id, e)
+            return []
+    found = [x for items in await asyncio.gather(*(one(n, b) for n, b in enumerate(batches))) for x in items]
+    by_id = {g.id: g for g in rest}
+    worth: list[PaymentGroup] = []
+    for it in found:
+        g = by_id.get(it.group_id)
+        if g is None:
+            continue
+        g.counterparty = g.counterparty or it.counterparty
+        g.counterparty_kind = g.counterparty_kind or (it.kind if it.kind != "unknown" else None)
+        if it.worth:
+            worth.append(g)
+    await deps.cases.put_many(case.id, "groups", [by_id[it.group_id] for it in found if it.group_id in by_id])
+    # the most telling first, as for the first MAX_GROUPS
+    return sorted(worth, key=lambda g: (-(g.after_death_count > 0), -(g.count >= 2), -float(g.amount_typical)))[
+        :SCREEN_EXTRA]
+
+
 async def discover(deps: Any, case_id: str) -> list[Lead]:
     await holdings_from_papers(deps, case_id)
     all_groups = await group_payments(deps, case_id)
     groups = worth_reading(all_groups)
     if len(groups) < len(all_groups):
-        await deps.activity(case_id, MODULE, f"The statements have {len(all_groups)} different payments and payees; "
-                            f"the {len(groups)} that recur, continued after the death, or name a policy, fund, loan "
-                            "or pension are looked into first.", kind="step")
+        case0 = await deps.cases.get_case(case_id)
+        country0 = next(iter(case0.country_codes or []), "IN")
+        rest = [g for g in all_groups if g.id not in {x.id for x in groups}]
+        extra = await screen_payees(deps, case0, rest, await deps.knowledge.get("rails", country0))
+        keep = {g.id for g in groups} | {g.id for g in extra}
+        groups = [g for g in all_groups if g.id in keep]
+        await deps.activity(case_id, MODULE, f"The statements have {len(all_groups)} different payments and payees. "
+                            f"The {len(all_groups) - len(rest)} that recur, continued after the death, or name a policy, "
+                            f"fund, loan or pension are looked into closely; the other {len(rest)} were screened "
+                            f"quickly, and {len(extra)} of them looked worth a closer reading too.", kind="step")
     snap = await snapshot(deps, case_id)
     case = snap.case
     k = knowledge(deps)
@@ -350,7 +450,7 @@ async def discover(deps: Any, case_id: str) -> list[Lead]:
         lead.group_ids = gids
         lead.paper_ids = pids
         lead.institution_id = h.institution_id or lead.institution_id or \
-            await _institution_of(k, gids, by_group, countries)
+            await _institution_of(k, gids, by_group, countries, case_id=case_id)
         if inv:
             lead.sentence, lead.investigator_note = inv.sentence, inv.investigator_note
             lead.sentence_local = inv.sentence_local or lead.sentence_local
@@ -391,7 +491,7 @@ async def discover(deps: Any, case_id: str) -> list[Lead]:
                             sentence=d.sentence)
         lead.group_ids, lead.cites = gids, d.cites
         lead.institution_id = d.institution_id or lead.institution_id or \
-            await _institution_of(k, gids, by_group, countries)
+            await _institution_of(k, gids, by_group, countries, case_id=case_id)
         lead.holding_kind = _valid_kind(d.holding_kind) or lead.holding_kind
         lead.category = canonical_category(d.category or lead.category, lead.holding_kind, cov_items)
         lead.title_local, lead.sentence_local = d.title_local, d.sentence_local
@@ -401,6 +501,7 @@ async def discover(deps: Any, case_id: str) -> list[Lead]:
         lead.probability, lead.label = 0.97, "sure"
         lead.evidence = _lead_evidence(lead, by_group, txn_by_id, snap)
         leads.append(lead)
+    await name_institutions(deps, case, leads, by_group)
     cov = await call_agent(deps, "coverage_auditor", {"key": pack_key("coverage_auditor", case, str(len(leads))), **base,
                                                       "coverage": coverage, "holdings": [h.kind for h in snap.holdings],
                                                       "leads": [x.category for x in leads]}, case_id=case_id)
@@ -453,7 +554,66 @@ def canonical_category(category: str, holding_kind: str | None, items: list[dict
     return category
 
 
-async def _institution_of(k: Any, group_ids: list[str], by_group: dict, countries: list[str]) -> str | None:
+# the kind of institution that holds (or is owed) each kind of holding, as a hint for naming it
+_HOLDER_KIND = {"savings": "bank", "current": "bank", "fixed_deposit": "bank", "recurring_deposit": "bank", "nre": "bank",
+                "nro": "bank", "locker": "bank", "life_policy": "insurer", "accident_cover": "insurer",
+                "government_cover": "government", "mutual_fund": "fund_house", "demat": "depository",
+                "shares_physical": "registrar", "provident_fund": "pension", "pension": "pension",
+                "family_pension": "pension", "cpf": "pension", "loan": "lender", "card_loan": "lender",
+                "credit_card": "bank", "employer_benefit": "employer", "salary": "employer", "chit_fund": "chit_fund",
+                "social_security": "government"}
+
+
+async def name_institutions(deps: Any, case: Any, leads: list[Lead], by_group: dict) -> None:
+    """Each lead the family could claim or settle needs the institution behind it. Where the directory has none, the
+    payee the payments name (or the institution the lead's own title names) is identified on the web, a few at a time
+    and at most a dozen per run; a lead whose payee is only a bare name keeps no institution, and its card asks the
+    family where it is held."""
+    from .institutions import ORG_COUNTERPARTIES, Lookups, looks_like_org, resolve
+    from .planning import holding_kind_of
+    lookups = Lookups()
+
+    async def one(lead: Lead) -> None:
+        if lead.institution_id or lead.kind in ("stop_payment", "refund") or lead.status == "closed":
+            return
+        hk = holding_kind_of(lead)
+        if hk is None:
+            return
+        hint = _HOLDER_KIND.get(hk)
+        names: list[tuple[str, str | None]] = []
+        for gid in lead.group_ids:
+            g = by_group.get(gid)
+            if g is not None and g.counterparty and (g.counterparty_kind in ORG_COUNTERPARTIES
+                                                     or looks_like_org(g.counterparty)):
+                names.append((g.counterparty, g.counterparty_kind))
+        if looks_like_org(lead.title):
+            names.append((lead.title, None))
+        tried: set[str] = set()
+        for name, cp_kind in names:
+            if name.lower() in tried:
+                continue
+            tried.add(name.lower())
+            what = (f"{lead.title}: the payments go to or come from {name}" if cp_kind else
+                    f"the institution named in “{lead.title}”")
+            if hk == "provident_fund":
+                what += ". The family will claim the person's provident fund; name the body they claim it from"
+            inst = await resolve(deps, case, name, kind=cp_kind if cp_kind in ("employer",) and hk != "provident_fund"
+                                 else hint, context=what, source=f"named in the payments behind “{lead.title}”",
+                                 lookups=lookups)
+            if inst is not None:
+                lead.institution_id = inst.id
+                return
+
+    await asyncio.gather(*(one(lead) for lead in leads))
+    if lookups.done:
+        await deps.activity(case.id, MODULE, f"Named the institution behind what was found: looked up "
+                            f"{lookups.done} name{'s' if lookups.done != 1 else ''} the directory did not have"
+                            + (f"; {lookups.skipped} more are kept as printed for now" if lookups.skipped else "")
+                            + ".", agent="institution_researcher", kind="research")
+
+
+async def _institution_of(k: Any, group_ids: list[str], by_group: dict, countries: list[str], *,
+                          case_id: str | None = None) -> str | None:
     """The one institution every payment of a lead names (its narration matched against the knowledge's names and
     statement tokens), when the model left it out; None when the payments name none, or more than one."""
     found: set[str] = set()
@@ -464,7 +624,7 @@ async def _institution_of(k: Any, group_ids: list[str], by_group: dict, countrie
         hit = None
         for text in (g.label, g.counterparty):       # the narration first, then the payee the interpreter named
             for country in countries or [None]:
-                inst, score = await k.find_institution(text, country) if text else (None, 0.0)
+                inst, score = await k.find_institution(text, country, case_id=case_id) if text else (None, 0.0)
                 if inst is not None and score >= 0.9:
                     hit = inst.id
                     break

@@ -32,16 +32,21 @@ function HandIn({ view }: { view: PackView }) {
   const tc = useTranslations('common');
   const tn = useTranslations('nav');
   const locale = useLocale();
-  const { caseId, viewerId } = useCase();
+  const { caseId, viewerId, readOnly } = useCase();
   const event = useClaimEvent(caseId);
   const [open, setOpen] = useState(false);
   const [on, setOn] = useState('');
   const claim = view.claim;
+  // an interim pack is the first letter to the institution: it is sent, and the claim itself comes later
+  const interim = Boolean(view.pack.plan_key?.startsWith('XX/'));
+  const sentOn = claim.submitted_on ?? (interim ? (claim.events?.notified ?? null) : null);
   if (HANDED_IN.has(claim.status) || claim.submitted_on) {
     return (
       <span className="inline-flex min-h-12 flex-wrap items-center gap-x-3 gap-y-1">
         <span className="font-bold text-ledger">
-          {claim.submitted_on ? t('handedIn', { date: dayMonth(claim.submitted_on, locale) }) : t('handedInPlain')}
+          {sentOn
+            ? t(interim ? 'sentOn' : 'handedIn', { date: dayMonth(sentOn, locale) })
+            : t(interim ? 'sentPlain' : 'handedInPlain')}
         </span>
         <Link href={`/cases/${caseId}/tracker`} className="tap font-bold">
           {tn('tracker')}
@@ -51,8 +56,8 @@ function HandIn({ view }: { view: PackView }) {
   }
   if (!open) {
     return (
-      <Button size="lg" onClick={() => setOpen(true)}>
-        {t('handIn')}
+      <Button size="lg" disabled={readOnly} onClick={() => setOpen(true)}>
+        {t(interim ? 'markSent' : 'handIn')}
       </Button>
     );
   }
@@ -63,12 +68,12 @@ function HandIn({ view }: { view: PackView }) {
         e.preventDefault();
         event.mutate(
           { claimId: claim.id, event: 'submitted', on: on || null, by: viewerId },
-          { onSuccess: () => (setOpen(false), toast.success(t('handInDone'))) },
+          { onSuccess: () => (setOpen(false), toast.success(t(interim ? 'sentDone' : 'handInDone'))) },
         );
       }}
     >
       <label className="flex flex-col gap-1 text-[15px] font-bold">
-        {t('handInWhen')}
+        {t(interim ? 'sentWhen' : 'handInWhen')}
         <input
           type="date"
           value={on}
@@ -234,7 +239,7 @@ function Approve({ view }: { view: PackView }) {
   const t = useTranslations('pack');
   const tc = useTranslations('common');
   const locale = useLocale();
-  const { caseId, viewerId } = useCase();
+  const { caseId, viewerId, readOnly } = useCase();
   const answer = useAnswer(caseId);
   const [changing, setChanging] = useState(false);
   const [note, setNote] = useState('');
@@ -290,12 +295,12 @@ function Approve({ view }: { view: PackView }) {
   }
   return (
     <>
-      <Button variant="secondary" size="lg" onClick={() => setChanging(true)}>
+      <Button variant="secondary" size="lg" disabled={readOnly} onClick={() => setChanging(true)}>
         {t('changeAsk')}
       </Button>
       <Button
         size="lg"
-        disabled={answer.isPending}
+        disabled={answer.isPending || readOnly}
         onClick={() =>
           answer.mutate({ checkpointId: cp.id, answer: 'approve', by: viewerId }, { onSuccess: () => toast.success(t('approvedToast')) })
         }

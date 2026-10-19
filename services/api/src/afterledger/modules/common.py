@@ -73,6 +73,19 @@ class Snapshot:
     def family(self) -> list[Person]:
         return [p for p in self.people if p.id != self.case.deceased_id]
 
+    def claimant(self, claim: Any = None) -> Person | None:
+        """Who makes a claim and signs its letters: the person the claim names, else the family's claimant, else the
+        person who started the case (the speaker claims unless the family says otherwise; until 19 October 2026 a
+        case with no claimant named yet had letters signed by no one)."""
+        named = self.person(getattr(claim, "claimant_person_id", None)) if claim is not None else None
+        if named is not None:
+            return named
+        found = next((p for p in self.family() if "claimant" in p.roles), None)
+        if found is not None:
+            return found
+        starter = self.person(self.case.viewer_person_id)
+        return starter if starter is not None and starter.id != self.case.deceased_id else None
+
 
 COLLECTION_FIELDS = ["people", "papers", "values", "facts", "holdings", "transactions", "groups", "leads", "claims",
                      "plans", "packs", "tasks", "checkpoints", "correspondence"]
@@ -88,10 +101,20 @@ async def snapshot(deps: Any, case_id: str, only: list[str] | None = None) -> Sn
     return snap
 
 
+def case_lock(deps: Any, case_id: str) -> Any:
+    """The lock that serialises changes to one case (asyncio.Lock), shared by the screens' actions and background jobs."""
+    import asyncio
+    locks = deps.extras.setdefault("case_locks", {})
+    lock = locks.get(case_id)
+    if lock is None:
+        lock = locks[case_id] = asyncio.Lock()
+    return lock
+
+
 def knowledge(deps: Any) -> Knowledge:
     k = deps.extras.get("knowledge")
     if k is None:
-        k = Knowledge(deps.knowledge, deps.pages)
+        k = Knowledge(deps.knowledge, deps.pages, cases=lambda: deps.cases)
         deps.extras["knowledge"] = k
     return k
 

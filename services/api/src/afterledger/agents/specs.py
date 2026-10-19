@@ -69,8 +69,12 @@ AGENTS: dict[str, AgentSpec] = {a.name: a for a in [
     _a("merge_critic", "people", "flash", "medium", S.MergeCriticOut, description="Challenges each merge"),
     _a("institution_resolver", "people", "flash", "low", S.InstitutionsOut,
        description="Payees and issuers to institutions in the directory"),
+    _a("institution_researcher", "people", "flash", "low", S.InstitutionResearchOut, ("web_search", "fetch_page"),
+       description="Identifies on the web an institution the directory does not have"),
     # M5 discovery
     _a("rail_profiler", "discovery", "lite", "low", S.RailOut, description="How this country's statements name payments"),
+    _a("payee_screener", "discovery", "lite", "low", S.PayeeScreenOut,
+       description="Screens every payee of a long statement for the ones worth a closer reading"),
     _a("narration_interpreter", "discovery", "flash", "low", S.NarrationOut, description="What a payment group is"),
     _a("hypothesis_generator", "discovery", "flash", "medium", S.HypothesesOut, description="What the payments point to"),
     _a("investigator", "discovery", "flash", "high", S.InvestigationOut, ("get_rows", "search_knowledge"),

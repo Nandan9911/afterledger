@@ -8,7 +8,7 @@ import type { CiteView, ConversationView, Utterance } from '@afterledger/contrac
 import { Keyboard, Mic, Send } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Fragment, useEffect, useRef, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { useCase } from '@/components/CaseShell';
 import { useListening, useLiveVoice, useSpeech } from '@/components/Voice';
@@ -88,6 +88,8 @@ export function AskScreen({ caseId }: { caseId: string }) {
   const [pending, setPending] = useState<string | null>(null);
   const [followUps, setFollowUps] = useState<string[]>([]);
   const [research, setResearch] = useState(false);
+  // answers on a shared sample case are not saved (it stays as it is for everyone): they are shown here only
+  const [unsaved, setUnsaved] = useState<Array<{ question: Utterance; answer: Utterance; cites: Record<string, CiteView> }>>([]);
   const end = useRef<HTMLDivElement>(null);
   const voice = useListening(locale, (final) => {
     if (final) send(final, 'voice');
@@ -122,7 +124,7 @@ export function AskScreen({ caseId }: { caseId: string }) {
 
   useEffect(() => {
     end.current?.scrollIntoView({ block: 'end' });
-  }, [conv.data?.utterances.length]);
+  }, [conv.data?.utterances.length, unsaved.length]);
 
   function send(question: string, channel: 'voice' | 'text') {
     const q = question.trim();
@@ -136,6 +138,10 @@ export function AskScreen({ caseId }: { caseId: string }) {
         onSuccess: (out) => {
           setFollowUps(out.follow_ups ?? []);
           setResearch(!!out.research_started);
+          if (out.kept === false) {
+            const cites = Object.fromEntries((out.sources ?? []).map((c) => [c.id, c]));
+            setUnsaved((list) => [...list, { question: out.question, answer: out.answer, cites }]);
+          }
           if (channel === 'voice') speech.speak(out.answer.text, out.answer.lang.split('-')[0]);
         },
         onError: (e) => toast.error(tc('error', { message: e.message })),
@@ -169,12 +175,19 @@ export function AskScreen({ caseId }: { caseId: string }) {
         <Skeleton className="h-64" />
       ) : (
         <ol aria-label={t('conversation')} className="m-0 flex flex-1 list-none flex-col gap-3 p-0">
-          {!qa.length && !pending ? (
+          {!qa.length && !pending && !unsaved.length ? (
             <li className="rounded-[14px] border border-dashed border-rule-strong bg-sheet px-4 py-3 text-ink-soft">{t('empty')}</li>
           ) : null}
           {qa.map((u) => (
             <Bubble key={u.id} u={u} conv={conv.data} today={header?.today} locale={locale} />
           ))}
+          {unsaved.map((x, i) => (
+            <Fragment key={`unsaved-${i}`}>
+              <Bubble u={x.question} conv={conv.data} today={header?.today} locale={locale} />
+              <Bubble u={x.answer} conv={{ ...conv.data, cites: { ...conv.data.cites, ...x.cites } }} today={header?.today} locale={locale} />
+            </Fragment>
+          ))}
+          {unsaved.length ? <li className="text-[14px] text-ink-faint">{t('notSaved')}</li> : null}
           {pending ? (
             <>
               <li className="max-w-[min(560px,88%)] self-end rounded-[14px] rounded-se-[4px] border border-rule bg-[#EAF2EC] px-3.5 py-3 opacity-75">

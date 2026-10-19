@@ -1361,6 +1361,11 @@ export interface components {
              * @default false
              */
             research_started: boolean;
+            /**
+             * Kept
+             * @default true
+             */
+            kept: boolean;
         };
         /** AssertionView */
         AssertionView: {
@@ -1552,6 +1557,18 @@ export interface components {
             working: ("reading" | "finding") | null;
             /** Working Since */
             working_since: string | null;
+            /**
+             * Read Only
+             * @default false
+             */
+            read_only: boolean;
+            /**
+             * Researching
+             * @default []
+             */
+            researching: {
+                [key: string]: unknown;
+            }[];
         };
         /** CasePlan */
         CasePlan: {
@@ -2024,6 +2041,11 @@ export interface components {
              */
             source_url: string;
             /**
+             * Read Url
+             * @default
+             */
+            read_url: string;
+            /**
              * Publisher
              * @default
              */
@@ -2178,6 +2200,13 @@ export interface components {
             signers: {
                 [key: string]: string[];
             };
+            /**
+             * Research
+             * @default {}
+             */
+            research: {
+                [key: string]: unknown;
+            };
         };
         /** ClaimEventIn */
         ClaimEventIn: {
@@ -2308,6 +2337,16 @@ export interface components {
              * @default []
              */
             cites: string[];
+            /**
+             * Rule
+             * @default true
+             */
+            rule: boolean;
+            /**
+             * Starts On
+             * @default
+             */
+            starts_on: string;
         };
         /** Compensation */
         Compensation: {
@@ -2428,6 +2467,11 @@ export interface components {
              * @default []
              */
             cites: string[];
+            /**
+             * Kind
+             * @default
+             */
+            kind: string;
         };
         /** CountryGroup */
         CountryGroup: {
@@ -2965,7 +3009,7 @@ export interface components {
              * @default bank
              * @enum {string}
              */
-            kind: "bank" | "insurer" | "depository" | "fund_house" | "registrar" | "pension" | "government" | "employer" | "regulator" | "court" | "chit_fund" | "company" | "other";
+            kind: "bank" | "insurer" | "lender" | "depository" | "fund_house" | "registrar" | "pension" | "government" | "employer" | "regulator" | "court" | "chit_fund" | "company" | "other";
             /**
              * Identifiers
              * @default {}
@@ -2987,6 +3031,20 @@ export interface components {
              * @default
              */
             note: string;
+            /** Bank Type */
+            bank_type: string | null;
+            /** Branch */
+            branch: string | null;
+            /**
+             * Learned
+             * @default false
+             */
+            learned: boolean;
+            /**
+             * Source
+             * @default
+             */
+            source: string;
         };
         /** InstitutionGroup */
         InstitutionGroup: {
@@ -3306,7 +3364,7 @@ export interface components {
              * @default reminder
              * @enum {string}
              */
-            kind?: "reminder" | "objection" | "grievance";
+            kind?: "reminder" | "chase" | "objection" | "grievance" | "request";
             /** Request */
             request?: string | null;
             /** By */
@@ -3586,6 +3644,8 @@ export interface components {
             case_id: string;
             /** Claim Id */
             claim_id: string;
+            /** Plan Key */
+            plan_key: string | null;
             /** Title */
             title: string;
             /**
@@ -4465,6 +4525,13 @@ export interface components {
              * @default []
              */
             holdings_mentioned: string[];
+            /**
+             * Holdings
+             * @default []
+             */
+            holdings: {
+                [key: string]: unknown;
+            }[];
             /**
              * Papers At Hand
              * @default []

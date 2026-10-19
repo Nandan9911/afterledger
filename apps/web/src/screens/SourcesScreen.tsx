@@ -5,7 +5,7 @@ import { ExternalLink } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { ErrorNote, h1Class, Sheet, Skeleton } from '@/components/ui';
-import { asDate, cls, dayMonth, intl } from '@/lib/format';
+import { asDate, cls, dayMonth, intl, openable } from '@/lib/format';
 import { useSources } from '@/lib/queries';
 
 const LEVEL_ORDER = ['gold', 'outcome_confirmed', 'adjudicated', 'dual_verified', 'sourced', 'draft'];
@@ -86,8 +86,13 @@ function Row({ r, locale }: { r: SourceRow; locale: string }) {
         ) : null}
       </td>
       <td className="border-b border-rule px-4 py-3.5 align-top">
-        {c.source_url ? (
-          <a href={c.source_url} target="_blank" rel="noreferrer" className="inline-flex items-start gap-1 font-bold">
+        {openable(c.read_url || c.source_url) && !c.fictional ? (
+          <a
+            href={c.read_url || c.source_url || undefined}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-start gap-1 font-bold"
+          >
             <span>
               {c.source_title}
               {c.locator ? `, ${c.locator}` : ''}

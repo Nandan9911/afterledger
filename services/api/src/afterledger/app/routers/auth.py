@@ -58,22 +58,38 @@ async def may_open(deps: Deps, case: Any, user: User | None) -> bool:
     return user is not None and (user.role == "admin" or case.owner_id == user.id)
 
 
+SAMPLE_READ_ONLY = ("This is a sample case, kept the same for everyone who opens it, so its buttons are switched "
+                    "off. Start a case of your own to try them.")
+
+
 async def case_access(request: Request, deps: Deps = Depends(get_deps)) -> None:
-    """Every /v1/cases/{case_id}/... route: another account's case does not exist, as far as this caller knows."""
+    """Every /v1/cases/{case_id}/... route: another account's case does not exist, as far as this caller knows; and on
+    the public site a sample case is read only to all but the admin (until 19 October 2026 any visitor could approve,
+    upload or answer on a sample, changing it for everyone and paying for its model work)."""
     case_id = request.path_params.get("case_id")
-    if not case_id or not deps.settings.auth_required:
+    if not case_id or not (deps.settings.auth_required or deps.settings.product):
         return
     case = await deps.cases.get_case(case_id)
     if case is None:
         return                              # the route says it is not found
-    if not await may_open(deps, case, await signed_in(deps, request)):
+    user = await signed_in(deps, request)
+    if deps.settings.auth_required and not await may_open(deps, case, user):
         raise HTTPException(404, f"No case {case_id}")
+    if sample_read_only(deps, case, user) and request.method not in ("GET", "HEAD", "OPTIONS") \
+            and not request.url.path.endswith("/ask"):      # a question is answered there without being saved
+        raise HTTPException(403, SAMPLE_READ_ONLY)
+
+
+def sample_read_only(deps: Deps, case: Any, user: User | None) -> bool:
+    """On the public site a sample case stays as it is for everyone but the admin."""
+    return bool(case is not None and case.demo_key and deps.settings.product
+                and not (user is not None and user.role == "admin"))
 
 
 def may_see_question(deps: Deps, run: dict | None, user: User | None) -> bool:
     """A live question (challenge) is its asker's, where sign-in is required."""
-    if run is None or not deps.settings.auth_required:
-        return True
+    if run is None or not deps.settings.auth_required or run.get("shared"):
+        return True                       # research a claim needed is about rules only, so it is open to anyone
     return user is not None and (user.role == "admin" or (run.get("owner_id") is not None
                                                           and run.get("owner_id") == user.id))
 

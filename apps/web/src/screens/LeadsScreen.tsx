@@ -64,7 +64,7 @@ function Evidence({ lv }: { lv: LeadView }) {
           className="grid grid-cols-[80px_minmax(0,1fr)_auto] gap-3 border-b border-rule bg-[#FFF8D6] px-3.5 py-2 text-[15px] tabular last:border-b-0 sm:grid-cols-[96px_minmax(0,1fr)_auto]"
         >
           <span>{shortDate(r.date, locale)}</span>
-          <span className="truncate font-bold">{r.narration}</span>
+          <span dir="auto" className="truncate font-bold">{r.narration}</span>
           <span className={cls('text-end font-bold', r.direction === 'credit' ? 'text-ledger' : '')}>{r.amount.text}</span>
         </div>
       ))}
@@ -86,8 +86,9 @@ function Evidence({ lv }: { lv: LeadView }) {
 function MarkButtons({ lv, big }: { lv: LeadView; big?: boolean }) {
   const t = useTranslations('leads');
   const tt = useTranslations('task');
-  const { caseId, viewerId } = useCase();
+  const { caseId, viewerId, readOnly } = useCase();
   const mark = useMarkLead(caseId);
+  const off = mark.isPending || readOnly;
   const done = () => toast.success(tt('marked'));
   const plural = /\b(bonds|shares|units|policies|accounts|certificates|deposits|funds)\b/i.test(lv.lead.title);
   const run = (m: 'know' | 'check' | 'not_relevant') => mark.mutate({ leadId: lv.lead.id, mark: m, by: viewerId }, { onSuccess: done });
@@ -95,14 +96,14 @@ function MarkButtons({ lv, big }: { lv: LeadView; big?: boolean }) {
   if (big) {
     return (
       <div className="flex flex-col gap-2.5">
-        <Button size="lg" disabled={mark.isPending} onClick={() => run('know')}>
+        <Button size="lg" disabled={off} onClick={() => run('know')}>
           {plural ? t('knowThese') : t('know')}
         </Button>
         <div className="grid grid-cols-2 gap-2.5">
-          <Button size="lg" variant="secondary" disabled={mark.isPending} onClick={() => run('check')}>
+          <Button size="lg" variant="secondary" disabled={off} onClick={() => run('check')}>
             {t('checkThis')}
           </Button>
-          <Button size="lg" variant="secondary" disabled={mark.isPending} onClick={() => run('not_relevant')}>
+          <Button size="lg" variant="secondary" disabled={off} onClick={() => run('not_relevant')}>
             {t('notRelevant')}
           </Button>
         </div>
@@ -114,16 +115,16 @@ function MarkButtons({ lv, big }: { lv: LeadView; big?: boolean }) {
     <div className="mt-4 flex flex-wrap items-center gap-2.5">
       <Button
         variant={marked === 'know' ? 'primary' : marked ? 'secondary' : 'primary'}
-        disabled={mark.isPending}
+        disabled={off}
         onClick={() => run('know')}
       >
         {plural ? t('knowThese') : t('know')}
       </Button>
-      <Button variant="secondary" disabled={mark.isPending || marked === 'check'} onClick={() => run('check')}>
+      <Button variant="secondary" disabled={off || marked === 'check'} onClick={() => run('check')}>
         {t('checkThis')}
       </Button>
       {debt ? null : (
-        <Button variant="secondary" disabled={mark.isPending} onClick={() => run('not_relevant')}>
+        <Button variant="secondary" disabled={off} onClick={() => run('not_relevant')}>
           {t('notRelevant')}
         </Button>
       )}

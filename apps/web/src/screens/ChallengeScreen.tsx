@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { ChallengeForm } from '@/components/ChallengeForm';
 import { LanguageSelect } from '@/components/CaseShell';
 import { Button, ButtonLink, Chip, ErrorNote, Logo, Skeleton, Spinner } from '@/components/ui';
+import { ApiError } from '@/lib/api';
 import { Why } from '@/components/Why';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useEventStream } from '@/lib/events';
@@ -417,7 +418,17 @@ export function ChallengeRunScreen({ runId }: { runId: string }) {
       <div className="min-h-screen bg-paper">
         <TopBar finished={false} running={false} />
         <div className="mx-auto max-w-xl p-8">
-          <ErrorNote error={q.error} retry={() => q.refetch()} />
+          {q.error instanceof ApiError && (q.error.status === 404 || q.error.status === 403) ? (
+            <div className="flex flex-col gap-3 rounded-[14px] border border-rule bg-sheet p-5">
+              <p className="m-0 text-[18px] font-bold">{t('missingTitle')}</p>
+              <p className="m-0 text-ink-soft">{t('missingNote')}</p>
+              <ButtonLink href="/challenge" className="self-start">
+                {t('askOwn')}
+              </ButtonLink>
+            </div>
+          ) : (
+            <ErrorNote error={q.error} retry={() => q.refetch()} />
+          )}
         </div>
       </div>
     );

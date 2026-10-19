@@ -208,6 +208,7 @@ def _baseline_situation(current: dict, heard: list[dict], turns: list[dict] | No
     pensions = [f"a pension from {x}" for x in
                 re.findall(r"\bpension (?:from|with|at) ([A-Z][\w&'-]+(?:\s[A-Z][\w&'-]+){0,3})", text)]
     sit["holdings_mentioned"] = sorted(set(sit.get("holdings_mentioned", [])) | {b.strip() for b in banks} | set(pensions))
+    sit["holdings"] = _mentioned_holdings(text, sit.get("holdings") or [])
     codes = _countries(text)
     if codes:
         sit["country_codes"] = list(dict.fromkeys([*(sit.get("country_codes") or []), *codes]))
@@ -218,6 +219,51 @@ def _baseline_situation(current: dict, heard: list[dict], turns: list[dict] | No
     sit["unknowns"] = [u for u in ["date of death" if not sit.get("died_on") else None,
                                    "who the family are" if not sit["family"] else None] if u]
     return sit
+
+
+_ORG_NAME = re.compile(r"\b((?:[A-Z][\w&'-]*\s){1,4}(?:Bank|Building Society|Life|Insurance|Assurance|Finance|"
+                       r"Credit Union|Securities|Mutual Fund)(?:\sof\s[A-Z][\w]+)?)\b")
+_ACRONYM_POLICY = re.compile(r"\b([A-Z]{2,}[\w&'-]*)\s(?:life\s)?(?:policy|policies|insurance)\b")
+_STARTERS = {"Also", "He", "She", "His", "Her", "The", "And", "An", "A", "My", "Our", "They", "There", "With", "At",
+             "In", "From", "Then", "But", "Plus"}
+
+
+def _mentioned_holdings(text: str, known: list[dict]) -> list[dict]:
+    """The offline stand-in's reading of what the family named: in each clause, an institution's name and the kind
+    of thing the clause says it is (a policy, a loan, a card, a deposit); a provident fund named on its own."""
+    out = list(known)
+    seen = {(h.get("institution") or "", h.get("kind")) for h in out}
+
+    def add(said: str, kind: str, inst: str | None, direction: str = "asset") -> None:
+        if (inst or "", kind) not in seen:
+            seen.add((inst or "", kind))
+            out.append({"said": said, "kind": kind, "institution": inst, "direction": direction})
+    for clause in re.split(r"[.;,]|\band\b", text):
+        low = clause.lower()
+        names = [m.group(1) for m in _ORG_NAME.finditer(clause)] + \
+            [m.group(1) for m in _ACRONYM_POLICY.finditer(clause)]
+        for raw in names:
+            words = raw.split()
+            while words and words[0] in _STARTERS:
+                words.pop(0)
+            name = " ".join(words)
+            if not name:
+                continue
+            if re.search(r"insurance|assurance|\blife\b|polic", low):
+                add(clause.strip(), "life_policy", name)
+            elif "credit card" in low:
+                add(clause.strip(), "credit_card", name, "debt")
+            elif re.search(r"\bloan\b|\bemi\b", low):
+                add(clause.strip(), "loan", name, "debt")
+            elif re.search(r"fixed deposit|\bfds?\b", low):
+                add(clause.strip(), "fixed_deposit", name)
+            elif "mutual fund" in low:
+                add(clause.strip(), "mutual_fund", name)
+            elif "bank" in name.lower():
+                add(clause.strip(), "savings", name)
+        if re.search(r"\b(EPF|PF|provident fund)\b", clause, re.I):
+            add(clause.strip(), "provident_fund", None)
+    return out
 
 
 @oracle("gap_planner")

@@ -14,7 +14,7 @@ import { Button, Chip, ErrorNote, h1Class, h2Class, Sheet, Skeleton } from '@/co
 import { Why } from '@/components/Why';
 import { apiUrl } from '@/lib/api';
 import { asDate, cls, dayMonth, languageName, longDate, personName } from '@/lib/format';
-import { useLetterAction, useRecordReply, useShare, useTracker } from '@/lib/queries';
+import { useClaimEvent, useDraftLetter, useLetterAction, useRecordReply, useShare, useTracker } from '@/lib/queries';
 
 const DAY = 86_400_000;
 
@@ -174,6 +174,9 @@ function Timeline({ view }: { view: TrackerView }) {
   );
 }
 
+const LETTER_KINDS = ['reminder', 'chase', 'request', 'objection', 'grievance'] as const;
+type LetterKind = (typeof LETTER_KINDS)[number];
+
 function paragraphs(text: string) {
   return text
     .split(/\n\s*\n/)
@@ -184,11 +187,17 @@ function paragraphs(text: string) {
 function LetterCard({ lv, view }: { lv: LetterView; view: TrackerView }) {
   const t = useTranslations('tracker');
   const locale = useLocale();
-  const { caseId, viewerId } = useCase();
+  const { caseId, viewerId, readOnly } = useCase();
   const act = useLetterAction(caseId);
   const [copy, setCopy] = useState(false);
   const L = lv.letter;
-  const kind = /objection/i.test(L.title) ? 'objection' : /grievance|complaint/i.test(L.title) ? 'grievance' : 'reminder';
+  const kind = LETTER_KINDS.includes(L.kind as LetterKind)
+    ? (L.kind as LetterKind)
+    : /objection/i.test(L.title)
+      ? 'objection'
+      : /grievance|complaint/i.test(L.title)
+        ? 'grievance'
+        : 'reminder';
   const signer = lv.signer ? personName(lv.signer, locale) : '';
   const mirrorLang = L.letter_lang && L.letter_lang !== 'en' ? L.letter_lang : null;
   const text = copy && L.letter_mirror ? L.letter_mirror : (L.letter_text ?? '');
@@ -231,7 +240,7 @@ function LetterCard({ lv, view }: { lv: LetterView; view: TrackerView }) {
       <div className="mt-4 flex flex-wrap gap-2.5">
         {L.status === 'draft' ? (
           <Button
-            disabled={act.isPending}
+            disabled={act.isPending || readOnly}
             onClick={() =>
               act.mutate({ corrId: L.id, action: 'approve', by: viewerId }, { onSuccess: () => toast.success(t('approvedNote')) })
             }
@@ -241,7 +250,7 @@ function LetterCard({ lv, view }: { lv: LetterView; view: TrackerView }) {
         ) : null}
         {L.status === 'approved' ? (
           <Button
-            disabled={act.isPending}
+            disabled={act.isPending || readOnly}
             onClick={() =>
               act.mutate(
                 { corrId: L.id, action: 'sent', by: viewerId, channel: 'letter' },
@@ -381,7 +390,7 @@ function ShareDesk({ view }: { view: TrackerView }) {
   const t = useTranslations('tracker');
   const tc = useTranslations('common');
   const locale = useLocale();
-  const { caseId, viewerId } = useCase();
+  const { caseId, viewerId, readOnly } = useCase();
   const share = useShare(caseId);
   const [links, setLinks] = useState<Record<string, string>>({});
   const rows = view.rows.filter((r) => ['submitted', 'acknowledged', 'returned', 'escalated'].includes(r.status) && r.kind === 'claim');
@@ -422,7 +431,7 @@ function ShareDesk({ view }: { view: TrackerView }) {
                 <Button
                   size="sm"
                   variant="secondary"
-                  disabled={share.isPending}
+                  disabled={share.isPending || readOnly}
                   onClick={() =>
                     share.mutate(
                       { claimId: r.claim_id, by: viewerId },
@@ -439,6 +448,174 @@ function ShareDesk({ view }: { view: TrackerView }) {
                   {t('share', { institution: r.institution })}
                 </Button>
               )}
+            </li>
+          );
+        })}
+      </ul>
+    </Sheet>
+  );
+}
+
+type EventKind = 'complete_set_confirmed' | 'settled' | 'returned' | 'submitted';
+
+/** What the family can record for one claim, given where it stands. */
+function eventsFor(row: ClockRow): EventKind[] {
+  if (row.status === 'settled' || row.status === 'closed') return [];
+  const notifiedOnly = Boolean(row.events?.notified) && !row.events?.submitted;
+  if (notifiedOnly) return []; // waiting for the institution's answer: its reply is added with "Add a reply"
+  if (row.status === 'returned') return ['submitted'];
+  if (row.status === 'acknowledged') return ['settled', 'returned'];
+  if (row.status === 'submitted') return ['complete_set_confirmed', 'settled', 'returned'];
+  return [];
+}
+
+/** The letter worth drafting next: a reminder once a rule's time limit has run out, a follow-up while a first letter
+ * waits for an answer, otherwise a request asking what the institution still needs. */
+function letterFor(row: ClockRow): 'reminder' | 'chase' | 'request' | null {
+  if (row.status === 'settled' || row.status === 'closed') return null;
+  if (row.late) return 'reminder';
+  if (row.events?.notified && !row.events?.submitted) return 'chase';
+  if (['submitted', 'acknowledged', 'returned'].includes(row.status)) return 'request';
+  return null;
+}
+
+function EventForm({ row, event, onDone }: { row: ClockRow; event: EventKind; onDone: () => void }) {
+  const t = useTranslations('tracker');
+  const tc = useTranslations('common');
+  const { caseId, viewerId } = useCase();
+  const record = useClaimEvent(caseId);
+  const [on, setOn] = useState('');
+  const [amount, setAmount] = useState('');
+  const [note, setNote] = useState('');
+  const today = new Date().toISOString().slice(0, 10);
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    const id = toast.loading(tc('working'));
+    record.mutate(
+      {
+        claimId: row.claim_id,
+        event,
+        on: on || null,
+        amount: event === 'settled' && amount.trim() ? amount.trim() : null,
+        note: note.trim() || null,
+        by: viewerId,
+      },
+      {
+        onSuccess: () => {
+          toast.success(t('ev.done'), { id });
+          onDone();
+        },
+        onError: (err) => toast.error(err.message, { id }),
+      },
+    );
+  }
+  const field = 'rounded-[10px] border border-rule-strong bg-sheet px-3 text-[17px] font-normal';
+  return (
+    <form onSubmit={submit} className="mt-3 flex flex-col gap-3 rounded-[12px] border border-rule bg-paper p-4">
+      <p className="m-0 font-bold">{t(`ev.ask.${event}`, { institution: row.institution || row.title })}</p>
+      <label className="flex flex-col gap-1 text-[15px] font-bold">
+        {t('ev.when')}
+        <input type="date" value={on} max={today} onChange={(e) => setOn(e.target.value)} className={cls(field, 'min-h-11 max-w-[220px]')} />
+        <span className="text-[14px] font-normal text-ink-soft">{t('ev.whenHint')}</span>
+      </label>
+      {event === 'settled' ? (
+        <label className="flex flex-col gap-1 text-[15px] font-bold">
+          {t('ev.amount')}
+          <input
+            inputMode="decimal"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder={t('ev.amountHint')}
+            className={cls(field, 'min-h-11 max-w-[320px]')}
+          />
+        </label>
+      ) : null}
+      {event === 'returned' ? (
+        <label className="flex flex-col gap-1 text-[15px] font-bold">
+          {t('ev.note')}
+          <textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} className={cls(field, 'py-2.5')} />
+        </label>
+      ) : null}
+      <div className="flex flex-wrap gap-2.5">
+        <Button type="submit" disabled={record.isPending}>
+          {t('ev.save')}
+        </Button>
+        <Button variant="secondary" onClick={onDone}>
+          {tc('cancel')}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function ClaimProgress({ view, onReply }: { view: TrackerView; onReply: () => void }) {
+  const t = useTranslations('tracker');
+  const { caseId, viewerId, readOnly } = useCase();
+  const draft = useDraftLetter(caseId);
+  const [open, setOpen] = useState<{ claim: string; event: EventKind } | null>(null);
+  const rows = view.rows.filter((r) => r.status !== 'closed');
+  if (!rows.length) return null;
+  function draftLetter(row: ClockRow, kind: 'reminder' | 'chase' | 'request') {
+    const id = toast.loading(t('drafting'));
+    draft.mutate(
+      { claimId: row.claim_id, kind, by: viewerId },
+      {
+        onSuccess: () => toast.success(t('drafted'), { id }),
+        onError: (err) => toast.error(err.message, { id }),
+      },
+    );
+  }
+  return (
+    <Sheet as="section" className="px-6 py-5" aria-labelledby="progress">
+      <h2 id="progress" className={h2Class}>
+        {t('progressTitle')}
+      </h2>
+      <p className="m-0 mt-1.5 text-[15px] text-ink-soft">{t('progressLede')}</p>
+      <ul className="m-0 mt-3 list-none p-0">
+        {rows.map((r) => {
+          const events = eventsFor(r);
+          const letter = letterFor(r);
+          const waiting = Boolean(r.events?.notified) && !r.events?.submitted && r.status !== 'settled';
+          return (
+            <li key={r.claim_id} className="border-t border-rule py-3.5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="m-0 font-bold">{r.institution || r.title}</p>
+                  <p className="m-0 text-[14px] text-ink-soft">
+                    {r.institution ? `${r.title} · ` : ''}
+                    <span className={cls(r.late ? 'font-bold text-debit' : r.status === 'settled' ? 'font-bold text-ledger' : '')}>
+                      {r.status_text}
+                    </span>
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {waiting ? (
+                    <Button size="sm" variant="secondary" disabled={readOnly} onClick={onReply}>
+                      {t('ev.theyReplied')}
+                    </Button>
+                  ) : null}
+                  {events.map((ev) => (
+                    <Button
+                      key={ev}
+                      size="sm"
+                      variant={ev === 'settled' ? 'primary' : 'secondary'}
+                      disabled={readOnly}
+                      aria-expanded={open?.claim === r.claim_id && open.event === ev}
+                      onClick={() =>
+                        setOpen((cur) => (cur?.claim === r.claim_id && cur.event === ev ? null : { claim: r.claim_id, event: ev }))
+                      }
+                    >
+                      {t(`ev.button.${ev === 'settled' && r.kind === 'debt' ? 'settledDebt' : ev}`)}
+                    </Button>
+                  ))}
+                  {letter ? (
+                    <Button size="sm" variant="secondary" disabled={readOnly || draft.isPending} onClick={() => draftLetter(r, letter)}>
+                      {t(`draft.${letter}`)}
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+              {open?.claim === r.claim_id ? <EventForm row={r} event={open.event} onDone={() => setOpen(null)} /> : null}
             </li>
           );
         })}
@@ -501,6 +678,7 @@ function Received({ view }: { view: TrackerView }) {
 
 export function TrackerScreen({ caseId }: { caseId: string }) {
   const t = useTranslations('tracker');
+  const { readOnly } = useCase();
   const q = useTracker(caseId);
   const [replying, setReplying] = useState(false);
   const view = q.data;
@@ -512,7 +690,7 @@ export function TrackerScreen({ caseId }: { caseId: string }) {
           <h1 className={h1Class}>{t('title')}</h1>
           <p className="m-0 mt-2 text-ink-soft">{t('lede')}</p>
         </div>
-        <Button variant="secondary" aria-expanded={replying} onClick={() => setReplying((v) => !v)}>
+        <Button variant="secondary" aria-expanded={replying} disabled={readOnly} onClick={() => setReplying((v) => !v)}>
           {t('addReply')}
         </Button>
       </header>
@@ -522,13 +700,20 @@ export function TrackerScreen({ caseId }: { caseId: string }) {
         <>
           {replying ? <ReplyForm view={view} onDone={() => setReplying(false)} /> : null}
           <Timeline view={view} />
+          <ClaimProgress
+            view={view}
+            onReply={() => {
+              setReplying(true);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
           <div className="flex flex-wrap items-start gap-6">
             <div className="flex min-w-0 flex-[3_1_520px] flex-col gap-6">
               {view.letters.length ? (
                 view.letters.map((lv) => <LetterCard key={lv.letter.id} lv={lv} view={view} />)
               ) : (
                 <Sheet className="px-6 py-5">
-                  <p className="m-0 text-ink-soft">{t('noLetters')}</p>
+                  <p className="m-0 text-ink-soft">{view.rows.length ? t('noLetters') : t('nothingYet')}</p>
                 </Sheet>
               )}
             </div>

@@ -8,7 +8,7 @@ from typing import Any
 from ...modules import followup
 from ...modules.common import Snapshot, knowledge, snapshot
 from ..schemas import CurrencyTotals, DeadlineView, LateClock, TaskView, TodayView, Uncertainty
-from .common import chip, chips, cite_views, institution_name, money
+from .common import chip, chips, cite_views, institution_name, money, tidy_text
 from .localize import localize
 
 
@@ -97,7 +97,8 @@ async def today(deps: Any, case_id: str, viewer_id: str | None = None, lang: str
     for iid in {h.institution_id for h in snap.holdings if h.institution_id} | {c.institution_id for c in snap.claims}:
         inst = await k.institution(iid) if iid else None
         inst_names[iid] = institution_name(inst, iid)
-    tasks = sorted(snap.tasks, key=lambda t: -t.priority)
+    tasks = [t.model_copy(update={"title": await tidy_text(deps, t.title), "body": await tidy_text(deps, t.body)})
+             for t in sorted(snap.tasks, key=lambda t: -t.priority)]
     task_views = [TaskView(task=t, owners=chips(snap, t.owner_person_ids),
                            for_viewer=bool(viewer and viewer.id in t.owner_person_ids)) for t in tasks]
     deadlines = [DeadlineView(date=date.fromisoformat(d["date"]), title=d["title"], note=d.get("note", ""),

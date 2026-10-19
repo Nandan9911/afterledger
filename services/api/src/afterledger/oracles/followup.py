@@ -151,6 +151,13 @@ def escalation_writer(ctx: Ctx, req: OracleRequest) -> dict:
         return {"subject": f"Your request for {what}: the late {f.get('deceased', '')}",
                 "body": frame(f, f"Claim for the late {f.get('deceased', '')}, {holdings}", body),
                 "lang": "en", "kind": "objection"}
+    if kind == "chase":
+        body = [f"I wrote to you on {f.get('notified_on')} to tell you of the death of {f.get('deceased', '')} and to "
+                "ask what you hold for the estate and how to claim it. I have not had a reply.", "",
+                "Please reply in writing with what you hold, the amount, and your claim procedure and forms."]
+        return {"subject": f"Reminder: the late {f.get('deceased', '')}, my letter of {f.get('notified_on')}",
+                "body": frame(f, f"The late {f.get('deceased', '')}, {holdings}" if holdings else
+                              f"The late {f.get('deceased', '')}", body), "lang": "en", "kind": "chase"}
     body = ["Please tell me in writing what you still need to settle this claim."]
     return {"subject": f"Claim for the late {f.get('deceased', '')}",
             "body": frame(f, f"Claim for the late {f.get('deceased', '')}", body), "lang": "en", "kind": "request"}

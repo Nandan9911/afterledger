@@ -17,7 +17,7 @@ from .. import __version__
 from ..logs import configure_logging
 from ..runtime import Deps, build_deps
 from . import demo
-from .actions import Conflict, NotFound, register_handlers
+from .actions import BadInput, Conflict, NotFound, register_handlers
 
 log = logging.getLogger(__name__)
 
@@ -64,6 +64,10 @@ def create_app(deps: Deps | None = None, *, prepare_demo: bool | None = None) ->
     @app.exception_handler(Conflict)
     async def conflict(_: Request, exc: Conflict) -> JSONResponse:
         return JSONResponse(status_code=409, content={"detail": str(exc)})
+
+    @app.exception_handler(BadInput)
+    async def bad_input(_: Request, exc: BadInput) -> JSONResponse:
+        return JSONResponse(status_code=422, content={"detail": str(exc)})
 
     @app.exception_handler(KeyError)
     async def key_error(_: Request, exc: KeyError) -> JSONResponse:

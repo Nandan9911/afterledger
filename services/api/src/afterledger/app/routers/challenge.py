@@ -17,7 +17,16 @@ from ..schemas import ChallengeIn, ChallengePreset, ChallengeRow, ChallengeView
 from ..views.common import cite_views
 from ..views.localize import localize, page_language
 from .auth import may_see_question, optional_user
-from .common import get_deps, sse
+from .common import (
+    RETRY_MS,
+    STREAM_SECONDS,
+    get_deps,
+    sse,
+    stream_closed,
+    stream_opened,
+    streams_full,
+    too_many_streams,
+)
 
 router = APIRouter(prefix="/v1/challenges", tags=["challenge"])
 
@@ -111,8 +120,17 @@ async def events(run_id: str, request: Request, pace: float = Query(0.0, ge=0, l
     stored = None if run is not None else await challenge.get_challenge(deps, run_id)
     if run is None and stored is None:
         raise HTTPException(404, f"No challenge {run_id}")
-    if not may_see_question(deps, {"owner_id": run.owner_id} if run is not None else stored, user):
+    if not may_see_question(deps, {"owner_id": run.owner_id, "shared": run.shared} if run is not None else stored,
+                            user):
         raise HTTPException(404, f"No challenge {run_id}")
+    if streams_full(deps):
+        raise too_many_streams()
+    # a reconnecting browser says the last step it has (EventSource sends it back as Last-Event-ID): only later
+    # steps are sent again, as the server ends each stream after STREAM_SECONDS
+    try:
+        after = int(request.headers.get("last-event-id") or 0)
+    except ValueError:
+        after = 0
     queue: asyncio.Queue = asyncio.Queue()
     if run is not None:
         run.listeners.append(queue.put_nowait)
@@ -120,21 +138,33 @@ async def events(run_id: str, request: Request, pace: float = Query(0.0, ge=0, l
     else:
         done = list(stored.get("events", []))
 
+    def step(ev: dict, text_ev: dict) -> dict:
+        return {**sse(text_ev, "step"), "id": str(ev.get("n", 0))}
+
     async def stream():
-        sent = 0
+        stream_opened(deps)
+        loop = asyncio.get_running_loop()
+        end = loop.time() + STREAM_SECONDS
+        sent = after
         try:
+            yield {"comment": "ready", "retry": RETRY_MS}
             for ev in done:
                 if await request.is_disconnected():
                     return
+                if ev.get("n", 0) <= after:
+                    continue
                 sent = max(sent, ev.get("n", 0))
-                yield sse(await _localized(deps, ev, lang), "step")
+                yield step(ev, await _localized(deps, ev, lang))
                 if ev.get("stage") == challenge.FINISHED:
                     return
                 if pace:
                     await asyncio.sleep(pace)
             while True:
+                wait = min(15.0, end - loop.time())
+                if wait <= 0:
+                    return                # the browser reconnects and carries on from the last step it has
                 try:
-                    ev = await asyncio.wait_for(queue.get(), timeout=15)
+                    ev = await asyncio.wait_for(queue.get(), timeout=wait)
                 except TimeoutError:
                     if run is None or any(e.get("stage") == challenge.FINISHED for e in run.events[sent:]):
                         return
@@ -143,7 +173,7 @@ async def events(run_id: str, request: Request, pace: float = Query(0.0, ge=0, l
                 if ev.get("n", 0) <= sent:
                     continue
                 sent = ev.get("n", 0)
-                yield sse(await _localized(deps, ev, lang), "step")
+                yield step(ev, await _localized(deps, ev, lang))
                 if ev.get("stage") == challenge.FINISHED:
                     return
                 if pace:
@@ -151,8 +181,9 @@ async def events(run_id: str, request: Request, pace: float = Query(0.0, ge=0, l
         finally:
             if run is not None and queue.put_nowait in run.listeners:
                 run.listeners.remove(queue.put_nowait)
+            stream_closed(deps)
 
-    return EventSourceResponse(stream())
+    return EventSourceResponse(stream(), headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @router.post("/{run_id}/case")

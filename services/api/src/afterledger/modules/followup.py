@@ -77,7 +77,7 @@ async def compute_clocks(deps: Any, case_id: str, claim: Claim, plan: ProcedureP
         st = ClockState(id=stable_id("clk", claim.id, c.id), clock_id=c.id, label=c.label or c.id, owner=c.owner,
                         unit=c.unit, length=c.length, cites=c.cites, compensation_formula=c.compensation,
                         amount=claim.amount_due, currency=claim.currency, kind=c.kind, short=c.short,
-                        short_local=c.short_local)
+                        short_local=c.short_local, rule=c.rule, starts_on=c.starts_on)
         if started is None:
             out.append(st)
             continue
@@ -87,7 +87,7 @@ async def compute_clocks(deps: Any, case_id: str, claim: Claim, plan: ProcedureP
         st.ended_on = ended
         end = ended or today
         if c.kind == "wait":
-            st.status = "met" if end >= st.due_on else "running"
+            st.status = "met" if ended or end >= st.due_on else "running"
         elif c.kind == "window":
             st.status = "ended" if end > st.due_on else "running"
         elif ended and ended <= st.due_on:
@@ -167,10 +167,17 @@ async def record_claim_event(deps: Any, case_id: str, claim_id: str, event: str,
     claim: Claim = await deps.cases.get(case_id, "claims", claim_id)
     inst = await knowledge(deps).institution(claim.institution_id)
     name = inst.name if inst else claim.institution_id
+    current = await deps.cases.get(case_id, "plans", claim.plan_id) if claim.plan_id else None
+    from .rules_research import is_interim
+    if event == "submitted" and current is not None and is_interim(current.plan_key):
+        event = "notified"                # the interim letter tells the institution; the claim itself comes later
     if event in EVENT_FIELDS:
         setattr(claim, EVENT_FIELDS[event], on)
     claim.events[event] = on.isoformat()
-    if event == "submitted":
+    if event == "notified":
+        claim.status = "submitted"
+        text = f"The family wrote to {name} about the death and asked how to claim."
+    elif event == "submitted":
         claim.status = "submitted"
         text = f"The family handed in the claim to {name}."
     elif event == "complete_set_confirmed":
@@ -216,7 +223,7 @@ async def facts_block(deps: Any, case_id: str, claim: Claim) -> dict:
     inst_raw = await k.institution_raw(claim.institution_id) or {}
     case = snap.case
     holdings = [h for h in snap.holdings if h.id in claim.holding_ids]
-    claimant = next((p for p in snap.family() if "claimant" in p.roles), None)
+    claimant = snap.claimant(claim)
     late = next((c for c in claim.clocks if c.status == "late" and c.owner == "institution"), None)
     today = deps.today_for(case)
     facts = {"institution": inst_raw.get("name", claim.institution_id), "branch": inst_raw.get("branch"),
@@ -226,7 +233,9 @@ async def facts_block(deps: Any, case_id: str, claim: Claim) -> dict:
              "holdings": [f"{h.label.lower()} ending {h.account_mask}" if h.account_mask else h.label.lower()
                           for h in holdings],
              "amount": format_amount(claim.amount_due, claim.currency) if claim.amount_due is not None else None,
-             "complete_set_on": fmt_full(claim.complete_set_on), "today": fmt_full(today)}
+             "complete_set_on": fmt_full(claim.complete_set_on), "today": fmt_full(today),
+             "notified_on": fmt_full(date.fromisoformat(claim.events["notified"])) if claim.events.get("notified")
+             else None}
     if late:
         facts.update({"due_on": fmt_full(late.due_on), "days_late": late.days_late,
                       "base_rate": f"{late.base_rate_pct:.2f}" if late.base_rate_pct is not None else None,
@@ -277,8 +286,7 @@ async def draft_letter(deps: Any, case_id: str, claim_id: str, kind: str = "remi
                       method="every number in the letter must be in the facts block"
                       + (f" (after {repairs} repair{'s' if repairs != 1 else ''})" if repairs else ""),
                       detail=", ".join(sorted(violations)) or "no unsupported numbers")
-    people = await deps.cases.list(case_id, "people")
-    signer = next((p for p in people if "claimant" in p.roles), None)
+    signer = (await snapshot(deps, case_id, ["people", "claims"])).claimant(claim)
     mirror_lang = signer.languages[0] if signer and signer.languages and signer.languages[0] != "en" else None
     mirror, mirror_note = None, ""
     if mirror_lang:
@@ -299,8 +307,9 @@ async def draft_letter(deps: Any, case_id: str, claim_id: str, kind: str = "remi
             mirror_note = (f" The {language_name(mirror_lang)} copy is a machine translation, and its check found: "
                            f"{res.detail.rstrip('.')}. Read the English letter before signing it.")
     corr = Correspondence(id=stable_id("corr", claim_id, kind, str(deps.today_for(case))), case_id=case_id,
-                          claim_id=claim_id, direction="out", channel="letter", on=deps.today_for(case),
-                          title=out.subject, summary=f"{kind.capitalize()} drafted for {facts.get('claimant') or 'the family'} to sign."
+                          claim_id=claim_id, direction="out", channel="letter", on=deps.today_for(case), kind=kind,
+                          title=out.subject, summary=f"{'Reminder' if kind == 'chase' else kind.capitalize()} drafted "
+                          f"for {facts.get('claimant') or 'the family'} to sign."
                           + (f" A person must check it before it is sent: {', '.join(sorted(violations))} is not in "
                              "the case." if violations else "") + mirror_note,
                           letter_text=out.body, letter_mirror=mirror, letter_lang=mirror_lang, status="draft",
@@ -308,7 +317,8 @@ async def draft_letter(deps: Any, case_id: str, claim_id: str, kind: str = "remi
     await deps.cases.put(case_id, "correspondence", corr)
     claim.correspondence_ids = sorted(set(claim.correspondence_ids) | {corr.id})
     await deps.cases.put(case_id, "claims", claim)
-    await deps.activity(case_id, MODULE, f"Drafted a {kind} to {facts['institution']}; " + (
+    await deps.activity(case_id, MODULE, f"Drafted a {'reminder' if kind == 'chase' else kind} to "
+                        f"{facts['institution']}; " + (
         "every number in it is in the case." if not violations else
         f"{', '.join(sorted(violations))} is not in the case, so a person checks it before it is sent."),
         agent="escalation_writer", kind="step" if not violations else "warning", claim_id=claim_id)
@@ -337,6 +347,7 @@ async def record_reply(deps: Any, case_id: str, claim_id: str, *, title: str, te
                           paper_id=paper_id, objection=out.objection, status="received")
     await deps.cases.put(case_id, "correspondence", corr)
     claim.correspondence_ids = sorted(set(claim.correspondence_ids) | {corr.id})
+    claim.events["reply_received"] = on.isoformat()      # a reply ends the wait for one
     await deps.cases.put(case_id, "claims", claim)
     await deps.activity(case_id, MODULE, f"Read a reply from {title.split(':')[0]}: {out.summary}",
                         agent="correspondence_reader", kind="warning" if out.objection else "step", claim_id=claim_id)
@@ -493,33 +504,140 @@ async def totals(deps: Any, case_id: str) -> dict:
                            for c, t in by_cur.items()}, "unknown_leads": unknown}
 
 
+def _clock_began(clk: Any, name: str) -> str:
+    """What started an institution's clock, in the family's words."""
+    on = fmt_day(clk.started_on)
+    if clk.starts_on == "complete_set_confirmed":
+        return f"{name} confirmed it had every paper on {on}."
+    if clk.starts_on in ("claim_lodged", "submitted", "claim_intimated", "papers_received", "forwarded_to_insurer"):
+        return f"The claim reached {name} on {on}."
+    if clk.starts_on in ("death", "learned_of_death"):
+        return f"The time counts from the death, on {on}."
+    return f"Its time started on {on}."
+
+
+async def _getting_started(deps: Any, snap: Any, claimant: Any) -> list[dict]:
+    """What a case of the family's own needs next, before and while its claims are planned: the date of death,
+    the papers, a look at what was found, values to check, plans to approve, and research under way."""
+    case = snap.case
+    owner = [claimant.id] if claimant else ([case.viewer_person_id] if case.viewer_person_id else [])
+    out: list[dict] = []
+    if case.demo_key:
+        return out                        # a sample's story already has its tasks
+    if case.died_on is None:
+        out.append({"key": "ask:date_of_death", "kind": "ask", "priority": 0.92,
+                    "title": "Tell us the date of death",
+                    "body": "The time limits for each claim count from it. Say it in the conversation, or add the death "
+                            "certificate and it is read from there.",
+                    "owner_person_ids": owner, "cites": [],
+                    "actions": [{"label": "Tell AfterLedger", "kind": "open", "target": "story:"},
+                                {"label": "Add a paper", "kind": "open", "target": "papers:"}]})
+    if not snap.papers:
+        out.append({"key": "ask:papers", "kind": "acquire", "priority": 0.8, "title": "Add the papers you have",
+                    "body": "Bank statements or passbooks, policies, the death certificate: each is read twice, and what "
+                            "they show (and what their payments point to) becomes the claims.",
+                    "owner_person_ids": owner, "cites": [],
+                    "actions": [{"label": "Add a paper", "kind": "open", "target": "papers:"}]})
+    checks = [c for c in snap.checkpoints if c.status == "open" and c.code == "C2"]
+    if checks:
+        out.append({"key": "ask:values", "kind": "ask", "priority": 0.82,
+                    "title": f"Check {len(checks)} value{'s' if len(checks) != 1 else ''} read from your papers",
+                    "body": "The two readings of these did not agree, and each decides where money goes. One look at the "
+                            "paper settles it.", "owner_person_ids": owner, "cites": [],
+                    "actions": [{"label": "Check the papers", "kind": "open", "target": "papers:"}]})
+    marks = [c for c in snap.checkpoints if c.status == "open" and c.code == "C4"]
+    if marks:
+        out.append({"key": "ask:leads", "kind": "ask", "priority": 0.78,
+                    "title": f"Look at {len(marks)} thing{'s' if len(marks) != 1 else ''} the papers point to",
+                    "body": "Each was found in the payments and checked by its own investigator. Say which you know "
+                            "about, so the claims can be made.", "owner_person_ids": owner, "cites": [],
+                    "actions": [{"label": "Open the leads", "kind": "open", "target": "leads:"}]})
+    approvals = [c for c in snap.checkpoints if c.status == "open" and c.code == "C5" and c.kind == "plan_approval"]
+    for cp in approvals[:2]:
+        pid = (cp.subject_ref or "").split(":")[1] if cp.subject_ref else ""
+        claim = snap.claim((cp.payload or {}).get("claim_id"))
+        out.append({"key": f"approve:{pid}", "kind": "decide", "priority": 0.86,
+                    "title": cp.title, "body": (cp.why or "")[:400] or "Read the plan and approve it; the papers are "
+                    "prepared as soon as you do.", "owner_person_ids": owner, "claim_id": claim.id if claim else None,
+                    "cites": [], "actions": [{"label": "Open the plan", "kind": "open", "target": f"plan:{pid}"}]})
+    if len(approvals) > 2:
+        out.append({"key": "approve:more", "kind": "decide", "priority": 0.84,
+                    "title": f"Approve {len(approvals) - 2} more plan{'s' if len(approvals) - 2 != 1 else ''}",
+                    "body": "Each claim's plan waits for your approval before its papers are prepared.",
+                    "owner_person_ids": owner, "cites": [],
+                    "actions": [{"label": "Open the plans", "kind": "open", "target": "plans:"}]})
+    return out
+
+
+async def draft_due_reminders(deps: Any, case_id: str) -> int:
+    """A reminder is drafted, for the family to check and send, when an institution is late under its rule or has not
+    answered the family's letter by the day expected: once for each time it falls due, never twice."""
+    snap = await snapshot(deps, case_id, ["claims", "correspondence"])
+    if snap.case.demo_key:
+        return 0                          # a sample's story drafts its own letters
+    n = 0
+    for c in snap.claims:
+        if c.status in ("settled", "closed"):
+            continue
+        late = next((x for x in c.clocks if x.owner == "institution" and x.due_on and x.rule and x.status == "late"),
+                    None)
+        silent = next((x for x in c.clocks if x.clock_id == "reply_expected" and x.status == "met" and not x.ended_on
+                       and x.due_on), None)
+        due = late or silent
+        if due is None:
+            continue
+        drafted = [x for x in snap.correspondence if x.claim_id == c.id and x.direction == "out" and x.on >= due.due_on]
+        if drafted:
+            continue
+        try:
+            await draft_letter(deps, case_id, c.id, "reminder" if late else "chase")
+            n += 1
+        except Exception:  # a letter that cannot be drafted now is tried again next time Today is planned
+            import logging
+            logging.getLogger(__name__).exception("could not draft a reminder for %s", c.id)
+    return n
+
+
 async def plan_today(deps: Any, case_id: str, viewer_id: str | None = None) -> list[Task]:
     """Candidates by code, the final few chosen and worded by the supervisor."""
     await refresh_clocks(deps, case_id)
+    await draft_due_reminders(deps, case_id)
     snap = await snapshot(deps, case_id, ["people", "claims", "packs", "leads", "checkpoints", "tasks", "plans",
-                                          "correspondence"])
+                                          "correspondence", "papers"])
     case = snap.case
     k = knowledge(deps)
     today = deps.today_for(case)
     helper = next((p for p in snap.family() if "helper" in p.roles), None)
-    claimant = next((p for p in snap.family() if "claimant" in p.roles), None)
+    claimant = snap.claimant()
     cands: list[dict] = []
     for c in snap.claims:
         inst = await k.institution(c.institution_id)
+        name = (inst.short_name or inst.name) if inst else "the institution"
         for clk in c.clocks:
-            if clk.status == "late" and clk.owner == "institution" and c.status != "settled":
-                body = (f"The bank confirmed it had every paper on {fmt_day(clk.started_on)}. The rule gives it "
-                        f"{clk.length} days, so payment was due on {fmt_day(clk.due_on)}.")
+            if clk.status == "late" and clk.owner == "institution" and c.status != "settled" and clk.rule:
+                body = (f"{_clock_began(clk, name)} The rule gives it {clk.length} "
+                        f"{'business days' if clk.unit == 'business_days' else 'months' if clk.unit == 'months' else 'days'}"
+                        f", so it was due to act by {fmt_day(clk.due_on)}.")
                 if clk.compensation is not None and clk.per_day is not None:
                     body += (f" It now owes {format_amount(clk.compensation, c.currency, decimals=False)} for the delay, "
                              f"and {format_amount(clk.per_day, c.currency, decimals=False)} more each day.")
                 cands.append({"key": f"remind:{c.id}", "kind": "follow_up", "priority": 0.95,
                               "institution_id": c.institution_id,
-                              "title": f"Remind {inst.name if inst else 'the institution'} that the claim is overdue",
+                              "title": f"Remind {name} that the claim is overdue",
                               "body": body, "owner_person_ids": [helper.id if helper else (claimant.id if claimant else "")],
                               "claim_id": c.id, "cites": clk.cites, "due_on": clk.due_on.isoformat() if clk.due_on else None,
                               "actions": [{"label": "Review the reminder", "kind": "open", "target": f"tracker:{c.id}"},
                                           {"label": "Why?", "kind": "open", "target": f"why:{','.join(clk.cites)}"}]})
+            elif clk.clock_id == "reply_expected" and clk.status == "met" and not clk.ended_on and \
+                    c.status not in ("settled", "closed"):
+                cands.append({"key": f"remind:{c.id}", "kind": "follow_up", "priority": 0.9,
+                              "institution_id": c.institution_id, "title": f"Ask {name} again for a reply",
+                              "body": f"The family wrote to {name} on {fmt_day(clk.started_on)} and no reply has come. "
+                                      "A reminder is drafted for you to check and send.",
+                              "owner_person_ids": [helper.id if helper else (claimant.id if claimant else "")],
+                              "claim_id": c.id, "cites": [], "due_on": clk.due_on.isoformat() if clk.due_on else None,
+                              "actions": [{"label": "Review the reminder", "kind": "open", "target": f"tracker:{c.id}"}]})
+    cands += await _getting_started(deps, snap, claimant)
     for pk in snap.packs:
         if pk.status == "ready":
             signers = sorted({s for it in pk.items for s in it.signers})
@@ -541,6 +659,8 @@ async def plan_today(deps: Any, case_id: str, viewer_id: str | None = None) -> l
     for corr in snap.correspondence:
         if corr.direction == "out" and corr.status == "draft" and corr.claim_id not in remind_claims:
             claim_for = snap.claim(corr.claim_id) if corr.claim_id else None
+            if claim_for is not None and claim_for.status in ("settled", "closed"):
+                continue                  # a letter drafted before the claim was settled is no longer needed
             inst = await k.institution(claim_for.institution_id) if claim_for else None
             name = (inst.short_name or inst.name) if inst else "the institution"
             what = "objection" if "objection" in corr.summary.lower() or "request for a grant" in corr.title.lower() \
@@ -590,12 +710,18 @@ async def plan_today(deps: Any, case_id: str, viewer_id: str | None = None) -> l
                           else ([claimant.id] if claimant else []), "cites": [],
                           "actions": [{"label": o.label, "kind": "answer", "target": f"checkpoint:{cp.id}",
                                        "value": o.value} for o in cp.options]})
-    n_q = sum(1 for cp in snap.checkpoints if cp.status == "open" and cp.code == "C5" and cp.kind == "plan_question")
+    questions = [cp for cp in snap.checkpoints if cp.status == "open" and cp.code == "C5" and cp.kind == "plan_question"]
+    n_q = len(questions)
     if n_q:
+        # the questions are asked on their plan's page: the task opens it (or the plans, when several plans ask)
+        asking = sorted({(cp.subject_ref or "").split(":")[1] for cp in questions
+                         if (cp.subject_ref or "").startswith("plan:") and len((cp.subject_ref or "").split(":")) > 1})
         cands.append({"key": "answer:questions", "kind": "ask", "priority": 0.5,
                       "title": f"Answer {n_q} question{'s' if n_q != 1 else ''} about the plans",
                       "body": "Each answer settles which papers a claim needs.",
-                      "owner_person_ids": [claimant.id] if claimant else [], "cites": []})
+                      "owner_person_ids": [claimant.id] if claimant else [], "cites": [],
+                      "actions": [{"label": "Open the plan", "kind": "open", "target": f"plan:{asking[0]}"}]
+                      if len(asking) == 1 else [{"label": "Open the plans", "kind": "open", "target": "plans:"}]})
     viewer = snap.person(viewer_id or case.viewer_person_id)
     out = await call_agent(deps, "supervisor", {
         "key": pack_key("supervisor", case, today.isoformat(), viewer.id if viewer else "", str(len(cands))),

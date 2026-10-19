@@ -24,7 +24,7 @@ function rel(t: ReturnType<typeof useTranslations>, relationship: string | null 
 function QuestionCard({ q, view }: { q: IdentityQuestion; view: PeopleView }) {
   const t = useTranslations('people');
   const locale = useLocale();
-  const { caseId, viewerId } = useCase();
+  const { caseId, viewerId, readOnly } = useCase();
   const answer = useAnswer(caseId);
   const [other, setOther] = useState(false);
   const [value, setValue] = useState('');
@@ -80,14 +80,14 @@ function QuestionCard({ q, view }: { q: IdentityQuestion; view: PeopleView }) {
           <div className="mt-4 flex flex-wrap gap-2.5">
             {cp.options.map((o, i) =>
               o.value === 'other' ? (
-                <Button key={o.value} variant="secondary" onClick={() => setOther(true)}>
+                <Button key={o.value} variant="secondary" disabled={readOnly} onClick={() => setOther(true)}>
                   {t('someoneElse')}
                 </Button>
               ) : (
                 <Button
                   key={o.value}
                   variant={i === 0 ? 'dark' : 'secondary'}
-                  disabled={answer.isPending}
+                  disabled={answer.isPending || readOnly}
                   onClick={() => answer.mutate({ checkpointId: cp.id, answer: o.value, by: viewerId }, { onSuccess: done })}
                 >
                   {o.value === 'yes' ? label('yes', o.label) : o.value === 'no' ? t('no') : o.label}
@@ -108,7 +108,7 @@ function QuestionCard({ q, view }: { q: IdentityQuestion; view: PeopleView }) {
                 asDate(r.date)!,
               )}
             </span>
-            <span className="truncate font-bold">{r.narration}</span>
+            <span dir="auto" className="truncate font-bold">{r.narration}</span>
             <span className="text-end font-bold">{r.amount.text}</span>
           </div>
         ))}
@@ -171,7 +171,7 @@ function NamesTable({ view }: { view: PeopleView }) {
 function PersonLine({ p, pronoun }: { p: Person; pronoun: string }) {
   const t = useTranslations('people');
   const locale = useLocale();
-  const { caseId, viewerId } = useCase();
+  const { caseId, viewerId, readOnly } = useCase();
   const invite = useInvite(caseId);
   const unknown = p.certainty === 'unknown' || !p.relationship;
   const place = [p.city, p.country ? countryName(p.country, locale) : null].filter((x, i, a) => x && a.indexOf(x) === i).join(', ');
@@ -211,7 +211,7 @@ function PersonLine({ p, pronoun }: { p: Person; pronoun: string }) {
           <Button
             size="sm"
             variant="secondary"
-            disabled={invite.isPending}
+            disabled={invite.isPending || readOnly}
             onClick={() =>
               invite.mutate(
                 { personId: p.id, by: viewerId },
@@ -448,6 +448,7 @@ function SignTables({ view }: { view: PeopleView }) {
 
 export function PeopleScreen({ caseId }: { caseId: string }) {
   const t = useTranslations('people');
+  const { readOnly } = useCase();
   const q = usePeople(caseId);
   const [adding, setAdding] = useState(false);
   const view = q.data;
@@ -459,7 +460,7 @@ export function PeopleScreen({ caseId }: { caseId: string }) {
           <h1 className={h1Class}>{t('title')}</h1>
           <p className="m-0 mt-2 max-w-[46em] text-ink-soft">{t('lede')}</p>
         </div>
-        <Button variant="secondary" onClick={() => setAdding((v) => !v)} aria-expanded={adding}>
+        <Button variant="secondary" disabled={readOnly} onClick={() => setAdding((v) => !v)} aria-expanded={adding}>
           <UserPlus size={18} aria-hidden="true" />
           {t('add')}
         </Button>

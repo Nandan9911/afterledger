@@ -120,7 +120,7 @@ class ClaimEventIn(BaseModel):
 
 
 class LetterIn(BaseModel):
-    kind: Literal["reminder", "objection", "grievance"] = "reminder"
+    kind: Literal["reminder", "chase", "objection", "grievance", "request"] = "reminder"
     request: str | None = None
     by: str | None = None
 
@@ -199,6 +199,8 @@ class CiteView(BaseModel):
     quote_translation: str | None = None
     source_title: str = ""
     source_url: str = ""
+    read_url: str = ""                     # the page a person opens: the same as source_url, unless the source is
+    #                                        checked through an official data service (a law's XML) with its own page
     publisher: str = ""
     tier: int = 4
     tier_label: str = ""                   # Regulator, Law, Government source, Institution's own page...
@@ -261,6 +263,11 @@ class CaseHeader(BaseModel):
     # (people, accounts, loans, policies, payments to stop) and planning; None when nothing is running
     working: Literal["reading", "finding"] | None = None
     working_since: datetime | None = None
+    # true on the public site for a sample case (everyone but the admin): its buttons are switched off, questions are
+    # answered without being saved
+    read_only: bool = False
+    # the rules being researched for its claims, now: [{claim_id, title, run_id, started}]
+    researching: list[dict] = []
 
 
 class CaseSummary(BaseModel):
@@ -729,6 +736,7 @@ class AskOut(BaseModel):
     sources: list[CiteView] = []
     follow_ups: list[str] = []
     research_started: bool = False
+    kept: bool = True                     # False on a shared sample case: answered, not saved to its conversation
 
 
 class DeskRequirement(BaseModel):

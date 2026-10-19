@@ -9,7 +9,7 @@ from ...domain.countries import country_name
 from ...modules.common import Snapshot, snapshot
 from ...modules.research import language_name
 from ..schemas import ConversationView, KnownLine
-from .common import chip, cite_views
+from .common import chip, cite_views, tidy_utterance
 
 ROLE_WORDS = {"claimant": "Will make the claims.", "helper": "Helps with the papers.", "executor": "The executor.",
               "heir": "A legal heir.", "nominee": "The nominee."}
@@ -78,6 +78,7 @@ async def conversation(deps: Any, case_id: str) -> ConversationView:
         known.append(KnownLine(label="Will", text="There is a will." if sit.will == "yes" else "No will was found."))
     summary = next((c for c in snap.checkpoints if c.code == "C1"), None)
     ids = {s for u in utterances for s in u.sources if not s.startswith(("fact:", "paper:", "case:", "holding:", "claim:"))}
+    utterances = [await tidy_utterance(deps, u) for u in utterances]
     return ConversationView(utterances=utterances, people=[c for c in (chip(p) for p in snap.people) if c],
                             known=known, urgent=list(sit.urgent) if sit else [], summary=summary, stage=case.stage,
                             languages=case.languages, cites=await cite_views(deps, ids, deps.today_for(case)))

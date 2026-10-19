@@ -5,7 +5,7 @@ import { useMemo, useState, useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 import { LanguageSelect } from '@/components/CaseShell';
 import { ChallengeForm } from '@/components/ChallengeForm';
-import { Button, ButtonLink, Chip, Logo, ScrollX, Skeleton, Wordmark } from '@/components/ui';
+import { Button, ButtonLink, Chip, ErrorNote, Logo, ScrollX, Skeleton, SlowNote, Wordmark } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 import { countryName, longDate } from '@/lib/format';
 import { myCasesSnapshot, onMyCasesChange } from '@/lib/mycases';
@@ -238,6 +238,13 @@ export function MainScreen() {
               <h2 className={h2}>{t('familiesTitle')}</h2>
               <p className="m-0 mt-3.5 text-[18px] text-ink-soft">{t('familiesText')}</p>
             </div>
+            {families.isError ? (
+              <div className="mt-6">
+                <ErrorNote error={families.error} retry={() => families.refetch()} />
+              </div>
+            ) : (
+              <SlowNote active={families.isPending} className="mt-6" />
+            )}
             {/* phones and tablets: a card per family */}
             <ul className="m-0 mt-8 grid list-none gap-3 p-0 md:grid-cols-2 lg:hidden">
               {families.data
@@ -424,7 +431,7 @@ function MyQuestions() {
               <span className="block text-[14px] text-night-faint">
                 {[countryName(r.country, locale), state(r.status), longDate(r.started_at, locale)].filter(Boolean).join(' · ')}
               </span>
-              <span className="mt-1 line-clamp-2 block text-[17px] leading-snug">{r.question}</span>
+              <span dir="auto" className="mt-1 line-clamp-2 block text-[17px] leading-snug">{r.question}</span>
             </Link>
           </li>
         ))}

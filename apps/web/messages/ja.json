@@ -1,6 +1,6 @@
 {
   "common": {
-    "unreachable": "AfterLedger のサービスから応答がありません。サービスが動いているか、この端末から接続できるかを確かめてください。",
+    "unreachable": "AfterLedger に接続できませんでした。インターネット接続を確かめて、もう一度お試しください。",
     "skip": "本文へ移動",
     "why": "なぜ？",
     "close": "閉じる",
@@ -37,7 +37,7 @@
     "modeScripted": "オフライン：用意した応答",
     "modeGemini": "ライブ：Gemini",
     "modeReplay": "ライブ実行の再生",
-    "apiDown": "AfterLedgerのサービスに接続できません。API を起動して（python tools/dev.py api）、ページを再読み込みしてください。",
+    "apiDown": "AfterLedger に接続できませんでした。インターネット接続を確かめて、ページを再読み込みしてください。",
     "notFound": "このページは存在しません。",
     "home": "ホーム",
     "print": "印刷",
@@ -71,7 +71,12 @@
     },
     "whyTopic": "なぜ：{topic}",
     "updatesOn": "変更はすぐに反映されます",
-    "updatesOff": "更新は停止中です"
+    "updatesOff": "更新は停止中です",
+    "busy": "AfterLedger は少し混み合っています。数秒待ってから、もう一度お試しください。",
+    "loadingSlow": "まだ読み込んでいます。しばらく使われていなかった後の最初のページは、30秒ほどかかることがあります。",
+    "notFoundNote": "リンクが古いか、入力に誤りがあるかもしれません。すべてのケースとページにはホームページから移動できます。",
+    "startCase": "ケースを始める",
+    "samplePage": "サンプルの機関のページ（実在のサイトではありません）"
   },
   "nav": {
     "today": "今日",
@@ -108,7 +113,14 @@
     "storyLink": "始まりを読む",
     "workingReading": "書類を読み取っています。",
     "workingFinding": "書類が示すものを調べています：口座、ローン、保険、止めるべき支払い。",
-    "workingNote": "終わると手がかり、財産マップ、今日に反映されます（通常は数分以内）。その間もケースは使えます。"
+    "workingNote": "終わると手がかり、財産マップ、今日に反映されます（通常は数分以内）。その間もケースは使えます。",
+    "sampleTitle": "これはサンプルケースです。",
+    "sampleNote": "すべてのページを開いて質問もできますが、ここでは何も変更できません。ボタンを使うには、ご自分のケースを始めてください。",
+    "sampleStart": "自分のケースを始める",
+    "researching": "{count, plural, =1 {{title}の規則を調べています} other {#件の請求の規則を調べています}}",
+    "researchingNote": "その間は、機関に手紙を書いて請求の方法を尋ねる計画です。調査が終わると（通常は数分以内）、計画が置き換わり、承認をお願いします。",
+    "researchWatch": "調査の様子を見る",
+    "caseMissing": "このケースは存在しないか、別のアカウントに保存されています。"
   },
   "main": {
     "title": "AfterLedger：残されたものを見つける",
@@ -255,7 +267,8 @@
     "refresh": "今日の予定を立て直す",
     "listen": "読み上げ",
     "stopListen": "停止",
-    "lateDays": "{count, plural, other {#日遅れ}}"
+    "lateDays": "{count, plural, other {#日遅れ}}",
+    "noneKnown": "金額はまだわかっていません。書類が読み取られ、機関から返信が来るにつれて表示されます。"
   },
   "story": {
     "starting": "ケースを始めています",
@@ -536,7 +549,12 @@
       "procedures": "ほかの請求が待っている書類や決定です。",
       "debts": "遺産が負っているものと、その精算のルールです。",
       "closedGroup": "調べたうえで終了したもの。理由を添えています。"
-    }
+    },
+    "researching": "規則を調査中",
+    "forNow": "当面は機関に問い合わせる",
+    "emptyHow": "通帳、銀行の取引明細、保険証券、機関からの手紙など、お手元の書類を追加し、AfterLedger が見つけた手がかりを確認してください。その後、請求ごとに計画が作られます。",
+    "addPapers": "書類を追加",
+    "openLeads": "手がかりを開く"
   },
   "plan": {
     "crumb": "手続き",
@@ -628,7 +646,18 @@
     "askAbout": "{title}の計画について質問があります。",
     "haveQuestion": "質問がある",
     "theInstitution": "機関",
-    "or": "、または"
+    "or": "、または",
+    "interim": {
+      "runningTitle": "この請求の規則を、いま調べています",
+      "runningNote": "規則が見つかり出典と照合されるまでは、どこでも通用する最初の一歩が計画です。機関に手紙で死亡を知らせ、請求の方法を尋ねます。調査が終わると（通常は数分以内）、この計画は置き換わり、新しい計画の承認をお願いします。",
+      "waitingTitle": "当面は、機関に書面で問い合わせる計画です",
+      "waitingNote": "この請求について、公式の規則はまだ見つかって確認されていません。次の手順は機関の返信で決まり、1週間以内にもう一度調査します。",
+      "watch": "調査の様子を見る",
+      "see": "調査の結果を見る",
+      "offNote": "この請求の公式の規則は、まだ保存されていません。次の手順は機関の返信で決まります。"
+    },
+    "researchedOn": "{date}に調査",
+    "preparingPack": "この計画の書類を準備しています（記入、読み返し、確認）。1〜2分かかります。準備ができるとここから開けます。"
   },
   "packs": {
     "title": "提出書類",
@@ -696,7 +725,12 @@
     "handInDone": "記録しました。これからは「進捗」で機関の期限を追います。",
     "handedIn": "{date}に提出済み",
     "handedInPlain": "提出済み",
-    "seePlan": "この書類の元になった計画を見る"
+    "seePlan": "この書類の元になった計画を見る",
+    "markSent": "手紙を送付済みにする",
+    "sentWhen": "いつ送付または提出しましたか？ 今日なら空欄のままで構いません。",
+    "sentDone": "記録しました。30日以内に返信が見込まれます。返信がなければ AfterLedger が催促状を作ります。",
+    "sentOn": "{date}に手紙を送付",
+    "sentPlain": "手紙を送付済み"
   },
   "tracker": {
     "title": "進捗",
@@ -730,7 +764,9 @@
     "kinds": {
       "reminder": "督促状",
       "objection": "異議",
-      "grievance": "苦情"
+      "grievance": "苦情",
+      "chase": "催促の手紙",
+      "request": "問い合わせ"
     },
     "expectedBy": "{date}までに見込み",
     "draftedOn": "{date}に{name}さんの署名用に作成",
@@ -743,7 +779,40 @@
     "openDesk": "窓口ページを開く",
     "in": "受信",
     "out": "送付",
-    "objection": "ルール上求められないものを求めています：{rule}"
+    "objection": "ルール上求められないものを求めています：{rule}",
+    "progressTitle": "各請求の状況",
+    "progressLede": "何かがあったら、ここに記録してください。期限、計画、今日がそれに合わせて更新されます。",
+    "nothingYet": "まだ何も提出されていません。書類を提出するか最初の手紙を送ると、請求がここに表示されます。",
+    "drafting": "手紙を作成しています。1分ほどかかることがあります。",
+    "drafted": "作成しました。下に表示されているので、読んで承認してください。",
+    "ev": {
+      "done": "記録しました。計画と期限を更新しました。",
+      "when": "何日でしたか？",
+      "whenHint": "今日なら空欄のままで構いません。",
+      "amount": "いくら支払われましたか？",
+      "amountHint": "全額なら空欄のままで構いません",
+      "note": "何と言われましたか？",
+      "save": "記録する",
+      "theyReplied": "返信が来た",
+      "ask": {
+        "complete_set_confirmed": "{institution}から、書類がすべてそろったと書面で確認がありましたか？",
+        "settled": "{institution}から支払い、または精算がありましたか？",
+        "returned": "{institution}から請求が差し戻されましたか？",
+        "submitted": "{institution}に請求を再提出しましたか？"
+      },
+      "button": {
+        "complete_set_confirmed": "書類がすべてそろった",
+        "settled": "入金があった",
+        "settledDebt": "精算済み",
+        "returned": "差し戻された",
+        "submitted": "再提出した"
+      }
+    },
+    "draft": {
+      "reminder": "督促状を作る",
+      "chase": "催促の手紙を作る",
+      "request": "まだ必要なものを尋ねる"
+    }
   },
   "sources": {
     "title": "出典",
@@ -819,7 +888,8 @@
     "liveConnecting": "接続しています…",
     "liveTalking": "AfterLedger と話しています",
     "liveHint": "いつものように話してください。話し終えると、ケースの内容から答えます。",
-    "liveFailed": "音声を続けられませんでした（{message}）。文字で入力することもできます。"
+    "liveFailed": "音声を続けられませんでした（{message}）。文字で入力することもできます。",
+    "notSaved": "サンプルケースでは、回答はここに表示されますが保存されません。"
   },
   "newCase": {
     "title": "ケースを始める",
@@ -896,13 +966,17 @@
       "gold": "ゴールドとの照合",
       "letter": "手紙",
       "finished": "完了",
-      "round": "次のラウンド"
+      "round": "次のラウンド",
+      "known": "確認済みの規則"
     },
     "firstAnswerPending": "最初の答えのために公式ページを確認しています…",
     "onlyWhen": "{when}の場合のみ。",
     "showAll": "すべて表示",
     "hideDetails": "詳細を隠す",
-    "compiling": "調査役の意見が一致すると計画をまとめます…"
+    "compiling": "調査役の意見が一致すると計画をまとめます…",
+    "missingTitle": "この調査ページは存在しません",
+    "missingNote": "リンクが古いか誤っているか、別の人の質問かもしれません。ご自分の質問をすることができます。",
+    "askOwn": "自分の質問をする"
   },
   "desk": {
     "title": "AfterLedger 窓口",
@@ -1068,7 +1142,13 @@
     "cantFind": "見つからない",
     "why": "なぜ？",
     "marked": "印を付けました。計画を更新しました。",
-    "answered": "ありがとうございます。計画を更新しました。"
+    "answered": "ありがとうございます。計画を更新しました。",
+    "openPlans": "計画を開く",
+    "openLeads": "手がかりを開く",
+    "tellUs": "AfterLedger に伝える",
+    "addPaper": "書類を追加",
+    "checkPapers": "書類を確かめる",
+    "sampleOnly": "サンプルケースでは使えません"
   },
   "watch": {
     "title": "最初の書類から経緯を見ています",

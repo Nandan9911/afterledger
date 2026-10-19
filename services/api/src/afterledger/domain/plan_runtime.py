@@ -200,7 +200,7 @@ def static_check(plan: ProcedurePlan, known_assertions: set[str]) -> list[str]:
         errors.append("no step submits a claim or hands it off")
     for clock in plan.clocks:
         walk(clock.when)
-        if not clock.cites:
+        if not clock.cites and (clock.rule or not plan.unverified):
             errors.append(f"clock {clock.id}: no source cited")
     for item in [*plan.steps, *plan.documents, *plan.clocks, *plan.variables]:
         errors += [f"{item.__class__.__name__} {getattr(item, 'id', getattr(item, 'name', '?'))}: "

@@ -48,6 +48,26 @@ def rail_profiler(ctx: Ctx, req: OracleRequest) -> dict:
     return {"country": p.get("country", ""), "conventions": prof.get("conventions", [])}
 
 
+@oracle("payee_screener")
+def payee_screener(ctx: Ctx, req: OracleRequest) -> dict:
+    """Offline: the rails' patterns and the words that name a policy, fund, loan or pension decide."""
+    from ..modules.discovery import _TELLING
+    p = ctx.payload(req)
+    items = []
+    for g in p.get("groups", []):
+        label = str(g.get("label", ""))
+        up = label.upper()
+        kind = "cash" if ("ATM" in up or "CASH" in up) else "unknown"
+        cp = None
+        for pat in _patterns(p.get("rails")):
+            if re.search(pat["rx"], up, re.I):
+                kind, cp = pat["category"], pat.get("institution_id")
+                break
+        worth = bool(_TELLING.search(label)) or (kind not in ("cash", "unknown") and kind != "merchant")
+        items.append({"group_id": g["id"], "counterparty": cp, "kind": kind, "worth": worth})
+    return {"items": items}
+
+
 @oracle("narration_interpreter")
 def narration_interpreter(ctx: Ctx, req: OracleRequest) -> dict:
     p = ctx.payload(req)

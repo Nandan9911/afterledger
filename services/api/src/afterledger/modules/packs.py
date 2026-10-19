@@ -27,8 +27,7 @@ ROLE_LABEL = {"claimant": "the claimant", "other_heirs": "the other legal heirs"
 
 def _signers(snap: Any, roles: list[str], claim: Any = None) -> list[str]:
     fam = snap.family()
-    claimant = (snap.person(claim.claimant_person_id) if claim is not None and claim.claimant_person_id else None) \
-        or next((p for p in fam if "claimant" in p.roles), None)
+    claimant = snap.claimant(claim)
     out: list[str] = []
     for r in roles:
         if r in ("claimant", "nominee", "beneficiary") and claimant:
@@ -197,8 +196,12 @@ async def prepare_pack(deps: Any, case_id: str, claim_id: str) -> Pack | None:
                               if not stale else "stale: " + ", ".join(stale),
                               params={"checked_on": checked_on.isoformat(), "stale": stale}))
     pending = [e for e in enclosures if e.status in ("missing", "unknown")]
-    pack = Pack(id=stable_id("pack", claim_id), case_id=case_id, claim_id=claim_id,
-                title=claim.title, items=items, enclosures=enclosures,
+    from .rules_research import is_interim
+    interim = is_interim(cp.plan_key)
+    # the interim plan's letter is a pack of its own, so the claim's papers (prepared once its rules are researched)
+    # do not replace the letter the family already sent
+    pack = Pack(id=stable_id("pack", claim_id, "interim") if interim else stable_id("pack", claim_id), case_id=case_id,
+                claim_id=claim_id, plan_key=cp.plan_key, title=claim.title, items=items, enclosures=enclosures,
                 checks=checks, status="draft" if draft else "ready",
                 summary=_summary(cp, items, snap), submit_how="Hand in at any branch and ask for a written "
                 "acknowledgement." if plan.institution_kind == "bank" else "Send as the institution directs.")
@@ -395,8 +398,7 @@ def unsupported(body: str, allowed: str) -> list[str]:
 async def _covering_letter(deps: Any, snap: Any, claim: Any, cp: Any, inst: dict, items: list[PackItem],
                            enclosures: list[Enclosure], allowed: str) -> tuple[PackItem, Any, int]:
     case = snap.case
-    claimant = (snap.person(claim.claimant_person_id) if claim.claimant_person_id else None) or \
-        next((p for p in snap.family() if "claimant" in p.roles), None)
+    claimant = snap.claimant(claim)
     lang = {"JP": "ja", "DE": "de", "FR": "fr"}.get((claim.country or "").split("-")[0], "en")
     through = await _through_bank(deps, snap, claim, inst)
     out, _still, repairs = await repair_loop(deps, "letter_writer", {

@@ -19,9 +19,10 @@ from ..domain.ids import stable_id
 from ..domain.money import format_amount
 from ..domain.plan_language import ProcedurePlan
 from ..domain.plan_runtime import documents_for, route, run
-from . import plan_facts
+from . import plan_facts, rules_research
 from .common import case_block, knowledge, open_checkpoint, pack_key, snapshot
 from .packs import _have
+from .rules_research import is_interim, signature
 
 MODULE = "planning"
 LEAD_KINDS = {"life_cover": "government_cover", "accident_cover": "accident_cover", "mutual_fund": "mutual_fund",
@@ -50,7 +51,8 @@ async def find_plan(deps: Any, country: str, kind: str, institution_id: str | No
     """The plan for a situation signature: the institution's own plan first, then the country's."""
     plans = await knowledge(deps).plans()
     cands = [p for p in plans if kind in p.holding_kinds and p.jurisdiction.split("-")[0] == country.split("-")[0]
-             and not p.authority]          # a procedure (a court, a registry) is reached through the claims that need it
+             and not p.authority           # a procedure (a court, a registry) is reached through the claims that need it
+             and not is_interim(p.key)]
     if institution_id:
         own = [p for p in cands if p.key.endswith("@" + institution_id)]
         if own:
@@ -73,8 +75,8 @@ async def holdings_from_leads(deps: Any, case_id: str) -> None:
         if kind is None or lead.kind in ("stop_payment", "refund"):
             continue
         if lead.holding_id is None:       # a paper may already show what the lead points to
-            on_paper = next((x for x in snap.holdings if x.paper_ids and x.institution_id == lead.institution_id
-                             and x.kind == kind), None)
+            on_paper = next((x for x in snap.holdings if (x.paper_ids or x.source == "family")
+                             and x.institution_id == lead.institution_id and x.kind == kind), None)
             if on_paper is not None:
                 lead.holding_id = on_paper.id
         hid = lead.holding_id or stable_id("h", case_id, "lead", lead.id)
@@ -82,7 +84,7 @@ async def holdings_from_leads(deps: Any, case_id: str) -> None:
         h = existing.get(hid) or Holding(id=hid, case_id=case_id, institution_id=lead.institution_id, kind=kind,  # type: ignore[arg-type]
                                          label=lead.title, lead_id=lead.id, status="lead", source="lead")
         h.lead_id = lead.id
-        if h.paper_ids:                   # a paper now shows it: the paper's values and status stand
+        if h.paper_ids or h.source == "family":   # a paper shows it, or the family said so: that stands
             lead.holding_id = hid
             if lead.status == "open":
                 lead.status = "confirmed"
@@ -118,15 +120,15 @@ async def build_claims(deps: Any, case_id: str) -> list[Claim]:
         inst = await k.institution(h.institution_id)
         country = h.country or (inst.country if inst else None) or (snap.case.country_codes or ["IN"])[0]
         plan = await find_plan(deps, country, h.kind, h.institution_id)
-        if plan is None:
-            continue                      # a debt with no rules to follow stays on the money map only
+        # no stored plan: the claim is still made, starts on the interim plan and has its rules researched
+        plan_key = plan.key if plan else f"research:{signature(country, h.kind)}"
         nominee_key = "yes" if h.nominee == "yes" else "no"
         # a holding stays in the claim it joined, even when a later paper changes its nominee
         if h.claim_id and any(c.id == h.claim_id for c in snap.claims):
             cid = h.claim_id
         else:
-            cid = stable_id("claim", case_id, h.institution_id, plan.key, nominee_key)
-        groups.setdefault((cid, h.institution_id, plan.key), []).append(h)
+            cid = stable_id("claim", case_id, h.institution_id, plan_key, nominee_key)
+        groups.setdefault((cid, h.institution_id, plan_key), []).append(h)
     existing = {c.id: c for c in snap.claims}
     claims = []
     for (cid, inst_id, plan_key), hs in groups.items():
@@ -150,7 +152,8 @@ async def build_claims(deps: Any, case_id: str) -> list[Claim]:
         c.next_action = c.next_action or "Plan the claim"
         if cid not in existing:
             await deps.activity(case_id, MODULE, f"New claim: {c.title}.", kind="step")
-        deps.extras.setdefault("claim_plan_key", {})[cid] = plan_key
+        if not plan_key.startswith("research:"):
+            deps.extras.setdefault("claim_plan_key", {})[cid] = plan_key
     await deps.cases.put_many(case_id, "claims", claims)
     await deps.cases.put_many(case_id, "holdings", [h for hs in groups.values() for h in hs])
     return claims
@@ -194,11 +197,13 @@ def claim_title(inst: Any, inst_id: str, labels: list[str]) -> str:
 
 
 async def plan_key_for_claim(deps: Any, snap: Any, claim: Claim) -> str | None:
+    """The stored plan this claim follows: a procedure's own, the one it was planned on, or the one its situation now
+    finds. A claim on the interim plan moves to a stored plan as soon as research has stored one."""
     if claim.plan_key:
         return claim.plan_key
     if claim.plan_id:
         plan = next((p for p in snap.plans if p.id == claim.plan_id), None)
-        if plan:
+        if plan and not is_interim(plan.plan_key):
             return plan.plan_key
     h = next((x for x in snap.holdings if x.id in claim.holding_ids), None)
     if h is None:
@@ -245,11 +250,21 @@ async def _checked_again(deps: Any, case: Any, claim: Claim, key: str) -> str | 
                              "depth": depth, "level": plan.level, "fresh": fresh, "rules": len(rules)})
     if depth == "recall" or deps.models.mode == "scripted":
         return None
-    why = "rules past their check date" if not fresh else "a single official source"
-    await deps.activity(case.id, MODULE, f"The stored plan for {claim.title} rests on {why}, so its rules are researched "
-                        "again before it is used.", kind="research")
-    from .research import research_need
-    return await research_need(deps, case.id, claim.id, depth=depth)
+    # until 19 October 2026 this research ran there and then, holding the case for up to half an hour; now the stored
+    # plan is used at once and its rules are researched in the background, and the claim moves to the result
+    why = "rules past their check date" if not fresh else "few official sources" if plan.unverified or not rules \
+        else "a single official source"
+    h = await deps.cases.get(case.id, "holdings", claim.holding_ids[0]) if claim.holding_ids else None
+    state = await rules_research.ensure(deps, case.id, claim, country=claim.country or plan.jurisdiction,
+                                        kind=h.kind if h else None, reason="recheck",
+                                        plan_key=key if plan.authority else None, authority=plan.authority)
+    if state.get("status") == "running" and (claim.research or {}).get("run_id") != state.get("run_id"):
+        claim.research = state
+        await deps.cases.put(case.id, "claims", claim)
+        await deps.activity(case.id, MODULE, f"The stored plan for {claim.title} rests on {why}, so its rules are being "
+                            "researched again in the background; the plan is used meanwhile.", kind="research",
+                            run_id=state.get("run_id"))
+    return None
 
 
 async def plan_claim(deps: Any, case_id: str, claim_id: str, *, answers: dict | None = None) -> CasePlan | None:
@@ -261,12 +276,17 @@ async def plan_claim(deps: Any, case_id: str, claim_id: str, *, answers: dict | 
     k = knowledge(deps)
     key = await plan_key_for_claim(deps, snap, claim)
     if key is None:
-        await deps.activity(case_id, MODULE, f"No stored plan fits {claim.title}; asking the research service.",
-                            kind="research")
-        from .research import research_need
-        key = await research_need(deps, case_id, claim_id, depth="deep")
-        if key is None:
-            return None
+        # no stored plan fits: the claim starts on the interim plan at once, and its rules are researched now, in
+        # the background (until 19 October 2026 research ran here and the case waited, or the claim was never made)
+        h = next((x for x in snap.holdings if x.id in claim.holding_ids), None)
+        state = await rules_research.ensure(deps, case_id, claim, country=claim.country or (h.country if h else None)
+                                            or (case.country_codes or ["XX"])[0], kind=h.kind if h else None)
+        if (claim.research or {}).get("run_id") != state.get("run_id") and state.get("status") == "running":
+            await deps.activity(case_id, MODULE, f"No stored plan covers {claim.title} yet, so its rules are being "
+                                "researched now; until then the plan is to tell the institution in writing and ask how "
+                                "to claim.", kind="research", run_id=state.get("run_id"))
+        claim.research = state
+        key = rules_research.INTERIM_DEBT if claim.kind == "debt" else rules_research.INTERIM_CLAIM
     elif snap.plan_for_claim(claim_id) is None:      # the first time this claim is planned
         key = await _checked_again(deps, case, claim, key) or key
     plan = await k.plan(key)
@@ -337,20 +357,29 @@ async def plan_claim(deps: Any, case_id: str, claim_id: str, *, answers: dict | 
                       "draft": "Not verified yet"}.get(level, level)
     if plan.unverified:
         verified_label = "Not verified: the plan starts by asking the institution"
+    interim = is_interim(key)
+    research = claim.research or {}
+    if interim:
+        verified_label = ("For now: the rules are being researched" if research.get("status") == "running" else
+                          "For now: research found no official rules yet" if research.get("status") in (
+                              "inconclusive", "failed", "done") else "For now: ask the institution in writing")
     must_not = sorted({m for sid in route_steps for m in plan.step(sid).must_not_be_asked})
     cp = CasePlan(id=pid, case_id=case_id, claim_id=claim_id, plan_key=key, title=plan.title,
                   institution_id=claim.institution_id, jurisdiction=plan.jurisdiction, level=level,
                   verified_label=verified_label, gold_match=gold, facts=facts,
                   questions=result.questions, steps=steps, documents=docs, must_not_be_asked=must_not,
-                  contested=plan.contested, approved_by=prev.approved_by if prev else None,
-                  approved_on=prev.approved_on if prev else None,
-                  research_label=f"verified on {plan.verified_on.day} {plan.verified_on.strftime('%B %Y')}"
-                  if plan.verified_on else "researched just now", verified_on=plan.verified_on,
+                  # an approval holds for the plan approved: a plan that replaced it (researched rules for an interim
+                  # plan) is approved again
+                  contested=plan.contested, approved_by=prev.approved_by if prev and prev.plan_key == key else None,
+                  approved_on=prev.approved_on if prev and prev.plan_key == key else None,
+                  research_label=("researching now" if research.get("status") == "running" else "") if interim else
+                  f"{'researched' if plan.unverified or level == 'draft' else 'verified'} on "
+                  f"{plan.verified_on.day} {plan.verified_on.strftime('%B %Y')}"
+                  if plan.verified_on else "researched just now", verified_on=None if interim else plan.verified_on,
                   unverified=bool(plan.unverified))
     viewer = snap.person(case.viewer_person_id)
     lang = (viewer.languages[0] if viewer and viewer.languages else "en")
-    claimant = snap.person(claim.claimant_person_id) or next((p for p in snap.family() if "claimant" in p.roles),
-                                                             None)
+    claimant = snap.claimant(claim)
     if lang == "en" and claimant and claimant.languages and claimant.languages[0] != "en":
         lang = claimant.languages[0]      # the person who signs reads the plan in their own language
     expl = await call_agent(deps, "explainer", {
@@ -377,6 +406,9 @@ async def plan_claim(deps: Any, case_id: str, claim_id: str, *, answers: dict | 
     if not route_steps and result.questions:
         cp.summary = cp.summary or "The route depends on a few answers; the plan covers every answer until then."
     claim.plan_id = pid
+    if not interim and claim.status == "submitted" and not claim.submitted_on and "notified" in claim.events:
+        # the family wrote under the interim plan; the researched plan's own claim is still to be made
+        claim.status, claim.next_action = "planning", "Approve the researched plan"
     claim.next_action = ("Answer " + str(len(result.questions)) + " question" + ("s" if len(result.questions) != 1 else "")
                          if result.questions else claim.next_action)
     await deps.cases.put(case_id, "plans", cp)
@@ -400,6 +432,11 @@ async def plan_claim(deps: Any, case_id: str, claim_id: str, *, answers: dict | 
                                   why=f"The plan for {claim.title} depends on it.",
                                   payload={"claim_id": claim_id, "variable": var, "plan_key": key})
     elif not cp.approved_by:
+        if prev is not None and prev.plan_key != key:     # a new plan replaced the one approved: asked again
+            for c in await deps.cases.list(case_id, "checkpoints"):
+                if c.subject_ref == f"plan:{pid}:approve" and c.status == "answered":
+                    c.status, c.answer, c.answered_by, c.answered_at = "open", None, None, None
+                    await deps.cases.put(case_id, "checkpoints", c)
         await open_checkpoint(deps, case, code="C5", kind="plan_approval", title=f"Approve the plan: {claim.title}",
                               question="Does this plan look right to you?",
                               options=[("approve", "Approve"), ("question", "I have a question")],

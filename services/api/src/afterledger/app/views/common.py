@@ -23,6 +23,55 @@ def money(amount: Any, currency: str | None) -> Money | None:
                  short=format_amount(value, currency, decimals=False))
 
 
+_RULE_ID = re.compile(r"\b[a-z]{2}_[a-z0-9]+(?:_[a-z0-9]+)+\b")
+_ISO_DATE = re.compile(r"\b(20\d{2})-(\d{2})-(\d{2})\b")
+_SIGNED_AMOUNT = re.compile(r"(₹|Rs\.?\s?|INR\s?)(\d{4,}(?:\.\d{1,2})?)(?![\d,])")
+_CODED_AMOUNT = re.compile(r"(?<![\d,.])(\d{4,}(?:\.\d{2})?)\s?(SGD|INR|USD|GBP|JPY|EUR|AUD)\b")
+# a grouped whole amount written with its paise or cents ("₹1,84,212.00"): shown as the screens show it ("₹1,84,212")
+_WHOLE_GROUPED = re.compile(r"((?:₹|Rs\.?\s?|S\$|US\$|\$|£|€|¥)\s?\d{1,3}(?:,\d{2,3})+)\.00(?!\d)")
+_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
+           "November", "December"]
+
+
+async def tidy_text(deps: Any, text: str | None, *, ids_only: bool = False) -> str | None:
+    """A sentence an agent wrote, as a family should read it: no rule ids in it (the rules are behind "Why?"), dates
+    in words, and amounts with their grouping and symbol (until 19 October 2026 a lead could read "(in_rbi_305_inventory)",
+    "2026-04-08" or "₹800000.00")."""
+    if not text:
+        return text
+    k = knowledge(deps)
+    out = text
+    for m in set(_RULE_ID.findall(out)):
+        if await k.assertion(m) is not None:
+            out = out.replace(m, "")
+    out = re.sub(r"\(\s*(?:,\s*)*\)", "", out)              # brackets left empty
+    out = re.sub(r"\s+,", ",", re.sub(r",(\s*,)+", ",", out))
+    out = re.sub(r"\s{2,}", " ", out).replace(" .", ".").strip()
+    if ids_only:                          # a sentence in another language keeps its own dates and numbers
+        return out
+
+    def day(m: re.Match) -> str:
+        y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        return f"{d} {_MONTHS[mo - 1]} {y}" if 1 <= mo <= 12 and 1 <= d <= 31 else m.group(0)
+    out = _ISO_DATE.sub(day, out)
+    out = _SIGNED_AMOUNT.sub(lambda m: format_amount(Decimal(m.group(2)), "INR", decimals=False), out)
+    out = _CODED_AMOUNT.sub(lambda m: format_amount(Decimal(m.group(1)), m.group(2),
+                                                    decimals=not m.group(1).endswith(".00")), out)
+    out = _WHOLE_GROUPED.sub(lambda m: m.group(1), out)
+    return out
+
+
+async def tidy_utterance(deps: Any, u: Any) -> Any:
+    """An answer as a family reads it (tidy_text): in full when it is in English, its rule ids only otherwise."""
+    if getattr(u, "role", "") != "assistant" or not getattr(u, "text", ""):
+        return u
+    english = (u.lang or "en").split("-")[0] == "en"
+    update = {"text": await tidy_text(deps, u.text, ids_only=not english)}
+    if u.translation:
+        update["translation"] = await tidy_text(deps, u.translation, ids_only=english)
+    return u.model_copy(update=update)
+
+
 def chip(p: Person | None) -> PersonChip | None:
     if p is None:
         return None
@@ -61,6 +110,22 @@ def tier_label(tier: int | None, publisher: str = "", url: str = "") -> str:
     return "Source"
 
 
+# Japan's e-Gov law service: the rules are checked against its XML (api/1/articles;lawId=...;article=...), and a
+# person reads the same law on its page
+_EGOV_API = re.compile(r"^https?://laws\.e-gov\.go\.jp/api/[^/]+/(?:articles;lawId=|lawdata/)([0-9A-Za-z]+)")
+
+
+def read_url(url: str | None) -> str:
+    """The page a person opens for a source: a machine-readable copy (an official data service's XML) is swapped for
+    the page that shows the same text; every other address is kept as it is."""
+    if not url:
+        return ""
+    m = _EGOV_API.match(url)
+    if m:
+        return f"https://laws.e-gov.go.jp/law/{m.group(1)}"
+    return url
+
+
 async def cite_views(deps: Any, ids: list[str] | set[str], today: date) -> dict[str, CiteView]:
     k = knowledge(deps)
     out: dict[str, CiteView] = {}
@@ -72,7 +137,8 @@ async def cite_views(deps: Any, ids: list[str] | set[str], today: date) -> dict[
         until = checked + timedelta(days=a.ttl_days) if checked else None
         locator = a.notes.split("Locator:", 1)[1].strip().rstrip(".") if "Locator:" in a.notes else ""
         out[aid] = CiteView(id=a.id, text=a.text, quote=a.quote, quote_translation=a.quote_translation,
-                            source_title=a.source.title, source_url=a.source.url, publisher=a.source.publisher,
+                            source_title=a.source.title, source_url=a.source.url, read_url=read_url(a.source.url),
+                            publisher=a.source.publisher,
                             tier=a.source.tier, tier_label=tier_label(a.source.tier, a.source.publisher, a.source.url),
                             level=a.level, level_label=LEVEL_LABEL.get(a.level, a.level), checked_on=checked,
                             fresh_until=until, fresh=bool(until is None or until >= today), locator=locator,

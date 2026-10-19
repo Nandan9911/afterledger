@@ -6,7 +6,7 @@ from typing import Any
 
 from ...modules.common import knowledge, snapshot
 from ..schemas import CoverageItem, LeadsView, LeadView
-from .common import cite_views, institution_name, money, row_view
+from .common import cite_views, institution_name, money, row_view, tidy_text
 
 LABEL_ORDER = {"sure": 0, "likely": 1, "possible": 2, "unlikely": 3}
 
@@ -31,7 +31,10 @@ async def leads(deps: Any, case_id: str) -> LeadsView:
         if value is None and lead.holding_id:
             h = snap.holding(lead.holding_id)
             value = h.value if h else None
-        view = LeadView(lead=lead, rows=rows, value=money(value, currency), institution=institution_name(inst) or None,
+        shown = lead.model_copy(update={f: await tidy_text(deps, getattr(lead, f)) for f in
+                                        ("sentence", "investigator_note", "critic_note", "how_to_confirm",
+                                         "next_step_note", "closed_reason")})
+        view = LeadView(lead=shown, rows=rows, value=money(value, currency), institution=institution_name(inst) or None,
                         checkpoint=cps.get(f"lead:{lead.id}"), papers=papers)
         out[lead.status].append(view)
         cite_ids |= set(lead.cites)

@@ -21,7 +21,9 @@ function MoneyCard({ totals, unknown }: { totals: CurrencyTotals; unknown: numbe
   return (
     <Sheet className="px-6 py-5">
       <div className="flex flex-wrap items-baseline justify-between gap-4">
-        <h2 className="m-0 text-[17px] font-bold">{t('found', { amount: totals.known.short, count: totals.holdings_known })}</h2>
+        <h2 className="m-0 text-[17px] font-bold">
+          {totals.holdings_known ? t('found', { amount: totals.known.short, count: totals.holdings_known }) : t('noneKnown')}
+        </h2>
         <Link href={`/cases/${caseId}/money`} className="text-[15px] font-bold">
           {t('openMoney')}
         </Link>
@@ -231,19 +233,20 @@ function PhoneToday({ today, locale }: { today: TodayView; locale: string }) {
 export function TodayScreen({ caseId }: { caseId: string }) {
   const t = useTranslations('today');
   const locale = useLocale();
-  const { viewerId } = useCase();
-  const q = useToday(caseId, viewerId);
+  const { viewerId, header, readOnly } = useCase();
+  // asked once the case says who is viewing, so the page is not fetched twice (once for nobody, once for them)
+  const q = useToday(caseId, viewerId, Boolean(header));
   const refresh = useRefreshToday(caseId);
   // each family member has a greeting of their own; one written for someone else is redone once, quietly
   const redone = useRef<string | null>(null);
   const stale = !!(viewerId && q.data?.greeting_for && q.data.greeting_for !== viewerId);
   const { mutate, isPending } = refresh;
   useEffect(() => {
-    if (stale && viewerId && redone.current !== viewerId && !isPending) {
+    if (stale && viewerId && !readOnly && redone.current !== viewerId && !isPending) {
       redone.current = viewerId;
       mutate(viewerId);
     }
-  }, [stale, viewerId, isPending, mutate]);
+  }, [stale, viewerId, readOnly, isPending, mutate]);
   if (q.isError) return <ErrorNote error={q.error} retry={() => q.refetch()} />;
   const today = q.data;
   if (!today) {

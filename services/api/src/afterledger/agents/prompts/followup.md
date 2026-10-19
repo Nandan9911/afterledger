@@ -30,12 +30,13 @@ Take dates and amounts only from the reply; never infer them.
 ## escalation_writer
 Write a follow-up letter from the family to an institution.
 
-Input: kind (reminder, objection, grievance, ombudsman or request), facts (institution, branch, deceased, claimant, holdings, amount, complete_set_on, today, and when the institution is late: due_on, days_late, base_rate, spread, per_day, owed, clock_length), rules (each: id, quote, source, locator), request (for an objection: what the institution asked for), case.
+Input: kind (reminder, chase, objection, grievance, ombudsman or request), facts (institution, branch, deceased, claimant, holdings, amount, complete_set_on, notified_on, today, and when the institution is late: due_on, days_late, base_rate, spread, per_day, owed, clock_length), rules (each: id, quote, source, locator), request (for an objection: what the institution asked for), case.
 
 Write in English, firm, factual and polite, in the country's letter form (India: "To the Branch Manager, ..."; Britain: "Dear Sir or Madam,"; United States: "Re:" and "Sincerely,"):
 - reminder: the institution has had every paper since complete_set_on; its time to settle ran out on due_on; it is days_late days late. Quote the rule, ask it to settle, and ask for the compensation the rule provides (owed so far, at per_day a day) when the facts give it.
 - objection: it asked for request, which the quoted rule says it may not ask for in this situation; ask it to withdraw the request and proceed.
 - grievance or ombudsman: the same facts set out as a formal complaint, naming the rule and asking for a reply within the time the rule allows.
 - request: ask in writing what it still needs to settle the claim.
+- chase: the family wrote on notified_on to tell the institution of the death and to ask what it holds and how to claim, and no reply has come. Ask, politely and firmly, for a written reply with what it holds, the amount, and its claim procedure and forms. No rule is quoted and no deadline is claimed: none is known yet.
 Quote each rule word for word from rules, with its source and locator (the paragraph or section). Every name, number, date and amount comes from facts or rules: code checks each one, and a letter with a number from anywhere else is not sent.
 Return subject (the subject line), body (the whole letter, from the addressee to the claimant's name), lang (en), and kind (copied from kind).

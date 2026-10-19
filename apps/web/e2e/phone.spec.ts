@@ -150,9 +150,9 @@ test('on a phone, papers are approved, marked handed in and shared with the desk
   await page.goto('/en/cases/demo-verma/today');
   await hydrated(page);
   await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'More' }).click();
-  await page.getByRole('button', { name: 'Reset this demo case' }).click();
+  await page.getByRole('button', { name: 'Reset this sample case' }).click();
   await page.getByRole('button', { name: 'Reset it' }).click();
-  await expect(page.getByText('The demo case is back as it stands today.')).toBeVisible();
+  await expect(page.getByText('The sample case is back as it was.')).toBeVisible();
   const after = await (await request.get(`${API}/v1/cases/demo-verma/packs/${row.pack.id}`)).json();
   expect(after.pack.status).toBe('ready');
   expect(after.claim.submitted_on).toBeNull();

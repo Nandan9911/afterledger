@@ -29,6 +29,17 @@ class FamilyMember(BaseModel):
     source_utterances: list[str] = []
 
 
+class MentionedHolding(BaseModel):
+    said: str = Field(description="What the family said, in their words")
+    kind: str = Field("other", description="savings, current, fixed_deposit, recurring_deposit, life_policy, "
+                                          "accident_cover, government_cover, mutual_fund, demat, shares_physical, "
+                                          "provident_fund, pension, family_pension, locker, loan, credit_card, "
+                                          "card_loan, gold, property, employer_benefit or other")
+    institution: str | None = Field(None, description="The bank, insurer, fund, employer or body that holds it, as "
+                                                      "named; null when unknown")
+    direction: Literal["asset", "debt"] = "asset"
+
+
 class SituationOut(BaseModel):
     deceased_name: str = ""
     deceased_name_en: str | None = Field(None, description="In Latin letters, when written in another script")
@@ -42,6 +53,7 @@ class SituationOut(BaseModel):
     speaker_relationship: str | None = Field(None, description="What the person speaking is to the person who died "
                                                                 "(wife, son...), when they said it")
     holdings_mentioned: list[str] = []
+    holdings: list[MentionedHolding] = []
     papers_at_hand: list[str] = []
     urgent: list[str] = []
     will: Tri = "unknown"
@@ -242,6 +254,26 @@ class InstitutionsOut(BaseModel):
     matches: list[InstitutionMatch]
 
 
+class InstitutionResearchOut(BaseModel):
+    found: bool = Field(description="True only when a page you fetched (the organisation's own site, or a regulator's "
+                                    "list) shows that this organisation exists and what it is")
+    is_person: bool = Field(False, description="True when the name is a person's, not an organisation's")
+    official_name: str = Field("", description="The organisation's own name for itself, as on its site")
+    short_name: str = Field("", description="The short name people use: 'ICICI Bank', 'LIC', 'EPFO'")
+    kind: Literal["bank", "insurer", "lender", "depository", "fund_house", "registrar", "pension", "government",
+                  "employer", "company", "other"] = "other"
+    country: str = Field("", description="ISO code of the country it operates in for this family")
+    bank_type: Literal["commercial", "urban_coop", "other"] | None = Field(
+        None, description="India only, for a bank: commercial (any scheduled commercial bank, including small finance "
+                          "and payments banks), urban_coop (an urban co-operative bank), or other (a rural or state "
+                          "co-operative bank)")
+    domain: str | None = Field(None, description="Its official web domain, such as icicibank.com")
+    claims_url: str | None = Field(None, description="Its own page on claims after a customer's death, if you found one")
+    regulator: str | None = Field(None, description="Who regulates it, when a page says so: RBI, IRDAI, SEBI, PFRDA...")
+    note: str = Field("", description="One plain sentence: what it is, for the family")
+    sources: list[str] = Field([], description="URLs of the pages you fetched that show this")
+
+
 # ---- M5 discovery ------------------------------------------------------------------------------
 class Convention(BaseModel):
     prefix: str = Field(description="As printed on statements")
@@ -259,6 +291,20 @@ class NarrationOut(BaseModel):
     counterparty_kind: str | None = None
     interpretation: str
     alternatives: list[str] = []
+
+
+class ScreenedPayee(BaseModel):
+    group_id: str
+    counterparty: str | None = None
+    kind: str = Field("unknown", description="insurer, fund_registrar, fund_house, lender, card_issuer, bank, broker, "
+                                             "employer, government, pension_payer, utility, telecom, merchant, "
+                                             "family_member, self_transfer, cash or unknown")
+    worth: bool = Field(False, description="True when the payments may point to something the family could claim, "
+                                           "owes, or must stop")
+
+
+class PayeeScreenOut(BaseModel):
+    items: list[ScreenedPayee]
 
 
 class Hypothesis(BaseModel):
@@ -574,7 +620,7 @@ class EscalationOut(BaseModel):
     subject: str
     body: str
     lang: str = "en"
-    kind: Literal["reminder", "objection", "grievance", "ombudsman", "request"] = "reminder"
+    kind: Literal["reminder", "chase", "objection", "grievance", "ombudsman", "request"] = "reminder"
 
 
 # ---- M9 conversation ---------------------------------------------------------------------------------

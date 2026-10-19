@@ -5,8 +5,9 @@
  */
 import type { PersonChip } from '@afterledger/contracts';
 import { useLocale, useTranslations } from 'next-intl';
-import type { ComponentProps, ReactNode } from 'react';
+import { useEffect, useState, type ComponentProps, type ReactNode } from 'react';
 import { Link } from '@/i18n/navigation';
+import { ApiError } from '@/lib/api';
 import { cls, personName } from '@/lib/format';
 
 export function Logo({ size = 30 }: { size?: number }) {
@@ -207,7 +208,9 @@ export function ErrorNote({ error, retry }: { error: unknown; retry?: () => void
   const t = useTranslations('common');
   // a request that never reached the service (it is stopped, or a phone cannot reach the laptop) fails with the
   // browser's own words ("Failed to fetch"); the API's own refusals carry its explanation
-  const msg = error instanceof TypeError ? t('unreachable') : error instanceof Error ? error.message : String(error);
+  const busy = error instanceof ApiError && [429, 502, 503, 504].includes(error.status);
+  const msg =
+    error instanceof TypeError ? t('unreachable') : busy ? t('busy') : error instanceof Error ? error.message : String(error);
   return (
     <div role="alert" className="rounded-[14px] border border-debit bg-debit-tint p-4 text-[16px] text-debit">
       <p className="m-0 font-bold">{msg}</p>
@@ -217,5 +220,30 @@ export function ErrorNote({ error, retry }: { error: unknown; retry?: () => void
         </button>
       ) : null}
     </div>
+  );
+}
+
+/** Words for a wait, so a page is never just blank boxes: nothing for a moment, then "Loading…", then that it can
+ * take a little longer (the first page after a quiet spell wakes the service). */
+export function SlowNote({ active, className }: { active: boolean; className?: string }) {
+  const t = useTranslations('common');
+  const [stage, setStage] = useState<0 | 1 | 2>(0);
+  useEffect(() => {
+    if (!active) {
+      const done = setTimeout(() => setStage(0), 0);
+      return () => clearTimeout(done);
+    }
+    const a = setTimeout(() => setStage(1), 1500);
+    const b = setTimeout(() => setStage(2), 10_000);
+    return () => {
+      clearTimeout(a);
+      clearTimeout(b);
+    };
+  }, [active]);
+  if (!active || stage === 0) return null;
+  return (
+    <p role="status" className={cls('m-0 text-[14px] text-ink-soft', className)}>
+      {stage === 1 ? t('loading') : t('loadingSlow')}
+    </p>
   );
 }

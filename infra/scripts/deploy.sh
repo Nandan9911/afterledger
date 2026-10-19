@@ -245,9 +245,12 @@ fi
 # AL_STRICT_LIVE false: a Google service that fails is reported on /v1/meta and the work goes on without it
 [ -z "$CASE_BUDGET_USD" ] || echo "AL_CASE_BUDGET_USD: \"$CASE_BUDGET_USD\"" >> "$ENV_FILE"
 [ -z "${AGENT_TIERS:-}" ] || echo "AL_AGENT_TIERS: \"$AGENT_TIERS\"" >> "$ENV_FILE"
+# --concurrency 500: every open case page holds one live update stream (AL_SSE_MAX_STREAMS, 300 by default, each
+# closed by the service after 45 s), so plain requests keep at least 200 slots. With 80 slots, on 19 October 2026,
+# about 80 case pages left open by one visitor filled the one instance for an hour.
 gcloud run deploy afterledger-api --image "$REGISTRY/api:$TAG" --region "$REGION" --service-account "$SA" \
   --allow-unauthenticated --max-instances 1 --min-instances "$MIN_INSTANCES" --no-cpu-throttling \
-  --cpu 2 --memory 2Gi --timeout 3600 --concurrency 80 --session-affinity --cpu-boost \
+  --cpu 2 --memory 2Gi --timeout 3600 --concurrency 500 --session-affinity --cpu-boost \
   --env-vars-file "$ENV_FILE"
 
 if [ "$FIREBASE" != "no" ]; then

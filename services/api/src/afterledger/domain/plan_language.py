@@ -258,6 +258,7 @@ class Clock(BaseModel):
     notes: str = ""
     when: Cond | None = None             # a clock that applies only in some situations (e.g. an investigation)
     cites: list[str]
+    rule: bool = True                    # False: AfterLedger's own date to follow up (an interim plan's), not a rule
 
     _when = field_validator("when", mode="before")(classmethod(lambda cls, v: _coerce_cond(v)))
 

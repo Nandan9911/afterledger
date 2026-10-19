@@ -108,7 +108,7 @@ def holding_joint_survivor(snap: Snapshot, claim: Any, arg: str, ctx: dict) -> s
 
 @derivation("claimant_relationship_in")
 def claimant_relationship_in(snap: Snapshot, claim: Any, arg: str, ctx: dict) -> str:
-    claimant = next((p for p in snap.family() if "claimant" in p.roles), None)
+    claimant = snap.claimant(claim)
     if claimant is None or not claimant.relationship:
         return "unknown"
     return "yes" if claimant.relationship in arg.split(",") else "no"
@@ -289,7 +289,7 @@ def spouse_same_household(snap: Snapshot, claim: Any, arg: str, ctx: dict) -> st
 
 @derivation("claimant_language")
 def claimant_language(snap: Snapshot, claim: Any, arg: str, ctx: dict) -> str:
-    claimant = next((p for p in snap.family() if "claimant" in p.roles), None)
+    claimant = snap.claimant(claim)
     if claimant is None:
         return "unknown"
     return "yes" if claimant.languages and claimant.languages[0].startswith(arg) else "no"

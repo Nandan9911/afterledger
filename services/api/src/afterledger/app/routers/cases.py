@@ -62,10 +62,10 @@ from ..views import plans as plans_view
 from ..views import sources as sources_view
 from ..views import today as today_view
 from ..views import tracker as tracker_view
-from ..views.common import cite_views
+from ..views.common import cite_views, tidy_utterance
 from ..views.localize import page_language
 from .auth import case_access, optional_user
-from .common import get_deps, queue_events
+from .common import get_deps, queue_events, stream_closed, stream_opened, streams_full, too_many_streams
 
 # Where sign-in is required, every /{case_id} route is open only to the case's own account (and the admin)
 router = APIRouter(prefix="/v1/cases", tags=["cases"], dependencies=[Depends(case_access)])
@@ -108,9 +108,13 @@ async def start_case(body: StartCase, user: User | None = Depends(optional_user)
 
 
 @router.get("/{case_id}", response_model=CaseHeader)
-async def get_case(case_id: str, viewer: str | None = None, deps: Deps = Depends(get_deps)) -> CaseHeader:
-    await actions.require_case(deps, case_id)
-    return await case_view.header(deps, case_id, viewer)
+async def get_case(case_id: str, viewer: str | None = None, user: User | None = Depends(optional_user),
+                   deps: Deps = Depends(get_deps)) -> CaseHeader:
+    from .auth import sample_read_only
+    case = await actions.require_case(deps, case_id)
+    out = await case_view.header(deps, case_id, viewer)
+    out.read_only = sample_read_only(deps, case, user)
+    return out
 
 
 @router.delete("/{case_id}")
@@ -440,16 +444,20 @@ async def activity(case_id: str, limit: int = Query(200, ge=1, le=2000), deps: D
 async def events(case_id: str, request: Request, deps: Deps = Depends(get_deps)) -> EventSourceResponse:
     """Activity lines and 'something changed' notices for open screens, as server-sent events."""
     await actions.require_case(deps, case_id)
-    queue = deps.hub.listen(case_id)
+    if streams_full(deps):
+        raise too_many_streams()
 
     async def stream():
+        stream_opened(deps)
+        queue = deps.hub.listen(case_id)
         try:
             async for item in queue_events(request, queue):
                 yield item
         finally:
             deps.hub.forget(case_id, queue)
+            stream_closed(deps)
 
-    return EventSourceResponse(stream())
+    return EventSourceResponse(stream(), headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @router.get("/{case_id}/checkpoints", response_model=list[Checkpoint])
@@ -467,12 +475,15 @@ async def answer(case_id: str, checkpoint_id: str, body: AnswerIn, deps: Deps = 
 
 
 @router.post("/{case_id}/ask", response_model=AskOut)
-async def ask(case_id: str, body: AskIn, deps: Deps = Depends(get_deps)) -> AskOut:
+async def ask(case_id: str, body: AskIn, user: User | None = Depends(optional_user),
+              deps: Deps = Depends(get_deps)) -> AskOut:
+    from .auth import sample_read_only
+    keep = not sample_read_only(deps, await deps.cases.get_case(case_id), user)
     out = await actions.ask(deps, case_id, question=body.question, person_id=body.person_id, lang=body.lang,
-                            channel=body.channel)
-    answer = Utterance.model_validate(out["answer"])
+                            channel=body.channel, keep=keep)
+    answer = await tidy_utterance(deps, Utterance.model_validate(out["answer"]))
     case = await deps.cases.get_case(case_id)
     cites = await cite_views(deps, answer.sources, deps.today_for(case))
     return AskOut(question=Utterance.model_validate(out["question"]), answer=answer, sources=list(cites.values()),
-                  research_started=out.get("intent") == "unknown_need")
+                  research_started=out.get("intent") == "unknown_need" and keep, kept=keep)
 

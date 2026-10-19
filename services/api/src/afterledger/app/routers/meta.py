@@ -91,7 +91,7 @@ async def demo_watch(key: str, request: Request, delay: float = Query(1.5, ge=0,
 
     async def stream() -> AsyncIterator[dict]:
         try:
-            async for item in queue_events(request, queue, until=("done", "error")):
+            async for item in queue_events(request, queue, until=("done", "error"), seconds=None):
                 yield item
         finally:
             demo.listeners(deps, key).discard(queue)

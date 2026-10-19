@@ -83,14 +83,17 @@ async def tracker(deps: Any, case_id: str, lang: str = "en") -> TrackerView:
     cite_ids: set[str] = set()
     for corr in sorted(snap.correspondence, key=lambda c: (c.on, c.id), reverse=True):
         claim = snap.claim(corr.claim_id) if corr.claim_id else None
+        if corr.direction == "out" and corr.status == "draft" and claim is not None and \
+                claim.status in ("settled", "closed"):
+            continue                      # drafted before the claim was settled: nothing to send any more
         inst = await k.institution(claim.institution_id) if claim and claim.institution_id else None
         raw = await k.institution_raw(claim.institution_id) if claim and claim.institution_id else None
         to_line = ""
         if inst is not None:
             to_line = "To " + ("the Branch Manager, " if inst.kind == "bank" else "") + inst.name + \
                       (f", {raw.get('branch')}" if raw and raw.get("branch") else "")
-        kind = "objection" if "objection" in corr.summary.lower() else "reminder"
-        signer = next((p for p in snap.family() if "claimant" in p.roles), None)
+        kind = corr.kind or ("objection" if "objection" in corr.summary.lower() else "reminder")
+        signer = snap.claimant(claim)
         view = LetterView(letter=corr, claim_title=claim.title if claim else "", institution=institution_name(inst),
                           to_line=to_line, signer=chip(signer),
                           fidelity=ledger.get(f"claim:{corr.claim_id}:letter:{kind}") if corr.direction == "out" else None)

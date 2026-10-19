@@ -3,7 +3,7 @@
 import type { PlanRow } from '@afterledger/contracts';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCase } from '@/components/CaseShell';
-import { Chip, ErrorNote, h1Class, h2Class, Sheet, Skeleton, Stamp } from '@/components/ui';
+import { ButtonLink, Chip, ErrorNote, h1Class, h2Class, Sheet, Skeleton, Stamp } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 import { cls, localText } from '@/lib/format';
 import { usePlans } from '@/lib/queries';
@@ -42,7 +42,13 @@ function Row({ r }: { r: PlanRow }) {
         </p>
         {summary ? <p className="m-0 mt-1 text-[15px] text-ink-soft">{summary}</p> : null}
         <div className="mt-2 flex flex-wrap items-center gap-2 text-[14px]">
-          <Chip tone={lv.tone}>{t(`level.${lv.key}`)}</Chip>
+          {plan?.plan_key?.startsWith('XX/') ? (
+            <Chip tone="blank">
+              {(r.claim.research as { status?: string } | undefined)?.status === 'running' ? t('researching') : t('forNow')}
+            </Chip>
+          ) : (
+            <Chip tone={lv.tone}>{t(`level.${lv.key}`)}</Chip>
+          )}
           {r.questions ? <Chip tone="pencil">{t('questions', { count: r.questions })}</Chip> : null}
           {plan?.approved_by ? <Chip>{t('approved')}</Chip> : null}
         </div>
@@ -85,8 +91,17 @@ export function PlansScreen({ caseId }: { caseId: string }) {
       {!q.data ? (
         <Skeleton className="h-96" />
       ) : !rows.length ? (
-        <Sheet className="px-6 py-6">
+        <Sheet className="flex flex-col gap-3 px-6 py-6">
           <p className="m-0 text-ink-soft">{t('empty')}</p>
+          <p className="m-0 text-[15px] text-ink-soft">{t('emptyHow')}</p>
+          <div className="flex flex-wrap gap-2.5">
+            <ButtonLink href={`/cases/${caseId}/papers`} size="sm">
+              {t('addPapers')}
+            </ButtonLink>
+            <ButtonLink href={`/cases/${caseId}/leads`} size="sm" variant="secondary">
+              {t('openLeads')}
+            </ButtonLink>
+          </div>
         </Sheet>
       ) : (
         groups

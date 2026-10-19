@@ -97,12 +97,13 @@ export function useTurn(caseId: string) {
   });
 }
 
-export function useToday(caseId: string, viewer?: string | null) {
+export function useToday(caseId: string, viewer?: string | null, enabled = true) {
   return useQuery({
     queryKey: [...c(caseId), 'today', viewer ?? null],
     queryFn: () =>
       unwrap(api().GET('/v1/cases/{case_id}/today', { params: { path: { case_id: caseId }, query: { viewer: viewer ?? undefined } } })),
     placeholderData: keepPreviousData,
+    enabled,
   });
 }
 
@@ -317,7 +318,12 @@ export function useLetterAction(caseId: string) {
 export function useDraftLetter(caseId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (args: { claimId: string; kind: 'reminder' | 'objection' | 'grievance'; request?: string; by?: string | null }) =>
+    mutationFn: (args: {
+      claimId: string;
+      kind: 'reminder' | 'chase' | 'request' | 'objection' | 'grievance';
+      request?: string;
+      by?: string | null;
+    }) =>
       unwrap(
         api().POST('/v1/cases/{case_id}/claims/{claim_id}/letters', {
           params: { path: { case_id: caseId, claim_id: args.claimId } },

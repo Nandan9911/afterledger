@@ -8,7 +8,7 @@ import { ExternalLink, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { cls, longDate } from '@/lib/format';
+import { cls, longDate, openable } from '@/lib/format';
 import { Chip } from './ui';
 
 export function levelTone(level: string): 'ledger' | 'pencil' | 'blank' | 'plain' {
@@ -32,11 +32,18 @@ export function CiteCard({ cite, compact }: { cite: CiteView; compact?: boolean 
         {cite.publisher && !cite.source_title.startsWith(cite.publisher) ? `${cite.publisher}, ` : ''}
         {cite.source_title}
         {cite.locator ? `, ${cite.locator}` : ''}.{' '}
-        {cite.source_url ? (
-          <a href={cite.source_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-bold">
+        {openable(cite.read_url || cite.source_url) && !cite.fictional ? (
+          <a
+            href={cite.read_url || cite.source_url || undefined}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 font-bold"
+          >
             {t('openPage')}
             <ExternalLink size={14} aria-hidden="true" />
           </a>
+        ) : cite.source_url ? (
+          <span className="font-bold text-blank">{t('samplePage')}</span>
         ) : null}
       </p>
       <div className="flex flex-wrap gap-2 text-[14px]">

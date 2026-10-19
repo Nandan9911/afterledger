@@ -1,6 +1,6 @@
 {
   "common": {
-    "unreachable": "El servicio de AfterLedger no respondió. Compruebe que está en marcha y que este dispositivo puede llegar a él.",
+    "unreachable": "No se pudo conectar con AfterLedger. Compruebe su conexión a internet e inténtelo de nuevo.",
     "skip": "Ir al contenido",
     "why": "¿Por qué?",
     "close": "Cerrar",
@@ -37,7 +37,7 @@
     "modeScripted": "Sin conexión: respuestas preparadas",
     "modeGemini": "En vivo: Gemini",
     "modeReplay": "Repetición de una ejecución en vivo",
-    "apiDown": "No se puede conectar con el servicio de AfterLedger. Inicie la API (python tools/dev.py api) y vuelva a cargar la página.",
+    "apiDown": "No se pudo conectar con AfterLedger. Compruebe su conexión a internet y vuelva a cargar la página.",
     "notFound": "Esta página no existe.",
     "home": "Inicio",
     "print": "Imprimir",
@@ -71,7 +71,12 @@
     },
     "whyTopic": "Por qué: {topic}",
     "updatesOn": "Los cambios llegan al momento",
-    "updatesOff": "Actualizaciones en pausa"
+    "updatesOff": "Actualizaciones en pausa",
+    "busy": "AfterLedger está ocupado un momento. Espere unos segundos e inténtelo de nuevo.",
+    "loadingSlow": "Sigue cargando. La primera página después de un rato sin uso puede tardar hasta medio minuto.",
+    "notFoundNote": "Puede que el enlace sea antiguo o esté mal escrito. Todos los casos y páginas se abren desde la página de inicio.",
+    "startCase": "Empezar un caso",
+    "samplePage": "Página de una entidad de muestra, no es un sitio real"
   },
   "nav": {
     "today": "Hoy",
@@ -108,7 +113,14 @@
     "storyLink": "Leer cómo empezó",
     "workingReading": "Leyendo sus papeles.",
     "workingFinding": "Averiguando a qué apuntan sus papeles: cuentas, préstamos, pólizas y pagos que hay que detener.",
-    "workingNote": "Las pistas, el mapa del dinero y Hoy se completan al terminar, normalmente en pocos minutos. Mientras tanto puede seguir usando el caso."
+    "workingNote": "Las pistas, el mapa del dinero y Hoy se completan al terminar, normalmente en pocos minutos. Mientras tanto puede seguir usando el caso.",
+    "sampleTitle": "Un caso de muestra.",
+    "sampleNote": "Todas las páginas se abren y puede hacer preguntas, pero aquí no se puede cambiar nada. Empiece su propio caso para usar los botones.",
+    "sampleStart": "Empezar su propio caso",
+    "researching": "{count, plural, =1 {Investigando las normas de {title}} other {Investigando las normas de # reclamaciones}}",
+    "researchingNote": "Mientras tanto, el plan es escribir a la entidad y preguntar cómo reclamar. Cuando termine la investigación, normalmente en pocos minutos, el plan se sustituye y se le pide que lo apruebe.",
+    "researchWatch": "Ver la investigación",
+    "caseMissing": "Este caso no existe o está guardado en otra cuenta."
   },
   "main": {
     "title": "AfterLedger: encuentre lo que dejaron",
@@ -255,7 +267,8 @@
     "refresh": "Planificar hoy de nuevo",
     "listen": "Escuchar",
     "stopListen": "Detener",
-    "lateDays": "{count, plural, one {# día de retraso} other {# días de retraso}}"
+    "lateDays": "{count, plural, one {# día de retraso} other {# días de retraso}}",
+    "noneKnown": "Todavía no se conoce ningún importe. Se completan a medida que se leen los documentos y responden las entidades."
   },
   "story": {
     "starting": "Empezando un caso",
@@ -536,7 +549,12 @@
       "procedures": "Documentos o decisiones que esperan otras reclamaciones.",
       "debts": "Lo que debe la herencia y las normas para saldarlo.",
       "closedGroup": "Estudiado y cerrado, con el motivo."
-    }
+    },
+    "researching": "Normas en investigación",
+    "forNow": "Por ahora: preguntar a la entidad",
+    "emptyHow": "Añada los documentos que tenga, como una libreta, un extracto bancario, una póliza o una carta de una entidad, y confirme las pistas que encuentre AfterLedger. Cada reclamación tendrá entonces su propio plan.",
+    "addPapers": "Añadir documentos",
+    "openLeads": "Abrir las pistas"
   },
   "plan": {
     "crumb": "Planes",
@@ -628,7 +646,18 @@
     "askAbout": "Tengo una pregunta sobre el plan de {title}.",
     "haveQuestion": "Tengo una pregunta",
     "theInstitution": "La entidad",
-    "or": " o "
+    "or": " o ",
+    "interim": {
+      "runningTitle": "Se están investigando ahora las normas de esta reclamación",
+      "runningNote": "Hasta que se encuentren y se comprueben con sus fuentes, el plan es el primer paso que sirve en todas partes: escribir a la entidad, comunicarle el fallecimiento y preguntar cómo reclamar. Cuando termine la investigación, normalmente en pocos minutos, este plan se sustituye y se le pide que apruebe el nuevo.",
+      "waitingTitle": "Por ahora, el plan pregunta por escrito a la entidad",
+      "waitingNote": "Todavía no se han encontrado ni comprobado normas oficiales para esta reclamación. La respuesta de la entidad decide los siguientes pasos, y la investigación se repite en el plazo de una semana.",
+      "watch": "Ver la investigación",
+      "see": "Ver lo que encontró la investigación",
+      "offNote": "Todavía no hay normas oficiales guardadas para esta reclamación. La respuesta de la entidad decide los siguientes pasos."
+    },
+    "researchedOn": "Investigado el {date}",
+    "preparingPack": "Se están preparando los documentos de este plan: se rellenan, se vuelven a leer y se comprueban. Tarda uno o dos minutos, y se abren aquí cuando estén listos."
   },
   "packs": {
     "title": "Paquetes",
@@ -696,7 +725,12 @@
     "handInDone": "Registrado. Ahora el seguimiento vigila los plazos de la institución.",
     "handedIn": "Entregado el {date}",
     "handedInPlain": "Entregado",
-    "seePlan": "Ver el plan detrás de estos documentos"
+    "seePlan": "Ver el plan detrás de estos documentos",
+    "markSent": "Marcar la carta como enviada",
+    "sentWhen": "¿Cuándo se envió o se entregó? Déjelo vacío si fue hoy.",
+    "sentDone": "Registrado. Se espera respuesta en 30 días; si no llega, AfterLedger redacta un recordatorio.",
+    "sentOn": "Carta enviada el {date}",
+    "sentPlain": "Carta enviada"
   },
   "tracker": {
     "title": "Seguimiento",
@@ -730,7 +764,9 @@
     "kinds": {
       "reminder": "Recordatorio",
       "objection": "Objeción",
-      "grievance": "Queja"
+      "grievance": "Queja",
+      "chase": "Carta de seguimiento",
+      "request": "Solicitud"
     },
     "expectedBy": "Se espera antes del {date}",
     "draftedOn": "Redactado el {date} para que {name} lo firme",
@@ -743,7 +779,40 @@
     "openDesk": "Abrir la página de la ventanilla",
     "in": "Recibido",
     "out": "Enviado",
-    "objection": "Esto pide algo que las normas dicen que no puede pedir: {rule}"
+    "objection": "Esto pide algo que las normas dicen que no puede pedir: {rule}",
+    "progressTitle": "En qué punto está cada reclamación",
+    "progressLede": "Cuando ocurra algo, regístrelo aquí. Los plazos, el plan y Hoy se actualizan solos.",
+    "nothingYet": "Todavía no se ha entregado nada. Una reclamación aparece aquí cuando se entregan sus documentos o se envía su primera carta.",
+    "drafting": "Redactando la carta. Puede tardar hasta un minuto.",
+    "drafted": "Redactada. Está abajo para que la lea y la apruebe.",
+    "ev": {
+      "done": "Registrado. El plan y los plazos están actualizados.",
+      "when": "¿Qué día?",
+      "whenHint": "Déjelo vacío si fue hoy.",
+      "amount": "¿Cuánto se pagó?",
+      "amountHint": "Déjelo vacío si fue el importe completo",
+      "note": "¿Qué le dijeron?",
+      "save": "Registrarlo",
+      "theyReplied": "Han respondido",
+      "ask": {
+        "complete_set_confirmed": "¿Ha confirmado {institution} por escrito que tiene todos los documentos?",
+        "settled": "¿Ha pagado o liquidado {institution}?",
+        "returned": "¿Ha devuelto {institution} la reclamación?",
+        "submitted": "¿Ha vuelto a entregar la reclamación a {institution}?"
+      },
+      "button": {
+        "complete_set_confirmed": "Tienen todos los documentos",
+        "settled": "Dinero recibido",
+        "settledDebt": "Liquidado",
+        "returned": "Lo devolvieron",
+        "submitted": "Entregado de nuevo"
+      }
+    },
+    "draft": {
+      "reminder": "Redactar un recordatorio",
+      "chase": "Redactar una carta de seguimiento",
+      "request": "Preguntar qué les falta"
+    }
   },
   "sources": {
     "title": "Fuentes",
@@ -819,7 +888,8 @@
     "liveConnecting": "Conectando…",
     "liveTalking": "Hablando con AfterLedger",
     "liveHint": "Hable con naturalidad. Cuando haga una pausa, la respuesta saldrá del caso.",
-    "liveFailed": "La voz no pudo continuar ({message}). Puede escribir su pregunta."
+    "liveFailed": "La voz no pudo continuar ({message}). Puede escribir su pregunta.",
+    "notSaved": "En un caso de muestra, las respuestas se muestran aquí pero no se guardan."
   },
   "newCase": {
     "title": "Empezar un caso",
@@ -896,13 +966,17 @@
       "gold": "Comprobación con el plan de oro",
       "letter": "Carta",
       "finished": "Terminado",
-      "round": "Otra ronda"
+      "round": "Otra ronda",
+      "known": "Normas ya comprobadas"
     },
     "firstAnswerPending": "Revisando una página oficial para una primera respuesta…",
     "onlyWhen": "Solo si {when}.",
     "showAll": "Mostrar todo",
     "hideDetails": "Ocultar los detalles",
-    "compiling": "El plan se compila cuando los investigadores coinciden…"
+    "compiling": "El plan se compila cuando los investigadores coinciden…",
+    "missingTitle": "Esta página de investigación no existe",
+    "missingNote": "Puede que el enlace sea antiguo o esté mal escrito, o que la pregunta sea de otra persona. Puede hacer su propia pregunta.",
+    "askOwn": "Hacer su propia pregunta"
   },
   "desk": {
     "title": "Ventanilla AfterLedger",
@@ -1068,7 +1142,13 @@
     "cantFind": "No lo encontramos",
     "why": "¿Por qué?",
     "marked": "Marcado. El plan está actualizado.",
-    "answered": "Gracias. El plan está actualizado."
+    "answered": "Gracias. El plan está actualizado.",
+    "openPlans": "Abrir los planes",
+    "openLeads": "Abrir las pistas",
+    "tellUs": "Contárselo a AfterLedger",
+    "addPaper": "Añadir un documento",
+    "checkPapers": "Revisar los documentos",
+    "sampleOnly": "Desactivado en un caso de muestra"
   },
   "watch": {
     "title": "Viendo la historia desde el primer documento",

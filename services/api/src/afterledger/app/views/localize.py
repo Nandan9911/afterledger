@@ -12,6 +12,7 @@ source's own words; the Why panel carries a translation beside it.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 from fastapi import Request
@@ -27,10 +28,17 @@ def page_language(request: Request) -> str:
     return code if code.isalpha() and 2 <= len(code) <= 3 else "en"
 
 
+_SCRIPTS = [(re.compile(r"[\u0900-\u097f]"), "hi"), (re.compile(r"[\u0d00-\u0d7f]"), "ml"),
+            (re.compile(r"[\u3040-\u30ff\u4e00-\u9fff]"), "ja"), (re.compile(r"[\u0600-\u06ff]"), "ar"),
+            (re.compile(r"[\u0b80-\u0bff]"), "ta"), (re.compile(r"[\u0980-\u09ff]"), "bn")]
+
+
 async def localize(deps: Any, lang: str, targets: list[tuple[Any, str]]) -> None:
     """Translates, in place, the named text fields of the given objects (a field may hold a string or a list of
-    strings). Pydantic models and plain dicts both work."""
+    strings). Pydantic models and plain dicts both work. On an English page, a sentence written in another script (a
+    plan question a researcher wrote in Hindi) is put into English too."""
     if not lang or lang == "en":
+        await _into_english(deps, targets)
         return
 
     def get(obj: Any, field: str) -> Any:
@@ -64,3 +72,31 @@ async def localize(deps: Any, lang: str, targets: list[tuple[Any, str]]) -> None
             put(obj, field, done[v])
         elif isinstance(v, list):
             put(obj, field, [done.get(x, x) if isinstance(x, str) else x for x in v])
+
+
+async def _into_english(deps: Any, targets: list[tuple[Any, str]]) -> None:
+    def get(obj: Any, field: str) -> Any:
+        return obj.get(field) if isinstance(obj, dict) else getattr(obj, field, None)
+
+    by_lang: dict[str, list[tuple[Any, str]]] = {}
+    for obj, field in targets:
+        v = get(obj, field)
+        if isinstance(v, str) and v.strip():
+            src = next((code for rx, code in _SCRIPTS if rx.search(v)), None)
+            if src:
+                by_lang.setdefault(src, []).append((obj, field))
+    for src, items in by_lang.items():
+        texts = list(dict.fromkeys(get(o, f) for o, f in items))
+        try:
+            out = await deps.translator.translate(texts, "en", src)
+        except Exception as e:            # the page keeps the words as written rather than failing
+            log.warning("translation from %s failed: %s", src, e)
+            continue
+        done = dict(zip(texts, out, strict=True))
+        for obj, field in items:
+            new = done.get(get(obj, field))
+            if new and new != get(obj, field):
+                if isinstance(obj, dict):
+                    obj[field] = new
+                else:
+                    setattr(obj, field, new)

@@ -116,7 +116,7 @@ function Known({ conv }: { conv: ConversationView }) {
 function Summary({ conv }: { conv: ConversationView }) {
   const t = useTranslations('story');
   const locale = useLocale();
-  const { caseId, viewerId } = useCase();
+  const { caseId, viewerId, readOnly } = useCase();
   const answer = useAnswer(caseId);
   const [changing, setChanging] = useState(false);
   const [note, setNote] = useState('');
@@ -176,14 +176,14 @@ function Summary({ conv }: { conv: ConversationView }) {
         <div className="flex flex-wrap gap-3">
           <Button
             size="lg"
-            disabled={answer.isPending}
+            disabled={answer.isPending || readOnly}
             onClick={() =>
               answer.mutate({ checkpointId: cp.id, answer: 'yes', by: viewerId }, { onSuccess: () => toast.success(t('confirmed')) })
             }
           >
             {t('yesRight')}
           </Button>
-          <Button size="lg" variant="secondary" onClick={() => setChanging(true)}>
+          <Button size="lg" variant="secondary" disabled={readOnly} onClick={() => setChanging(true)}>
             {t('change')}
           </Button>
         </div>
@@ -261,7 +261,7 @@ export function StoryScreen({ caseId }: { caseId: string }) {
   const t = useTranslations('story');
   const tc = useTranslations('common');
   const locale = useLocale();
-  const { header, viewerId } = useCase();
+  const { header, viewerId, readOnly } = useCase();
   const q = useConversation(caseId);
   const turn = useTurn(caseId);
   const end = useRef<HTMLDivElement>(null);
@@ -320,7 +320,7 @@ export function StoryScreen({ caseId }: { caseId: string }) {
         </div>
       )}
       <div ref={end} />
-      {!conv?.summary || conv.summary.status === 'open' || conv.summary.answer === 'change' ? (
+      {readOnly ? null : !conv?.summary || conv.summary.status === 'open' || conv.summary.answer === 'change' ? (
         <Composer onSend={send} pending={turn.isPending} lang={spoken || locale} />
       ) : null}
     </div>

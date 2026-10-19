@@ -25,6 +25,7 @@ from ..modules import (
     planning,
     reading,
 )
+from ..modules.common import case_lock as common_case_lock
 from ..modules.common import knowledge, snapshot
 
 log = logging.getLogger(__name__)
@@ -36,6 +37,39 @@ class NotFound(Exception):
 
 class Conflict(Exception):
     pass
+
+
+class BadInput(Exception):
+    """Something the family typed that cannot be used as it is: said back in plain words (422)."""
+
+
+def amount_typed(text: str | None) -> str | None:
+    """An amount as a person types it ("1,20,000", "₹ 85,000.50", "EUR 1.200") to a plain decimal, or None when
+    nothing was typed. Separators are read the way the text uses them: a single comma or point followed by exactly
+    three digits groups thousands; otherwise the last one marks the decimals."""
+    import re
+    from decimal import Decimal, InvalidOperation
+    if text is None or not text.strip():
+        return None
+    raw = re.sub(r"[^\d.,]", "", text)
+    if not raw or not re.search(r"\d", raw):
+        raise BadInput("Write the amount as a number, for example 120000 or 1,20,000.")
+    seps = [m.start() for m in re.finditer(r"[.,]", raw)]
+    if seps:
+        last = seps[-1]
+        tail = raw[last + 1:]
+        grouping = len(tail) == 3 and (len(seps) == 1 or raw[seps[0]] == raw[last])
+        if grouping:
+            raw = re.sub(r"[.,]", "", raw)
+        else:
+            raw = re.sub(r"[.,]", "", raw[:last]) + "." + tail
+    try:
+        value = Decimal(raw)
+    except InvalidOperation:
+        raise BadInput("Write the amount as a number, for example 120000 or 1,20,000.") from None
+    if value < 0:
+        raise BadInput("The amount cannot be negative.")
+    return str(value)
 
 
 # Uploads taken in at the same time on one server: each holds its files in memory while its pages are drawn and
@@ -66,11 +100,7 @@ def _working(deps: Any, case_id: str, job: object, step: str | None) -> None:
 
 
 def case_lock(deps: Any, case_id: str) -> asyncio.Lock:
-    locks = deps.extras.setdefault("case_locks", {})
-    lock = locks.get(case_id)
-    if lock is None:
-        lock = locks[case_id] = asyncio.Lock()
-    return lock
+    return common_case_lock(deps, case_id)
 
 
 async def refresh_clocks_if_idle(deps: Any, case_id: str) -> None:
@@ -81,6 +111,9 @@ async def refresh_clocks_if_idle(deps: Any, case_id: str) -> None:
         return
     async with lock:
         await followup.refresh_clocks(deps, case_id)
+        # research a restart cut short starts again (the claim still says it is being researched)
+        from ..modules.rules_research import resume_interrupted
+        await resume_interrupted(deps, case_id)
 
 
 async def require_case(deps: Any, case_id: str) -> Any:
@@ -283,6 +316,10 @@ async def answer_checkpoint(deps: Any, case_id: str, checkpoint_id: str, *, answ
             await intake.change_summary(deps, case_id, (note or "").strip(), by=by)
         elif cp.code == "C1":
             await intake.confirm_summary(deps, case_id, by=by, answer=answer)
+            if answer == "yes":
+                # what the family named (an account, a policy, a loan) goes on the money map and is planned, in
+                # the background, as after a paper
+                await deps.tasks.enqueue("after_papers", {"case_id": case_id, "paper_ids": []})
         elif cp.code == "C2":
             vid = (cp.payload or {}).get("value_id")
             await reading.answer_value_check(deps, case_id, vid, "yes" if answer == "yes" else "no", by=by,
@@ -327,8 +364,12 @@ async def answer_checkpoint(deps: Any, case_id: str, checkpoint_id: str, *, answ
 async def _approve_plan(deps: Any, case_id: str, plan_id: str, by: str | None) -> Any:
     cp = await planning.approve_plan(deps, case_id, plan_id, by=by)
     claim = await deps.cases.get(case_id, "claims", cp.claim_id) if cp.claim_id else None
-    if claim is not None and claim.kind != "procedure" and not claim.pack_id:
-        await deps.tasks.enqueue("prepare_pack", {"case_id": case_id, "claim_id": claim.id})
+    if claim is not None and claim.kind != "procedure":
+        # papers for the plan just approved, unless they are made already (a plan that replaced the interim one
+        # gets its own papers; the interim letter stays as it was sent)
+        have = [pk for pk in await deps.cases.list(case_id, "packs") if pk.claim_id == claim.id]
+        if not any(pk.plan_key in (None, cp.plan_key) for pk in have):
+            await deps.tasks.enqueue("prepare_pack", {"case_id": case_id, "claim_id": claim.id})
     return cp
 
 
@@ -535,7 +576,7 @@ async def claim_event(deps: Any, case_id: str, claim_id: str, *, event: str, on:
         if await deps.cases.get(case_id, "claims", claim_id) is None:
             raise NotFound(f"No claim {claim_id}")
         claim = await followup.record_claim_event(deps, case_id, claim_id, event, on or deps.today_for(case),
-                                                  amount=amount, note=note, by=by)
+                                                  amount=amount_typed(amount), note=note, by=by)
         await today_later(deps, case_id)
     return claim
 
@@ -603,8 +644,11 @@ async def refresh_today(deps: Any, case_id: str, viewer_id: str | None) -> None:
 
 
 async def ask(deps: Any, case_id: str, *, question: str, person_id: str | None, lang: str | None,
-              channel: str) -> dict:
+              channel: str, keep: bool = True) -> dict:
     await require_case(deps, case_id)
+    if not keep:                              # nothing is saved, so nothing needs the case's lock
+        return await conversation.ask(deps, case_id, question, person_id=person_id, lang=lang, channel=channel,
+                                      keep=False)
     async with case_lock(deps, case_id):
         return await conversation.ask(deps, case_id, question, person_id=person_id, lang=lang, channel=channel)
 

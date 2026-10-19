@@ -103,7 +103,7 @@ async def desk(deps: Any, case_id: str, claim_id: str, until: Any = None) -> Des
             paper = snap.paper(v.paper_id)
             notes.append(f"{v.label}: read from {'a photo of ' if paper.origin == 'photo' else ''}the "
                          f"{paper.title} and confirmed by the family.")
-    claimant = snap.person(claim.claimant_person_id) or next((p for p in snap.family() if "claimant" in p.roles), None)
+    claimant = snap.claimant(claim)
     main = next((v for v in views.values() if v.tier == 1), None)
     route = ""
     if cp:

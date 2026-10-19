@@ -205,7 +205,7 @@ async def resolve_institutions(deps: Any, case_id: str) -> None:
     for paper in snap.papers:
         if paper.institution_id or not paper.issuer:
             continue
-        inst, _score = await k.find_institution(paper.issuer, paper.country)
+        inst, _score = await k.find_institution(paper.issuer, paper.country, case_id=case_id)
         if inst:
             paper.institution_id = inst.id
             await deps.cases.put(case_id, "papers", paper)
@@ -222,14 +222,31 @@ async def resolve_institutions(deps: Any, case_id: str) -> None:
             "texts": [{"text": p.issuer, "country": p.country, "paper": p.id} for p in unmatched],
             "directory": directory}, case_id=case_id)
         by_text = {normalise(m.text): m for m in out.matches}
+        still = []
         for i, paper in enumerate(unmatched):   # matched by the printed text; by position if the text was changed
             match = by_text.get(normalise(paper.issuer or "")) or (out.matches[i] if i < len(out.matches) else None)
-            if match is not None and match.institution_id:
-                inst = await k.institution(match.institution_id)
-                if inst:
-                    paper.institution_id = inst.id
-                    await deps.cases.put(case_id, "papers", paper)
-                    await _ensure_institution(deps, case_id, inst)
+            inst = await k.institution(match.institution_id) if match is not None and match.institution_id else None
+            if inst:
+                paper.institution_id = inst.id
+                await deps.cases.put(case_id, "papers", paper)
+                await _ensure_institution(deps, case_id, inst)
+            else:
+                still.append(paper)
+        # a bank, insurer or lender the directory has never seen: identified on the web now (or kept as printed),
+        # so its paper's account, policy or loan is claimed like any other
+        from .institutions import DOC_ISSUER_KIND, Lookups, resolve
+        lookups = Lookups()
+        for paper in still:
+            kind = DOC_ISSUER_KIND.get(paper.doc_type)
+            if kind is None:
+                continue                      # a death certificate, an identity card: no institution holds anything
+            inst = await resolve(deps, case, paper.issuer, country=paper.country, kind=kind, lookups=lookups,
+                                 context=f"the issuer of a {paper.doc_type.replace('_', ' ')}",
+                                 source=f"named on “{paper.title}”", must_be_org=False)
+            if inst is not None:
+                paper.institution_id = inst.id
+                await deps.cases.put(case_id, "papers", paper)
+                await _ensure_institution(deps, case_id, inst)
     deps.changed(case_id, "papers", "institutions")
 
 
@@ -414,8 +431,9 @@ async def payees(deps: Any, case_id: str) -> None:
         "key": pack_key("identity_resolver", case, "payees", *[f["text"] for f in forms]), **base, "forms": forms,
         "people": people_pack, "deceased_id": case.deceased_id, "identifiers": {}}, case_id=case_id)
     dec = snap.deceased
-    first_name = (dec.name_en or dec.display_name).split()[0] if dec else "him"
-    asked_of = next((p for p in snap.family() if "claimant" in p.roles), None)
+    first_name = (dec.name_en or dec.display_name).split()[0] if dec else ""
+    whose = f"{first_name}'s" if first_name else "the"          # no "his" or "her": the deceased may be anyone
+    asked_of = snap.claimant()
     for m in ident.merges:
         form = next((f for f in forms if f["text"] == m.name_text), None)
         if form is None or m.person_id:
@@ -426,11 +444,11 @@ async def payees(deps: Any, case_id: str) -> None:
             id=pid, case_id=case_id, display_name=name, roles=[], certainty="unknown", initials="?", color="#E2E8E4",
             names=[NameForm(text=m.name_text, script=script_of(m.name_text), seen_on=form["seen_on"])])
         amount = format_amount(Decimal(form["amount"]), form["currency"]) if form.get("amount") else ""
-        p.notes = f"Paid {amount} {form['cadence']} from his account; relationship not known yet."
+        p.notes = f"Paid {amount} {form['cadence']} from {whose} account; relationship not known yet."
         await deps.cases.put(case_id, "people", p)
         rel = m.relationship
-        question = m.question or (f"Is {name} {first_name}'s {rel}?" if rel else f"Who is {name}?")
-        options = [("yes", f"Yes, his {rel}"), ("no", "No"), ("other", "Someone else")] if rel else \
+        question = m.question or (f"Is {name} {whose} {rel}?" if rel else f"Who is {name}?")
+        options = [("yes", f"Yes, {whose} {rel}"), ("no", "No"), ("other", "Someone else")] if rel else \
             [("family", "A relative"), ("other", "Someone else")]
         lang = (asked_of.languages[0] if asked_of and asked_of.languages else "en")
         await open_checkpoint(deps, case, code="C3", kind="identity", title=f"Who is {name}?", question=question,
@@ -441,7 +459,7 @@ async def payees(deps: Any, case_id: str) -> None:
                               payload={"person_id": pid, "relationship_guess": rel, "group_id": form["group_id"],
                                        "evidence": m.evidence, "paper": form.get("paper"), "date": form.get("date"),
                                        "narration": form.get("narration"), "amount": form.get("amount")})
-        await deps.activity(case_id, MODULE, f"{name} received {amount} {form['cadence']} from his account. "
+        await deps.activity(case_id, MODULE, f"{name} received {amount} {form['cadence']} from {whose} account. "
                             f"Asked the family who {name.split()[0]} is, because a parent or child would be an heir.",
                             agent="identity_resolver", kind="question")
     deps.changed(case_id, "people", "checkpoints")

@@ -130,6 +130,7 @@ class SituationModel(BaseModel):
     country_codes: list[str] = []
     family: list[dict[str, Any]] = []
     holdings_mentioned: list[str] = []
+    holdings: list[dict[str, Any]] = []   # what the family named: {said, kind, institution, direction}
     papers_at_hand: list[str] = []
     urgent: list[str] = []
     will: Literal["yes", "no", "unknown"] = "unknown"
@@ -285,19 +286,26 @@ class Utterance(BaseModel):
 # Money: institutions, holdings, transactions, leads
 # ---------------------------------------------------------------------------------------------
 
+InstitutionKind = Literal["bank", "insurer", "lender", "depository", "fund_house", "registrar", "pension",
+                          "government", "employer", "regulator", "court", "chit_fund", "company", "other"]
+
+
 class Institution(BaseModel):
     id: str
     name: str                             # the institution's own name, in its own script
     short_name: str | None = None         # a short English name for lists: "PMJJBY", "Naniwa Bank"
     aliases: list[str] = []
     country: str
-    kind: Literal["bank", "insurer", "depository", "fund_house", "registrar", "pension", "government",
-                  "employer", "regulator", "court", "chit_fund", "company", "other"] = "bank"
+    kind: InstitutionKind = "bank"
     identifiers: dict[str, str] = {}
     domain: str | None = None
     bereavement_url: str | None = None
     fictional: bool = True
     note: str = ""
+    bank_type: str | None = None          # India: commercial or urban_coop, which sets the RBI claim limit
+    branch: str | None = None             # the branch a letter goes to, when a paper names it
+    learned: bool = False                 # not in the directory: named on one family's papers or by the family
+    source: str = ""                      # where a learned institution was named ("the ICICI Bank statement")
 
 
 HoldingKind = Literal[
@@ -453,6 +461,8 @@ class ClockState(BaseModel):
     amount: Decimal | None = None
     currency: str | None = None
     cites: list[str] = []
+    rule: bool = True                     # False: AfterLedger's own date to follow up, not a rule
+    starts_on: str = ""                   # the event that starts it: complete_set_confirmed, claim_lodged, death...
 
 
 class CasePlan(BaseModel):
@@ -532,6 +542,7 @@ class Pack(BaseModel):
     id: str
     case_id: str
     claim_id: str
+    plan_key: str | None = None           # the plan it was prepared for (an interim plan's letter, then the claim's)
     title: str
     summary: str = ""
     items: list[PackItem] = []
@@ -573,6 +584,7 @@ class Claim(BaseModel):
     country: str | None = None
     events: dict[str, str] = {}           # event name -> ISO date (claim_lodged, forwarded_to_insurer...)
     signers: dict[str, list[str]] = {}    # document id -> person ids who sign it
+    research: dict[str, Any] = {}         # the rules being researched for it: {signature, run_id, status, started...}
 
 
 class TaskAction(BaseModel):
@@ -655,6 +667,7 @@ class Correspondence(BaseModel):
     letter_lang: str | None = None
     status: Literal["draft", "approved", "sent", "received"] = "received"
     cites: list[str] = []
+    kind: str = ""                        # a drafted letter's kind: reminder, chase, objection, grievance, request
 
 
 class Activity(BaseModel):

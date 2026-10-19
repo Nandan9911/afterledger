@@ -133,6 +133,15 @@ class Settings(BaseSettings):
     research_mode: Literal["adaptive", "fixed"] = Field("adaptive", alias="AL_RESEARCH_MODE")
     research_max_rounds: int = Field(3, alias="AL_RESEARCH_MAX_ROUNDS")
     research_parallel: int = Field(4, alias="AL_RESEARCH_PARALLEL")
+    # A cap on one research run's model work (a live challenge, or the rules a claim needs): past it, no further
+    # round starts and what was found is compiled. Empty or 0: no cap.
+    research_budget_usd: float | None = Field(2.5, alias="AL_RESEARCH_BUDGET_USD")
+    # How deep research goes when a claim's situation has no stored plan: quick (one researcher), standard (two
+    # researchers, one round) or deep (rounds until nothing is open). off: claims stay on the interim plan.
+    claim_research: Literal["quick", "standard", "deep", "off"] = Field("standard", alias="AL_CLAIM_RESEARCH")
+    # Live update streams open at once on the server (each holds a request slot while open); past it a page refreshes
+    # without one. Keep it well under the service's concurrency (deploy.sh: 500). 0: no limit.
+    sse_max_streams: int = Field(300, alias="AL_SSE_MAX_STREAMS")
 
     @property
     def live(self) -> bool:

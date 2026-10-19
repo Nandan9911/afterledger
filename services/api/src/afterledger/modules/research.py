@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-from ..agents.context import working_on
+from ..agents.context import researching, working_on
 from ..agents.meter import BudgetExceeded
 from ..agents.runner import call_agent
 from ..agents.schemas import ResearchAdjudicationOut
@@ -71,6 +71,7 @@ class ResearchRun:
     agreement: dict = field(default_factory=dict)
     rounds: int = 0                       # research rounds run (adaptive research runs until nothing is open)
     owner_id: str | None = None           # the account that asked, where sign-in is required
+    shared: bool = False                  # research a claim needed: about rules only, open to anyone with the link
     listeners: list = field(default_factory=list, repr=False)
 
     def log(self, stage: str, text: str, **detail: Any) -> None:
@@ -182,6 +183,24 @@ async def research(deps: Any, need: dict, *, case_id: str | None = None, run: Re
     listener = as_listener(on_event)
     if listener:
         run.listeners.append(listener)
+    with researching(run.id):
+        try:
+            return await _research(deps, need, run, case_id=case_id, depth=depth)
+        finally:
+            if deps.meter is not None:
+                deps.meter.forget_run(run.id)
+
+
+def _over_budget(deps: Any, run: ResearchRun) -> float | None:
+    """The research run's cost so far, when it has reached its cap (AL_RESEARCH_BUDGET_USD); None while under it."""
+    cap = float(getattr(deps.settings, "research_budget_usd", 0) or 0)
+    if not cap or deps.meter is None:
+        return None
+    spent = deps.meter.run_cost(run.id)
+    return spent if spent >= cap else None
+
+
+async def _research(deps: Any, need: dict, run: ResearchRun, *, case_id: str | None, depth: str) -> ResearchRun:
     k = knowledge(deps)
     rkey = need.get("key") or f"{need['country']}/{need.get('holding_kind', 'any')}"
     base = {"key": f"question_planner/{rkey}", "need": need}
@@ -193,6 +212,11 @@ async def research(deps: Any, need: dict, *, case_id: str | None = None, run: Re
 
     qp = await call_agent(deps, "question_planner", base, case_id=case_id)
     run.questions = [q.model_dump() for q in qp.questions]
+    known = await related_knowledge(deps, need)
+    if known:
+        run.log("known", f"{_n(len(known), 'rule')} already checked for related situations in this country go to "
+                "Researcher A as leads to check again on their pages; Researcher B works without them.",
+                known=[x["id"] for x in known])
     await emit("questions", f"Planned {len(qp.questions)} research question{'s' if len(qp.questions) != 1 else ''}.",
                questions=len(qp.questions))
 
@@ -211,12 +235,18 @@ async def research(deps: Any, need: dict, *, case_id: str | None = None, run: Re
     adj = None
     rounds = 0
     for rnd in range(1, max_rounds + 1):
+        spent = _over_budget(deps, run) if rnd > 1 else None
+        if spent is not None:
+            await emit("round", f"No round {rnd}: this research reached its cost cap (about ${spent:.2f}). What was "
+                       "found so far is used, and anything still open stays labelled as open.", round=rnd, stop="budget")
+            break
         rounds = rnd
         try:
             with working_on(case_id, "research" if rnd > 1 else None):
                 this = await _research_round(deps, run, need, rkey, questions, rnd, team,
                                              groups=_groups(questions, parallel // len(team)) if adaptive else [questions],
-                                             parallel=parallel, case_id=case_id, single_pass=not adaptive)
+                                             parallel=parallel, case_id=case_id, single_pass=not adaptive,
+                                             known=known if rnd == 1 else [])
         except BudgetExceeded:
             await emit("round", f"Round {rnd} stopped: the case reached its budget for model work. What was found so "
                        "far is used, and anything still open stays labelled as open.", round=rnd, stop="budget")
@@ -386,6 +416,37 @@ async def _free_id(k: Any, item: dict) -> str:
     return f"{item['id']}_{sha256_text(normalise(item['quote']))[:6]}"
 
 
+KNOWN_LEADS = 12
+
+
+async def related_knowledge(deps: Any, need: dict) -> list[dict]:
+    """Rules already checked for related situations in the same country, as leads for researcher A: a loan's research
+    starts from what was found for a card (what heirs owe), an EPF claim's from the EPS pension's (EPFO's own rules).
+    Only fresh rules of at least one official source; each is re-fetched and re-quoted by the researcher if it applies,
+    and judged again by the adjudicator, so nothing is accepted on the strength of the earlier research."""
+    country = str(need.get("country") or "").split("-")[0].upper()
+    if not country:
+        return []
+    k = knowledge(deps)
+    today = deps.today_for(None)
+    kind = str(need.get("holding_kind") or "")
+    words = {w for w in re.findall(r"[a-z]{4,}", (kind.replace("_", " ") + " " + str(need.get("question") or "")
+                                                   ).lower())} - {"what", "which", "when", "after", "from", "with",
+                                                                  "does", "family", "papers", "time", "limits", "holder",
+                                                                  "dies", "claim", "how", "long", "must", "they"}
+    scored = []
+    for a in await k.assertions():
+        if a.jurisdiction.split("-")[0].upper() != country or not k.level_at_least(a, "sourced") or \
+                not k.is_fresh(a, today) or a.source.fictional:
+            continue
+        hay = f"{a.text} {a.topic}".lower()
+        score = sum(w in hay for w in words) + (2 if kind and a.topic.startswith(kind) else 0)
+        if score >= 2:
+            scored.append((-score, a.id, {"id": a.id, "text": a.text, "quote": a.quote, "source_url": a.source.url,
+                                          "topic": a.topic, "level": a.level}))
+    return [x for *_, x in sorted(scored)[:KNOWN_LEADS]]
+
+
 def _groups(questions: list[dict], n: int) -> list[list[dict]]:
     """The questions in at most n groups (round-robin), each group for its own pair of researchers."""
     n = max(1, min(n, len(questions)))
@@ -416,7 +477,8 @@ def _both(decisions: list, kept: dict[str, dict[str, dict]]) -> set[str]:
 
 async def _research_round(deps: Any, run: ResearchRun, need: dict, rkey: str, questions: list[dict], rnd: int,
                           team: list[tuple[str, str, str]], *, groups: list[list[dict]], parallel: int,
-                          case_id: str | None, single_pass: bool = False) -> dict[str, dict]:
+                          case_id: str | None, single_pass: bool = False,
+                          known: list[dict] | None = None) -> dict[str, dict]:
     """One round: every question group goes to each researcher of the team, as parallel workers, at most `parallel`
     at once. Returns each researcher's merged findings for the round."""
     gate = asyncio.Semaphore(parallel)
@@ -426,6 +488,9 @@ async def _research_round(deps: Any, run: ResearchRun, need: dict, rkey: str, qu
             web_search, fetch_page, pages_read = _tools(deps, run, who)
             key = f"{name}/{rkey}" + (f"/round{rnd}" if rnd > 1 else "") + (f"/g{gi + 1}" if len(groups) > 1 else "")
             pack: dict[str, Any] = {"key": key, "need": need, "questions": qs}
+            if known and letter == "A":
+                # leads to check again, never evidence: only researcher A gets them, so B's check stays independent
+                pack["known"] = known
             if rnd > 1:
                 pack["round"] = rnd
             if single_pass and deps.models.mode == "scripted":
@@ -486,7 +551,9 @@ def plan_key_hint(need: dict, rkey: str) -> str:
     kind = need.get("holding_kind")
     key = rkey if "/" in rkey else f"{country}/{kind or 'any'}"
     for gold in gold_plans():
-        if gold.jurisdiction.split("-")[0] == country and (kind is None or kind in gold.holding_kinds):
+        # only for the same kind of holding: research for a procedure (no holding) keeps its own key, where until
+        # 19 October 2026 it took the first gold plan of the country
+        if kind and gold.jurisdiction.split("-")[0] == country and kind in gold.holding_kinds:
             key = gold.key
             break
     inst = need.get("institution_id")
@@ -502,6 +569,8 @@ def settle_identity(plan: ProcedurePlan, need: dict, key_hint: str) -> None:
     kind = need.get("holding_kind")
     if kind and kind not in plan.holding_kinds:
         plan.holding_kinds.append(kind)
+    if need.get("authority"):             # a procedure (a court, a registry) stays reached through its claims
+        plan.authority = need["authority"]
 
 
 def gold_plans() -> list[ProcedurePlan]:
@@ -672,7 +741,7 @@ def run_view(run: ResearchRun) -> dict:
             "adjudication": run.adjudication, "agreement": run.agreement, "plan": run.plan,
             "plan_errors": run.plan_errors, "gold": run.gold, "first_answer": run.first_answer, "letter": run.letter,
             "stored_key": run.stored_key, "seconds": round((run.events[-1]["at"] if run.events else 0), 1),
-            "model": run.model, "rounds": run.rounds, "owner_id": run.owner_id}
+            "model": run.model, "rounds": run.rounds, "owner_id": run.owner_id, "shared": run.shared}
 
 
 def _researcher_view(res: dict) -> dict:

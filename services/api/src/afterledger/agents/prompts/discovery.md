@@ -8,6 +8,16 @@ Input: country, profile (the stored description: conventions and patterns), case
 Start from the stored profile, and correct or add only what you are sure of for this country: the prefixes for direct debits and mandates, standing instructions, transfers, card payments, cash, interest, salaries and pensions, and common abbreviations.
 Return country, and conventions: each with prefix (as printed on statements) and meaning (one sentence).
 
+## payee_screener
+A quick first look at many payees of one person's statements at once, so that none is skipped: the most telling ones already get a closer reading, and these are the rest.
+
+Input: groups (each: id, label: one narration as printed, direction, count, cadence, amount, currency), rails (how this country's statements name payments), case.
+
+Return items, one for each group, with group_id copied exactly:
+- counterparty: the payee or payer as the narration names it, or null; never expand an abbreviation you cannot read from the narration.
+- kind: insurer, fund_registrar, fund_house, lender, card_issuer, bank, broker, employer, government, pension_payer, utility, telecom, merchant, family_member, self_transfer, cash or unknown.
+- worth: true when the payments may point to something the family could claim (a policy, a fund, a deposit, an account elsewhere, a pension, wages owed), something owed (a loan, a card, a mandate to a lender), or something to stop (a subscription or mandate still taking money). Shops, food, fuel, travel, utilities paid as used, one-off transfers to people and cash are not worth a closer reading. When unsure, true.
+
 ## narration_interpreter
 One group of statement rows with the same payee. Say who the counterparty probably is and what the payments mean.
 

@@ -8,17 +8,19 @@ import type { CaseHeader, NavCounts } from '@afterledger/contracts';
 import { Banknote, CircleEllipsis, FileText, Home, ListChecks, Mic } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
+import { useIsFetching } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { localeNames, locales, type Locale } from '@/i18n/routing';
+import { ApiError } from '@/lib/api';
 import { useCaseEvents } from '@/lib/events';
 import { cls, countryName, languageName, longDate, personName } from '@/lib/format';
 import { rememberCase } from '@/lib/mycases';
 import { useCaseHeader, useRefreshToday, useResetDemo } from '@/lib/queries';
 import { useSite } from '@/lib/site';
 import { useViewer, useViewerStore } from '@/lib/store';
-import { Button, ErrorNote, Logo, Skeleton } from './ui';
+import { Button, ErrorNote, Logo, Skeleton, SlowNote } from './ui';
 import { WatchBanner } from './WatchBanner';
 import { SignInFirst } from './Account';
 import { useAuth } from '@/lib/auth';
@@ -76,8 +78,8 @@ function ResetDemo({ demoKey }: { demoKey: string }) {
   );
 }
 
-type Ctx = { caseId: string; header: CaseHeader | undefined; viewerId: string | null };
-const CaseContext = createContext<Ctx>({ caseId: '', header: undefined, viewerId: null });
+type Ctx = { caseId: string; header: CaseHeader | undefined; viewerId: string | null; readOnly: boolean };
+const CaseContext = createContext<Ctx>({ caseId: '', header: undefined, viewerId: null, readOnly: false });
 export const useCase = () => useContext(CaseContext);
 
 type NavKey = 'today' | 'story' | 'papers' | 'money' | 'leads' | 'people' | 'plans' | 'packs' | 'tracker' | 'sources' | 'activity';
@@ -155,7 +157,9 @@ export function CaseShell({ caseId, children }: { caseId: string; children: Reac
   // What prepared this case's content: said plainly, so scripted responses are never taken for a live run.
   const modeLabel = (mode: string) => (mode === 'gemini' ? tc('modeGemini') : mode === 'replay' ? tc('modeReplay') : tc('modeScripted'));
 
-  const ctx = useMemo(() => ({ caseId, header: h, viewerId }), [caseId, h, viewerId]);
+  // a shared sample on the public site: every page opens, its buttons are switched off, questions are answered
+  const readOnly = Boolean(h?.read_only);
+  const ctx = useMemo(() => ({ caseId, header: h, viewerId, readOnly }), [caseId, h, viewerId, readOnly]);
 
   const href = (key: NavKey) => `/cases/${caseId}/${key}`;
   const deathCountry = h?.case.situation?.death_country ?? h?.case.country_codes?.[0] ?? null;
@@ -175,7 +179,7 @@ export function CaseShell({ caseId, children }: { caseId: string; children: Reac
 
   function chooseViewer(personId: string) {
     setViewer(caseId, personId);
-    refreshToday.mutate(personId);
+    if (!readOnly) refreshToday.mutate(personId); // a sample keeps the greetings it has
     const person = h?.family.find((p) => p.id === personId);
     const lang = person?.languages?.[0]?.split('-')[0];
     if (lang && (locales as readonly string[]).includes(lang) && lang !== locale) {
@@ -183,17 +187,32 @@ export function CaseShell({ caseId, children }: { caseId: string; children: Reac
     }
   }
 
-  // A case still being told has nothing else to show yet: its story page takes the whole window.
+  // A case still being told has nothing else to show yet: its story page takes the whole window. Until the case
+  // says which it is, the story page waits, so it is not drawn in one frame and then moved to the other (which
+  // threw away whatever the person had started typing).
+  if (active === 'story' && !h && !header.isError) {
+    return (
+      <div className="flex min-h-screen flex-col gap-4 bg-paper p-8" aria-busy="true">
+        <Skeleton className="h-10 w-80" />
+        <Skeleton className="h-24 max-w-[760px]" />
+      </div>
+    );
+  }
   if (active === 'story' && h?.case.stage === 'intake') {
     return <CaseContext.Provider value={ctx}>{children}</CaseContext.Provider>;
   }
 
   if (header.isError && !watching) {
+    // the case was not found for this visitor (or is another account's): sign in, or say so; anything else (the
+    // service busy or out of reach) is said as it is, with a way to try again, never as a request to sign in
+    const missing = header.error instanceof ApiError && [401, 403, 404].includes(header.error.status);
     return (
       <div className="mx-auto flex max-w-xl flex-col gap-4 p-8">
-        {site.auth && !signedIn ? (
+        {missing && site.auth && !signedIn ? (
           // a case of one's own opens only when signed in to its account
           <SignInFirst next={pathname} title={tAuth('signIn')} />
+        ) : missing ? (
+          <ErrorNote error={new Error(t('caseMissing'))} />
         ) : (
           <ErrorNote error={header.error} retry={() => header.refetch()} />
         )}
@@ -239,7 +258,7 @@ export function CaseShell({ caseId, children }: { caseId: string; children: Reac
               href={href(key)}
               aria-current={on ? 'page' : undefined}
               className={cls(
-                'flex min-h-[44px] items-center justify-between rounded-[10px] px-3 no-underline',
+                'flex min-h-[40px] items-center justify-between rounded-[10px] px-3 no-underline',
                 on ? 'bg-ledger-tint font-bold text-ledger-deep' : 'text-ink hover:bg-paper hover:text-ink',
               )}
             >
@@ -279,7 +298,7 @@ export function CaseShell({ caseId, children }: { caseId: string; children: Reac
       <div className="flex min-h-screen bg-paper">
         {/* ---- the sidebar, on wide screens ---- */}
         <nav aria-label={t('case')} className="hidden w-[270px] shrink-0 border-e border-rule bg-sheet lg:block">
-          <div className="sticky top-0 flex h-screen flex-col gap-5 overflow-y-auto px-3.5 pb-6 pt-5">
+          <div className="sticky top-0 flex h-screen flex-col gap-4 overflow-y-auto px-3.5 pb-5 pt-4">
             <Link href="/" className="flex items-center gap-2.5 px-2 text-ink no-underline">
               <Logo size={26} />
               <span className="font-serif text-[20px] font-semibold">AfterLedger</span>
@@ -318,7 +337,7 @@ export function CaseShell({ caseId, children }: { caseId: string; children: Reac
               <Logo size={24} />
             </Link>
             <div className="min-w-0 flex-1">
-              <p className="m-0 truncate text-[15px] font-bold">{h?.case.title ?? ''}</p>
+              <p dir="auto" className="m-0 truncate text-[15px] font-bold">{h?.case.title ?? ''}</p>
               {h?.case.synthetic ? <p className="m-0 text-[12px] font-bold text-blank">{tc('synthetic')}</p> : null}
             </div>
             <Link
@@ -332,7 +351,10 @@ export function CaseShell({ caseId, children }: { caseId: string; children: Reac
 
           <main id="main" className="min-w-0 flex-1 px-4 pb-28 pt-5 sm:px-8 lg:px-11 lg:pb-14 lg:pt-8">
             {watching && demoKey ? <WatchBanner demoKey={demoKey} /> : null}
+            {readOnly ? <SampleBanner /> : null}
+            <LoadingNote caseId={caseId} />
             {h?.working ? <WorkingBanner step={h.working} /> : null}
+            {h?.researching?.length ? <ResearchBanner items={h.researching} /> : null}
             {children}
           </main>
 
@@ -418,6 +440,49 @@ export function LanguageSelect({ compact, dark }: { compact?: boolean; dark?: bo
         ))}
       </select>
     </label>
+  );
+}
+
+/** A shared sample case on the public site: what can be done here, and where to try the buttons. */
+function SampleBanner() {
+  const t = useTranslations('nav');
+  return (
+    <div role="note" className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[12px] border border-blank bg-blank-tint px-4 py-3">
+      <p className="m-0 min-w-0 flex-1 text-[15px]">
+        <span className="font-bold">{t('sampleTitle')}</span> <span className="text-ink-soft">{t('sampleNote')}</span>
+      </p>
+      <Link href="/new" className="shrink-0 text-[15px] font-bold">
+        {t('sampleStart')}
+      </Link>
+    </div>
+  );
+}
+
+/** While a case's data is on its way: said in words after a moment (skeletons alone look like a broken page), and
+ * again if it takes long. Only for what has nothing to show yet: a page refreshing what it shows needs no words. */
+function LoadingNote({ caseId }: { caseId: string }) {
+  const fetching = useIsFetching({ queryKey: ['case', caseId], predicate: (q) => q.state.data === undefined }) > 0;
+  return <SlowNote active={fetching} className="mb-3" />;
+}
+
+/** The rules being researched for some of the case's claims, with a way to watch. */
+function ResearchBanner({ items }: { items: CaseHeader['researching'] }) {
+  const t = useTranslations('nav');
+  const first = items?.[0] as { run_id?: string; title?: string } | undefined;
+  if (!first) return null;
+  return (
+    <div role="status" className="mb-5 flex flex-wrap items-start gap-x-3 gap-y-1 rounded-[12px] border border-rule bg-sheet px-4 py-3">
+      <span aria-hidden="true" className="mt-1.5 h-2.5 w-2.5 shrink-0 animate-pulse-soft rounded-full bg-pencil" />
+      <p className="m-0 min-w-0 flex-1 text-[15px]">
+        <span className="font-bold">{t('researching', { count: items?.length ?? 1, title: first.title ?? '' })}</span>{' '}
+        <span className="text-ink-soft">{t('researchingNote')}</span>
+      </p>
+      {first.run_id ? (
+        <Link href={`/challenge/${first.run_id}`} className="shrink-0 text-[15px] font-bold">
+          {t('researchWatch')}
+        </Link>
+      ) : null}
+    </div>
   );
 }
 

@@ -42,10 +42,12 @@ async def voice(ws: WebSocket, case_id: str, person_id: str | None = None, lang:
         await ws.close(code=UNAVAILABLE, reason="Live voice runs only in a live run with Gemini")
         return
     case = await deps.cases.get_case(case_id)
-    from .auth import may_open, signed_in
-    if case is None or not await may_open(deps, case, await signed_in(deps, ws)):
+    from .auth import may_open, sample_read_only, signed_in
+    user = await signed_in(deps, ws)
+    if case is None or not await may_open(deps, case, user):
         await ws.close(code=NO_CASE, reason="No such case")
         return
+    keep = not sample_read_only(deps, case, user)     # a sample's questions are answered, not saved
     lang = (lang or "en").split("-")[0]
     people = await deps.cases.list(case_id, "people")
     speaker = next((p for p in people if p.id == person_id), None)
@@ -60,7 +62,7 @@ async def voice(ws: WebSocket, case_id: str, person_id: str | None = None, lang:
         async with (connect or live.connect)(deps.settings, instruction=instruction, lang=lang) as session:
             await ws.send_json({"type": "ready", "in_rate": live.IN_RATE, "out_rate": live.OUT_RATE})
             up = asyncio.create_task(_from_browser(ws, session))
-            down = asyncio.create_task(_from_model(ws, session, deps, case_id, person_id, lang))
+            down = asyncio.create_task(_from_model(ws, session, deps, case_id, person_id, lang, keep))
             done, pending = await asyncio.wait({up, down}, return_when=asyncio.FIRST_COMPLETED)
             for task in pending:
                 task.cancel()
@@ -107,7 +109,7 @@ async def _from_browser(ws: WebSocket, session: Any) -> None:
 
 
 async def _from_model(ws: WebSocket, session: Any, deps: Any, case_id: str, person_id: str | None,
-                      lang: str) -> None:
+                      lang: str, keep: bool = True) -> None:
     while True:                       # receive() yields one turn at a time
         async for msg in session.receive():
             content = getattr(msg, "server_content", None)
@@ -115,7 +117,7 @@ async def _from_model(ws: WebSocket, session: Any, deps: Any, case_id: str, pers
                 await _content(ws, content)
             call = getattr(msg, "tool_call", None)
             if call is not None and call.function_calls:
-                await _answer(ws, session, deps, case_id, person_id, lang, call.function_calls)
+                await _answer(ws, session, deps, case_id, person_id, lang, call.function_calls, keep)
             if getattr(msg, "go_away", None) is not None:
                 await ws.send_json({"type": "ending"})
 
@@ -139,7 +141,7 @@ async def _content(ws: WebSocket, content: Any) -> None:
 
 
 async def _answer(ws: WebSocket, session: Any, deps: Any, case_id: str, person_id: str | None, lang: str,
-                  calls: list[Any]) -> None:
+                  calls: list[Any], keep: bool = True) -> None:
     """Runs ask_case through the grounded answerer and gives the model the answer to say."""
     from google.genai import types
     responses = []
@@ -152,7 +154,7 @@ async def _answer(ws: WebSocket, session: Any, deps: Any, case_id: str, person_i
             continue
         try:
             out = await actions.ask(deps, case_id, question=question, person_id=person_id,
-                                    lang=(args.get("language") or lang).split("-")[0], channel="voice")
+                                    lang=(args.get("language") or lang).split("-")[0], channel="voice", keep=keep)
         except Exception as exc:
             log.exception("ask_case failed in a voice session")
             responses.append(types.FunctionResponse(id=fc.id, name=fc.name, response={

@@ -14,10 +14,40 @@ const LABELS: Record<string, string> = {
   'Review the letter': 'reviewLetter',
   'Open the pack': 'openPack',
   'Open the plan': 'openPlan',
+  'Open the plans': 'openPlans',
+  'Open the leads': 'openLeads',
+  'Tell AfterLedger': 'tellUs',
+  'Add a paper': 'addPaper',
+  'Check the papers': 'checkPapers',
   'We found it': 'foundIt',
   "We can't find it": 'cantFind',
   'Why?': 'why',
 };
+
+/** Where an 'open' action goes. Anything unknown opens Today rather than a page that does not exist. */
+function hrefFor(caseId: string, kind: string, ref: string): string {
+  const base = `/cases/${caseId}`;
+  switch (kind) {
+    case 'tracker':
+      return `${base}/tracker`;
+    case 'pack':
+      return ref ? `${base}/packs/${ref}` : `${base}/packs`;
+    case 'plan':
+      return ref ? `${base}/plans/${ref}` : `${base}/plans`;
+    case 'plans':
+    case 'packs':
+    case 'leads':
+    case 'papers':
+    case 'story':
+    case 'money':
+    case 'people':
+    case 'sources':
+    case 'ask':
+      return `${base}/${kind}`;
+    default:
+      return `${base}/today`;
+  }
+}
 
 export function TaskActions({
   actions,
@@ -29,7 +59,7 @@ export function TaskActions({
   primaryFirst?: boolean;
 }) {
   const t = useTranslations('task');
-  const { caseId, viewerId } = useCase();
+  const { caseId, viewerId, readOnly } = useCase();
   const mark = useMarkLead(caseId);
   const answer = useAnswer(caseId);
   const label = (a: TaskAction) => (LABELS[a.label] ? t(LABELS[a.label] as 'why') : a.label);
@@ -37,22 +67,14 @@ export function TaskActions({
   return (
     <>
       {actions.map((a, i) => {
-        const [kind, ref] = a.target.split(/:(.*)/s);
+        const [kind, ref = ''] = a.target.split(/:(.*)/s);
         const look = primaryFirst && i === 0 && a.kind === 'open' ? 'primary' : 'secondary';
         if (kind === 'why') {
           return <Why key={i} ids={ref.split(',')} cites={cites} />;
         }
         if (a.kind === 'open') {
-          const href =
-            kind === 'tracker'
-              ? `/cases/${caseId}/tracker`
-              : kind === 'pack'
-                ? `/cases/${caseId}/packs/${ref}`
-                : kind === 'plan'
-                  ? `/cases/${caseId}/plans/${ref}`
-                  : `/cases/${caseId}/today`;
           return (
-            <Link key={i} href={href} className={buttonClass(look)}>
+            <Link key={i} href={hrefFor(caseId, kind, ref)} className={buttonClass(look)}>
               {label(a)}
             </Link>
           );
@@ -62,7 +84,8 @@ export function TaskActions({
             <button
               key={i}
               type="button"
-              disabled={mark.isPending}
+              disabled={mark.isPending || readOnly}
+              title={readOnly ? t('sampleOnly') : undefined}
               className={buttonClass(i === 0 ? 'primary' : 'secondary')}
               onClick={() =>
                 mark.mutate(
@@ -80,7 +103,8 @@ export function TaskActions({
             <button
               key={i}
               type="button"
-              disabled={answer.isPending}
+              disabled={answer.isPending || readOnly}
+              title={readOnly ? t('sampleOnly') : undefined}
               className={buttonClass(i === 0 ? 'dark' : 'secondary')}
               onClick={() =>
                 answer.mutate({ checkpointId: ref, answer: a.value ?? '', by: viewerId }, { onSuccess: () => toast.success(t('answered')) })

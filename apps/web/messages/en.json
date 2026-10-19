@@ -1,6 +1,6 @@
 {
   "common": {
-    "unreachable": "The AfterLedger service did not answer. Check that it is running and that this device can reach it.",
+    "unreachable": "AfterLedger could not be reached. Check your internet connection and try again.",
     "skip": "Skip to content",
     "why": "Why?",
     "close": "Close",
@@ -37,7 +37,7 @@
     "modeScripted": "Offline: scripted responses",
     "modeGemini": "Live: Gemini",
     "modeReplay": "Replay of a live run",
-    "apiDown": "AfterLedger's service is not reachable. Start the API (python tools/dev.py api) and refresh.",
+    "apiDown": "AfterLedger could not be reached. Check your internet connection and refresh the page.",
     "notFound": "This page does not exist.",
     "home": "Home",
     "print": "Print",
@@ -71,7 +71,12 @@
     },
     "whyTopic": "Why: {topic}",
     "updatesOn": "Updates as they happen",
-    "updatesOff": "Updates paused"
+    "updatesOff": "Updates paused",
+    "busy": "AfterLedger is busy for a moment. Wait a few seconds and try again.",
+    "loadingSlow": "Still loading. The first page after a quiet spell can take up to half a minute.",
+    "notFoundNote": "The link may be old or mistyped. Every case and page can be reached from the home page.",
+    "startCase": "Start a case",
+    "samplePage": "A sample institution's page, not a real site"
   },
   "nav": {
     "today": "Today",
@@ -108,7 +113,14 @@
     "storyLink": "Read how it started",
     "workingReading": "Reading your papers.",
     "workingFinding": "Working out what your papers point to: accounts, loans, policies and payments to stop.",
-    "workingNote": "Leads, the money map and Today fill in when this is done, usually within a few minutes. You can keep using the case meanwhile."
+    "workingNote": "Leads, the money map and Today fill in when this is done, usually within a few minutes. You can keep using the case meanwhile.",
+    "sampleTitle": "A sample case.",
+    "sampleNote": "Every page opens and you can ask questions, but nothing here can be changed. Start your own case to use the buttons.",
+    "sampleStart": "Start your own case",
+    "researching": "{count, plural, =1 {Researching the rules for {title}} other {Researching the rules for # claims}}",
+    "researchingNote": "Meanwhile the plan is to write to the institution and ask how to claim. When the research finishes, usually within a few minutes, the plan is replaced and you are asked to approve it.",
+    "researchWatch": "Watch the research",
+    "caseMissing": "This case does not exist, or it is kept in another account."
   },
   "main": {
     "title": "AfterLedger: find what they left behind",
@@ -255,7 +267,8 @@
     "refresh": "Plan today again",
     "listen": "Listen",
     "stopListen": "Stop",
-    "lateDays": "{count, plural, one {# day late} other {# days late}}"
+    "lateDays": "{count, plural, one {# day late} other {# days late}}",
+    "noneKnown": "No amounts are known yet. They fill in as the papers are read and the institutions reply."
   },
   "story": {
     "starting": "Starting a case",
@@ -536,7 +549,12 @@
       "procedures": "Papers or decisions other claims wait for.",
       "debts": "What the estate owes, and the rules for settling it.",
       "closedGroup": "Looked into and closed, with the reason."
-    }
+    },
+    "researching": "Rules being researched",
+    "forNow": "For now: ask the institution",
+    "emptyHow": "Add the papers you have, such as a passbook, a bank statement, a policy or a letter from an institution, and confirm the leads AfterLedger finds. Each claim then gets a plan of its own.",
+    "addPapers": "Add papers",
+    "openLeads": "Open the leads"
   },
   "plan": {
     "crumb": "Plans",
@@ -628,7 +646,18 @@
     "askAbout": "I have a question about the plan for {title}.",
     "haveQuestion": "I have a question",
     "theInstitution": "The institution",
-    "or": " or "
+    "or": " or ",
+    "interim": {
+      "runningTitle": "The rules for this claim are being researched now",
+      "runningNote": "Until they are found and checked against their sources, the plan is the first step that works everywhere: write to the institution, tell it about the death and ask how to claim. When the research finishes, usually within a few minutes, this plan is replaced and you are asked to approve the new one.",
+      "waitingTitle": "For now, the plan asks the institution in writing",
+      "waitingNote": "No official rules for this claim have been found and checked yet. The institution's reply decides the next steps, and the research is tried again within a week.",
+      "watch": "Watch the research",
+      "see": "See what the research found",
+      "offNote": "No official rules for this claim are stored yet. The institution's reply decides the next steps."
+    },
+    "researchedOn": "Researched on {date}",
+    "preparingPack": "The papers for this plan are being prepared: filled in, read back and checked. This takes a minute or two, and they open here when ready."
   },
   "packs": {
     "title": "Packs",
@@ -696,7 +725,12 @@
     "handInDone": "Recorded. The tracker now follows the institution's time limits.",
     "handedIn": "Handed in on {date}",
     "handedInPlain": "Handed in",
-    "seePlan": "See the plan behind these papers"
+    "seePlan": "See the plan behind these papers",
+    "markSent": "Mark the letter as sent",
+    "sentWhen": "When was it sent or handed in? Leave it empty for today.",
+    "sentDone": "Recorded. A reply is expected within 30 days, and AfterLedger drafts a reminder if none comes.",
+    "sentOn": "Letter sent on {date}",
+    "sentPlain": "Letter sent"
   },
   "tracker": {
     "title": "Tracker",
@@ -730,7 +764,9 @@
     "kinds": {
       "reminder": "Reminder",
       "objection": "Objection",
-      "grievance": "Complaint"
+      "grievance": "Complaint",
+      "chase": "Follow-up letter",
+      "request": "Request"
     },
     "expectedBy": "Expected by {date}",
     "draftedOn": "Drafted on {date} for {name} to sign",
@@ -743,7 +779,40 @@
     "openDesk": "Open the desk page",
     "in": "Received",
     "out": "Sent",
-    "objection": "This asks for something the rules say it may not: {rule}"
+    "objection": "This asks for something the rules say it may not: {rule}",
+    "progressTitle": "Where each claim stands",
+    "progressLede": "When something happens, record it here. The clocks, the plan and Today follow.",
+    "nothingYet": "Nothing has been handed in yet. A claim appears here once its papers are handed in or its first letter is sent.",
+    "drafting": "Drafting the letter. This can take up to a minute.",
+    "drafted": "Drafted. It is below, for you to read and approve.",
+    "ev": {
+      "done": "Recorded. The plan and the clocks are updated.",
+      "when": "On which day?",
+      "whenHint": "Leave it empty for today.",
+      "amount": "How much was paid?",
+      "amountHint": "Leave it empty if it was the full amount",
+      "note": "What did they say?",
+      "save": "Record it",
+      "theyReplied": "They replied",
+      "ask": {
+        "complete_set_confirmed": "Did {institution} confirm in writing that it has every paper?",
+        "settled": "Did {institution} pay or settle it?",
+        "returned": "Did {institution} send the claim back?",
+        "submitted": "Did you hand the claim in to {institution} again?"
+      },
+      "button": {
+        "complete_set_confirmed": "They have every paper",
+        "settled": "Money received",
+        "settledDebt": "Settled",
+        "returned": "They sent it back",
+        "submitted": "Handed in again"
+      }
+    },
+    "draft": {
+      "reminder": "Draft a reminder",
+      "chase": "Draft a follow-up letter",
+      "request": "Ask what they still need"
+    }
   },
   "sources": {
     "title": "Sources",
@@ -819,7 +888,8 @@
     "liveConnecting": "Connecting…",
     "liveTalking": "Talking with AfterLedger",
     "liveHint": "Speak naturally. When you pause, the answer comes from the case.",
-    "liveFailed": "Voice could not continue ({message}). You can type instead."
+    "liveFailed": "Voice could not continue ({message}). You can type instead.",
+    "notSaved": "On a sample case, answers are shown here but not saved."
   },
   "newCase": {
     "title": "Start a case",
@@ -896,13 +966,17 @@
       "gold": "Gold check",
       "letter": "Letter",
       "finished": "Finished",
-      "round": "Another round"
+      "round": "Another round",
+      "known": "Rules already checked"
     },
     "firstAnswerPending": "Checking one official page for a first answer…",
     "onlyWhen": "Only if {when}.",
     "showAll": "Show everything",
     "hideDetails": "Hide the details",
-    "compiling": "The plan is compiled once the researchers agree…"
+    "compiling": "The plan is compiled once the researchers agree…",
+    "missingTitle": "This research page does not exist",
+    "missingNote": "The link may be old or mistyped, or the question may belong to someone else. You can ask a question of your own.",
+    "askOwn": "Ask your own question"
   },
   "desk": {
     "title": "AfterLedger desk",
@@ -1068,7 +1142,13 @@
     "cantFind": "We can't find it",
     "why": "Why?",
     "marked": "Marked. The plan is updated.",
-    "answered": "Thank you. The plan is updated."
+    "answered": "Thank you. The plan is updated.",
+    "openPlans": "Open the plans",
+    "openLeads": "Open the leads",
+    "tellUs": "Tell AfterLedger",
+    "addPaper": "Add a paper",
+    "checkPapers": "Check the papers",
+    "sampleOnly": "Switched off on a sample case"
   },
   "watch": {
     "title": "Watching the story from the first paper",

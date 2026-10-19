@@ -80,12 +80,14 @@ async def _case_facts(deps: Any, case_id: str) -> list[dict]:
 
 
 async def ask(deps: Any, case_id: str, question: str, *, person_id: str | None = None, lang: str | None = None,
-              channel: str = "text") -> dict:
+              channel: str = "text", keep: bool = True) -> dict:
+    """keep=False answers without saving anything to the case: a visitor's question on a shared sample case."""
     case = await deps.cases.get_case(case_id)
     base = {"case": case_block(case)}
     u = Utterance(id=new_id("ut"), case_id=case_id, person_id=person_id, role="family", lang=lang or "en",
                   text=question, channel=channel, at=deps.now(), intent="question")  # type: ignore[arg-type]
-    await deps.cases.put(case_id, "utterances", u)
+    if keep:
+        await deps.cases.put(case_id, "utterances", u)
     intent = await call_agent(deps, "intent_router", {"key": pack_key("intent_router", case, question[:60]), **base,
                                                       "question": question, "lang": lang}, case_id=case_id)
     u.lang = intent.lang
@@ -137,7 +139,7 @@ async def ask(deps: Any, case_id: str, question: str, *, person_id: str | None =
                                tools=[web_search, fetch_page], case_id=case_id)
         answer, answer_en, sources = out.answer, out.answer_en or out.answer, list(out.cites)
         ans_lang = out.lang
-        if out.research_request:
+        if out.research_request and keep:
             await deps.activity(case_id, MODULE, f"Not known yet, so it was passed to the research service: "
                                 f"{out.research_request}", kind="research")
     elif intent.intent in ("smalltalk", "outside"):
@@ -161,14 +163,17 @@ async def ask(deps: Any, case_id: str, question: str, *, person_id: str | None =
         grounded_texts += [(f"case:{i}", t) for i, t in enumerate(out.grounded_on)]
         if grounded_texts:
             g = await deps.grounding.check(answer_en, grounded_texts, threshold=0.35)
-            await deps.ledger(case_id, f"answer:{u.id}", "grounding", "pass" if g.supported else "fail",
-                              method=g.method, detail=f"support {g.support_score}")
+            if keep:
+                await deps.ledger(case_id, f"answer:{u.id}", "grounding", "pass" if g.supported else "fail",
+                                  method=g.method, detail=f"support {g.support_score}")
     at = deps.now()
     if u.at is not None and at <= u.at:      # the answer always follows its question
         at = u.at + timedelta(seconds=1)
     reply = Utterance(id=new_id("ut"), case_id=case_id, role="assistant", lang=ans_lang, text=answer,
                       translation=answer_en if ans_lang != "en" else None, at=at, sources=sources,
                       grounded=bool(sources), channel=channel)  # type: ignore[arg-type]
-    await deps.cases.put_many(case_id, "utterances", [u, reply])
-    deps.changed(case_id, "utterances")
-    return {"question": u.model_dump(mode="json"), "answer": reply.model_dump(mode="json"), "intent": intent.intent}
+    if keep:
+        await deps.cases.put_many(case_id, "utterances", [u, reply])
+        deps.changed(case_id, "utterances")
+    return {"question": u.model_dump(mode="json"), "answer": reply.model_dump(mode="json"), "intent": intent.intent,
+            "kept": keep}
