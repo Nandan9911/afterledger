@@ -17,7 +17,7 @@ import { ApiError } from '@/lib/api';
 import { useCaseEvents } from '@/lib/events';
 import { cls, countryName, languageName, longDate, personName } from '@/lib/format';
 import { rememberCase } from '@/lib/mycases';
-import { useCaseHeader, useRefreshToday, useResetDemo } from '@/lib/queries';
+import { useCaseHeader, useConversation, useRefreshToday, useResetDemo } from '@/lib/queries';
 import { useSite } from '@/lib/site';
 import { useViewer, useViewerStore } from '@/lib/store';
 import { Button, ErrorNote, Logo, Skeleton, SlowNote } from './ui';
@@ -133,6 +133,9 @@ export function CaseShell({ caseId, children }: { caseId: string; children: Reac
   const stored = useViewer(caseId);
   const setViewer = useViewerStore((s) => s.setViewer);
   const header = useCaseHeader(caseId, stored);
+  // the story page waits for the case before it is drawn (so the layout never moves under someone typing); its
+  // conversation is asked for at the same time, so the wait adds no round trip
+  useConversation(caseId, pathname.split('/')[3] === 'story');
   const refreshToday = useRefreshToday(caseId);
   const { live } = useCaseEvents(caseId);
   const [moreAt, setMoreAt] = useState<string | null>(null);

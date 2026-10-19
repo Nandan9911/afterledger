@@ -26,7 +26,10 @@ def sse(data: Any, event: str | None = None) -> dict:
 # reconnects, after RETRY_MS). On 19 October 2026 streams of pages already left were not released by the front end
 # in front of the service, and about 80 case pages viewed in 12 minutes filled every request slot of the one
 # instance for an hour: since then no stream holds a slot for longer than this, whatever happens to its client.
-STREAM_SECONDS = 45.0
+# Five minutes (45 s until 19 October 2026, when each reconnect also refetched the whole screen): the number of
+# streams is capped (AL_SSE_MAX_STREAMS) and a hidden tab closes its own, and a reconnect refetches only after a
+# change (each stream opens with the case's change number).
+STREAM_SECONDS = 300.0
 RETRY_MS = 3000
 
 
@@ -51,10 +54,14 @@ def too_many_streams() -> HTTPException:
 
 
 async def queue_events(request: Request, queue: asyncio.Queue, *, until: tuple[str, ...] = (),
-                       ping: float = 10.0, seconds: float | None = STREAM_SECONDS) -> AsyncIterator[dict]:
+                       ping: float = 10.0, seconds: float | None = STREAM_SECONDS,
+                       hello: dict | None = None) -> AsyncIterator[dict]:
     """Streams a queue as server-sent events until the client goes, a closing event type arrives, or `seconds` pass
-    (None: no limit). The first event goes at once, so the response starts without waiting for news."""
+    (None: no limit). The first event goes at once, so the response starts without waiting for news; `hello`, when
+    given, follows it (an event named by its type)."""
     yield {"comment": "ready", "retry": RETRY_MS}
+    if hello is not None:
+        yield sse(hello, hello.get("type"))
     loop = asyncio.get_running_loop()
     end = loop.time() + seconds if seconds else None
     while True:

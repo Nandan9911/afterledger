@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+import secrets
 from collections import defaultdict
 from contextvars import ContextVar
 from dataclasses import dataclass, field
@@ -36,10 +37,17 @@ STORY_NOW: ContextVar[datetime | None] = ContextVar("story_now", default=None)
 
 
 class ActivityHub:
-    """Fan-out of activity lines to live listeners (the app's activity feed over SSE)."""
+    """Fan-out of activity lines to live listeners (the app's activity feed over SSE). Every notice carries the case's
+    change number, and a stream opens with it, so a page that reconnects refetches only when something changed while
+    it had no stream (the number is new after a restart, so a restart counts as a change)."""
 
     def __init__(self) -> None:
         self._listeners: dict[str, set[asyncio.Queue]] = defaultdict(set)
+        self._seq: dict[str, int] = defaultdict(int)
+        self._boot = secrets.token_hex(4)
+
+    def version(self, case_id: str) -> str:
+        return f"{self._boot}.{self._seq.get(case_id, 0)}"
 
     def listen(self, case_id: str) -> asyncio.Queue:
         q: asyncio.Queue = asyncio.Queue(maxsize=500)
@@ -54,6 +62,8 @@ class ActivityHub:
                 del self._listeners[case_id]
 
     def send(self, case_id: str, payload: dict) -> None:
+        self._seq[case_id] += 1
+        payload = {**payload, "seq": self.version(case_id)}
         for q in list(self._listeners.get(case_id, ())):
             with contextlib.suppress(asyncio.QueueFull):   # a slow listener misses an update, never blocks
                 q.put_nowait(payload)

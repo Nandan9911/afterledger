@@ -7,6 +7,7 @@ it (checkpoint C3). Issuers and payees are matched to the institution directory.
 """
 from __future__ import annotations
 
+import asyncio
 import re
 from decimal import Decimal
 from typing import Any
@@ -197,7 +198,9 @@ async def resolve_people(deps: Any, case_id: str) -> None:
     deps.changed(case_id, "people")
 
 
-async def resolve_institutions(deps: Any, case_id: str) -> None:
+async def resolve_institutions(deps: Any, case_id: str, *, lookups: Any = None) -> None:
+    """Each paper's issuer: the directory's, else matched by the resolver agent, else identified on the web (all of
+    a case's papers side by side, within `lookups`' time and count), else kept as printed."""
     snap = await snapshot(deps, case_id, ["papers"])
     case = snap.case
     k = knowledge(deps)
@@ -235,14 +238,14 @@ async def resolve_institutions(deps: Any, case_id: str) -> None:
         # a bank, insurer or lender the directory has never seen: identified on the web now (or kept as printed),
         # so its paper's account, policy or loan is claimed like any other
         from .institutions import DOC_ISSUER_KIND, Lookups, resolve
-        lookups = Lookups()
-        for paper in still:
-            kind = DOC_ISSUER_KIND.get(paper.doc_type)
-            if kind is None:
-                continue                      # a death certificate, an identity card: no institution holds anything
-            inst = await resolve(deps, case, paper.issuer, country=paper.country, kind=kind, lookups=lookups,
-                                 context=f"the issuer of a {paper.doc_type.replace('_', ' ')}",
-                                 source=f"named on “{paper.title}”", must_be_org=False)
+        lookups = lookups or Lookups()
+        # a death certificate, an identity card: no institution holds anything
+        todo = [p for p in still if DOC_ISSUER_KIND.get(p.doc_type) is not None]
+        found = await asyncio.gather(*(          # side by side (one after another until 19 October 2026)
+            resolve(deps, case, paper.issuer, country=paper.country, kind=DOC_ISSUER_KIND[paper.doc_type],
+                    lookups=lookups, context=f"the issuer of a {paper.doc_type.replace('_', ' ')}",
+                    source=f"named on “{paper.title}”", must_be_org=False) for paper in todo))
+        for paper, inst in zip(todo, found, strict=True):
             if inst is not None:
                 paper.institution_id = inst.id
                 await deps.cases.put(case_id, "papers", paper)

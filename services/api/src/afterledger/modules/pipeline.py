@@ -45,8 +45,16 @@ async def _read_once(deps: Any, case_id: str, paper_id: str) -> None:
 async def after_reading(deps: Any, case_id: str) -> None:
     """What the papers lead to, across the case: who and what they name, what they point to, the claims and plans."""
     await reading.death_from_certificate(deps, case_id)
-    await people.resolve_institutions(deps, case_id)
-    await discovery.holdings_from_family(deps, case_id)
+    # the institutions the papers and the family name, side by side and within one time budget for web lookups
+    # (one after the other, each with its own, until 19 October 2026)
+    from .institutions import Lookups
+    lookups = Lookups()
+    try:
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(people.resolve_institutions(deps, case_id, lookups=lookups))
+            tg.create_task(discovery.holdings_from_family(deps, case_id, lookups=lookups))
+    except ExceptionGroup as group:      # the first failure, as itself (a passing error is retried as before)
+        raise group.exceptions[0] from None
     await people.resolve_people(deps, case_id)
     await discovery.discover(deps, case_id)
     await people.payees(deps, case_id)

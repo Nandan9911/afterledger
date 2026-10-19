@@ -139,7 +139,7 @@ async def holdings_from_papers(deps: Any, case_id: str) -> list[Holding]:
 DEBT_KINDS = {"loan", "card_loan", "credit_card"}
 
 
-async def holdings_from_family(deps: Any, case_id: str) -> list[Holding]:
+async def holdings_from_family(deps: Any, case_id: str, *, lookups: Any = None) -> list[Holding]:
     """What the family named in the conversation ("his SBI account", "an LIC policy", "a loan from Bajaj Finance")
     goes onto the money map as theirs, with its institution identified (looked up on the web when the directory does
     not have it), so it is planned and claimed like anything a paper shows. A kind of holding named without its
@@ -155,16 +155,17 @@ async def holdings_from_family(deps: Any, case_id: str) -> list[Holding]:
         return []
     allowed = set(get_args(HoldingKind))
     existing = await deps.cases.list(case_id, "holdings")
-    lookups = Lookups(8)
+    lookups = lookups or Lookups(8)
     out: list[Holding] = []
-    for m in sit.holdings:
-        name = str(m.get("institution") or "").strip()
-        if not name:
-            continue
-        kind = m.get("kind") if m.get("kind") in allowed else "other"
-        inst = await resolve(deps, case, name, kind=_HOLDER_KIND.get(kind), lookups=lookups, must_be_org=False,
-                             context=f"the family said the person who died had: {m.get('said') or name}",
-                             source="named by the family")
+    named = [(m, str(m.get("institution") or "").strip()) for m in sit.holdings]
+    named = [(m, name, m.get("kind") if m.get("kind") in allowed else "other") for m, name in named if name]
+    # every institution named is identified side by side (one after another until 19 October 2026); the holdings
+    # are then added in the order the family named them
+    found = await asyncio.gather(*(
+        resolve(deps, case, name, kind=_HOLDER_KIND.get(kind), lookups=lookups, must_be_org=False,
+                context=f"the family said the person who died had: {m.get('said') or name}",
+                source="named by the family") for m, name, kind in named))
+    for (m, name, kind), inst in zip(named, found, strict=True):
         if inst is None:
             continue
         if any(h.institution_id == inst.id and h.kind == kind and h.status != "closed" for h in existing):

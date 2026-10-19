@@ -73,10 +73,11 @@ export function useCaseHeader(caseId: string, viewer?: string | null) {
   });
 }
 
-export function useConversation(caseId: string) {
+export function useConversation(caseId: string, enabled = true) {
   return useQuery({
     queryKey: [...c(caseId), 'conversation'],
     queryFn: () => unwrap(api().GET('/v1/cases/{case_id}/conversation', { params: { path: { case_id: caseId } } })),
+    enabled,
   });
 }
 

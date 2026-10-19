@@ -450,8 +450,10 @@ async def events(case_id: str, request: Request, deps: Deps = Depends(get_deps))
     async def stream():
         stream_opened(deps)
         queue = deps.hub.listen(case_id)
+        # the change number is read after listening starts, so nothing falls between the two
+        hello = {"type": "hello", "seq": deps.hub.version(case_id)}
         try:
-            async for item in queue_events(request, queue):
+            async for item in queue_events(request, queue, hello=hello):
                 yield item
         finally:
             deps.hub.forget(case_id, queue)

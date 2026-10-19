@@ -125,3 +125,46 @@ async def test_a_sample_case_stays_on_the_interim_plan(deps: Any) -> None:
     state = await rules_research.ensure(deps, "demo-x", claim, country="IN", kind="loan")
     assert state["status"] == "off" and state.get("reason") == "sample"
     assert not deps.extras.get("rules_research_tasks")
+
+
+async def test_a_case_stream_opens_with_the_change_number_and_each_notice_carries_one(deps: Any) -> None:
+    """A page that reconnects compares the number its new stream opens with against the last one it saw, and refetches
+    only when they differ: every change moves the number, and a restart gives a new one."""
+    import json
+
+    from afterledger.app.routers.common import queue_events
+    from afterledger.runtime import ActivityHub
+
+    hub = deps.hub
+    before = hub.version("c9")
+    deps.changed("c9", "claims")
+    after = hub.version("c9")
+    assert before != after and ActivityHub().version("c9") != hub.version("c9")   # a restart counts as a change
+
+    class Open:
+        async def is_disconnected(self) -> bool:
+            return False
+
+    queue = hub.listen("c9")
+    try:
+        stream = queue_events(Open(), queue, hello={"type": "hello", "seq": hub.version("c9")}, seconds=2, ping=1)
+        ready, hello = await stream.__anext__(), await stream.__anext__()
+        assert ready.get("comment") == "ready" and hello["event"] == "hello"
+        assert json.loads(hello["data"])["seq"] == after
+        deps.changed("c9", "plans")
+        notice = await stream.__anext__()
+        assert notice["event"] == "changed" and json.loads(notice["data"])["seq"] not in (before, after)
+        await stream.aclose()
+    finally:
+        hub.forget("c9", queue)
+
+
+async def test_lookups_stop_starting_when_their_time_is_up(deps: Any) -> None:
+    """A phase of web lookups never waits past its budget: a name that cannot be looked up in time is kept as
+    printed, with this case, rather than holding up the case."""
+    from afterledger.modules.institutions import Lookups, resolve
+    case = CaseFile(id="case_t1", title="T", created_at=deps.now(), country_codes=["IN"])
+    await deps.cases.put_case(case)
+    spent = Lookups(budget_s=0)
+    inst = await resolve(deps, case, "ZEPHYR MICROFIN SERVICES PVT LTD", kind="lender", lookups=spent)
+    assert inst is not None and inst.id.startswith("case_t1~") and spent.skipped == 1 and spent.done == 0

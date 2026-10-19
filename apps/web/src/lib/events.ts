@@ -34,6 +34,8 @@ export function useCaseEvents(caseId: string | null | undefined): { live: boolea
   const [live, setLive] = useState(false);
   const [latest, setLatest] = useState<ActivityLine | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // the last change number this page saw for the case: a reconnect refetches only when the service's is different
+  const seen = useRef<{ caseId: string; seq: string } | null>(null);
   const visible = usePageVisible();
 
   useEffect(() => {
@@ -43,35 +45,56 @@ export function useCaseEvents(caseId: string | null | undefined): { live: boolea
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => qc.invalidateQueries({ queryKey: ['case', caseId] }), 350);
     };
-    let opened = false;
+    const note = (seq: unknown) => {
+      if (typeof seq === 'string') seen.current = { caseId, seq };
+    };
+    let fallback: ReturnType<typeof setTimeout> | null = null;
     es.onopen = () => {
-      // after a reconnect (the service closes each stream after a while) anything missed meanwhile is fetched again
-      if (opened) refresh();
-      opened = true;
       setLive(true);
+      // a reconnect to a service that does not say its change number (an older one) refetches, as it always did
+      if (seen.current?.caseId === caseId && !fallback) fallback = setTimeout(refresh, 4000);
     };
     // the service ends each stream after a while and the browser reconnects by itself: only a stream given up
     // (refused, or the service gone) shows as not live
     es.onerror = () => {
       if (es.readyState === EventSource.CLOSED) setLive(false);
     };
-    es.onmessage = (e) => {
+    // each stream opens with the case's change number: different from the last one seen means something changed
+    // while this page had no stream (it was hidden, or reconnecting, or the service restarted)
+    es.addEventListener('hello', (e) => {
+      if (fallback) clearTimeout(fallback);
+      fallback = null;
       try {
-        const msg = JSON.parse(e.data);
-        if (msg.type === 'activity') {
-          setLatest(msg.item as ActivityLine);
-          refresh();
-        } else if (msg.type === 'changed') {
+        const { seq } = JSON.parse((e as MessageEvent).data) as { seq?: string };
+        const before = seen.current?.caseId === caseId ? seen.current.seq : null;
+        if (before !== null && seq !== before) refresh();
+        note(seq);
+      } catch {
+        refresh();
+      }
+    });
+    // the service names its events ('changed', 'activity'); until 19 October 2026 only unnamed ones were listened
+    // for, so open screens did not refresh by themselves
+    const onNotice = (e: Event) => {
+      try {
+        const msg = JSON.parse((e as MessageEvent).data);
+        if (msg.type === 'activity') setLatest(msg.item as ActivityLine);
+        if (msg.type === 'activity' || msg.type === 'changed') {
+          note(msg.seq);
           refresh();
         }
       } catch {
-        /* a ping */
+        /* not a notice */
       }
     };
+    es.addEventListener('changed', onNotice);
+    es.addEventListener('activity', onNotice);
+    es.onmessage = onNotice;
     return () => {
       es.close();
       setLive(false);
       if (timer.current) clearTimeout(timer.current);
+      if (fallback) clearTimeout(fallback);
     };
   }, [caseId, qc, visible]);
 
