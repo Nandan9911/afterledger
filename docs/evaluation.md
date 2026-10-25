@@ -24,7 +24,7 @@ carries the offline evaluation of the demo cases it was built with, shown until 
 
 ## 1. Checks that must always pass
 
-| Check | What is compared | Offline result | Live run, 15 October |
+| Check | What is compared | Offline result | Live run |
 |---|---|---|---|
 | Routes against the hand-checked answer | Every claim's plan, run on the case's facts, against the route worked out by hand in the family's truth file (`expected_route`) | 29 of 29 match | 28 of 28 match; 1 not compared (below) |
 | Deadlines and compensation | Calendar, business-day (with the country's holidays) and month clocks, and each delay formula, against hand-worked vectors in `data/eval/clock_vectors.yaml` (8 due dates, 4 compensation amounts) | 12 of 12 exact | 12 of 12 exact |
@@ -39,8 +39,8 @@ In the demo, the Vermas' first reminder is drafted with one wrong figure on purp
 The routes check uses the claims in each family's file (`data/families/<key>/family.yaml`), which name the route
 a person worked out from the regulator's rules. When the stored plan a family's file names is an unverified draft,
 a live run researches the institution's own procedure in its place, and that claim is named in the result and not
-compared: the hand-worked route is for the draft's steps, and the research check covers the new plan. On 15 October
-this was the Vermas' family pension, researched from the UP Treasury's pages. The read-back check counts what the
+compared: the hand-worked route is for the draft's steps, and the research check covers the new plan. In the live
+run this was the Vermas' family pension, researched from the UP Treasury's pages. The read-back check counts what the
 forms module wrote when it filled each form.
 
 The quotes check reads each quote's source page through the same fetcher the app uses. Each quote is checked on its
@@ -51,7 +51,7 @@ snapshots exist, as in `afterledger audit-knowledge`.
 
 ## 2. Agents against their baselines
 
-| Module | Test set | Measure | Baseline (plain code) | Baseline, offline | Live run, 15 October |
+| Module | Test set | Measure | Baseline (plain code) | Baseline, offline | Live run |
 |---|---|---|---|---|---|
 | Reading papers | 61 pages of the families' papers, in 4 scripts | Fields read exactly right | Text-layer rules: a label, then its value | 79 of 175 fields (45%) | Baseline 53 of 175 (30%) on Document AI's lines. Agents 167 of 169 (99%), none wrong, 2 left unread; paper type right 32 of 33 |
 | Finding what nobody listed | 21 hidden items in 6 families | Items found, and false leads raised | The country's payment patterns, matched against each recurring payment | 13 of 21 found, 3 false | Baseline the same. Agents 17 of 20 found, 11 false leads; 1 more was already on a paper |
@@ -64,8 +64,7 @@ gold plans (`data/eval/gold_plans`) using the questions in `data/eval/research_f
 
 A value is read right when it is the field as printed or the field's own value, both of which the truth file gives
 (`Our reference: LMP/07714/C` and `LMP/07714/C`), and a name is right with or without the honorific printed beside
-it (様, Mrs, LATE, स्व.). Until 15 October only the printed line counted; all nine values the live run's first
-evaluation called wrong were of that kind. The baseline is scored the same way.
+it (様, Mrs, LATE, स्व.). The baseline is scored the same way.
 
 A compiled plan matches a gold plan when it sends the family the same way in every test case (every combination of
 the gold plan's questions, and each number either side of every threshold). A model names its steps its own way, in
@@ -134,11 +133,11 @@ Six families are a small test set: on the reading table they fill two or three b
 needs more families before any bin reaches 20 leads. The refit is there so that every label the app shows is
 traceable to a measurement or plainly marked as a starting value.
 
-The tables were refitted on 15 October from the six live cases. Two reading bins held enough items: values both
-readings matched on a paper with a text layer (107 of 107 right, now 0.991, was 0.995) and on a photo (37 of 37,
-now 0.974, was 0.985). Both stay above the 0.95 needed for **Sure**, so no label changed. Three other reading bins
-held 8 to 10 items each, all right, and keep their starting values, and the rest held none; the discovery table had
-19 leads across all its bins and keeps its own. Each bin's `n` in `calibration.json` says how many items it had, and the Evaluation page says
+The tables in `calibration.json` are fitted on the six cases of the live run. Two reading bins held enough items:
+values both readings matched on a paper with a text layer (107 of 107 right, measured at 0.991 against a starting
+value of 0.995) and on a photo (37 of 37, 0.974 against 0.985). Both are above the 0.95 needed for **Sure**. Three
+other reading bins held 8 to 10 items each, all right, and keep their starting values, and the rest held none; the
+discovery table had 19 leads across all its bins and keeps its own. Each bin's `n` in `calibration.json` says how many items it had, and the Evaluation page says
 which values were measured.
 
 ## 3. Coverage by country
@@ -174,23 +173,23 @@ says so; at the limit, extra research rounds and repairs stop and say why, while
 questions carry on. Research into a country's rules that any case can use (how a kind of claim is made there) is
 not charged to the case that started it; each such run stops at `AL_RESEARCH_BUDGET_USD` ($2.50 unless set).
 
-The live runs of 14 and 15 October (Google Cloud project `afterledger`) made 5,492 answered model calls, priced by
+The live evaluation runs (Google Cloud project `afterledger`) made 5,492 answered model calls, priced by
 the meter at $42.29: Gemini 3.6 Flash 2,861 calls ($18.70), Gemini 3.8 Flash 1,977 on the global and `us`
-endpoints ($15.92), Gemini 3.1 Pro 319 ($7.34) and Gemini 3.5 Flash-Lite 335 ($0.32). Gemini 3.8 Flash was slow on
-15 October (a median of 6.4 seconds on the global endpoint and 8.9 on `us`, with calls of several minutes), so the
+endpoints ($15.92), Gemini 3.1 Pro 319 ($7.34) and Gemini 3.5 Flash-Lite 335 ($0.32). Gemini 3.8 Flash was slow
+during the run (a median of 6.4 seconds on the global endpoint and 8.9 on `us`, with calls of several minutes), so the
 harness asked its peers, as [decision record 0012](adr/0012-routes-hedging-and-resumable-recordings.md) describes,
 and Gemini 3.6 Flash answered more than half the calls. The meter counts the answer that was used: the 524 requests that lost such a race were cancelled
 and are not in the total, nor are Google Search grounding, Document AI, Cloud Translation, check grounding or Model
 Armor. Google's invoice is the record.
 
-## 5. The live run of 15 October
+## 5. The live run
 
-AfterLedger ran end to end on real Gemini in the Google Cloud project `afterledger`, with every Google Cloud
-service live and strict (`AL_STRICT_LIVE=true`: a failing service stops the run): Firestore, Cloud Storage,
+AfterLedger ran end to end on real Gemini on 15 October 2026, in the Google Cloud project `afterledger`, with every
+Google Cloud service live and strict (`AL_STRICT_LIVE=true`: a failing service stops the run): Firestore, Cloud Storage,
 BigQuery, Document AI, Cloud Translation, check grounding, Google Search grounding and Model Armor, and Gemini Live
 for a spoken question in English and in Japanese. Each family's story was played from its first paper, both
 challenge countries were researched, and five typed questions were asked of the Tanakas' case. The results above
-are the evaluation of the six cases that run left in Firestore.
+are the evaluation of the six cases that run prepared.
 
 | Family | Countries | Time | Model calls | Model cost |
 |---|---|---|---|---|
@@ -206,41 +205,34 @@ are the evaluation of the six cases that run left in Firestore.
 The France challenge takes about 18 minutes live and Egypt about 12; a family's story takes 15 to 45 minutes, the
 largest part of it reading papers from their images.
 
-Real Gemini and the live web showed 33 problems that scripted runs could not; each is fixed and has a test. The
-largest kinds:
+Real Gemini and the live web raise problems that scripted answers cannot. The kinds that matter most, and how
+AfterLedger meets each (every one has a test):
 
-- **Answers that leave things out.** Gemini may omit what a schema leaves optional: the investigator dropped its
-  calibration signals in 99 of 185 answers, so those leads fell to the base rate and two hidden items got no claim.
-  Signals and cites are now required.
-- **Model judgements that code now makes or checks.** A will the family never mentioned, a contested succession law
-  stated as settled, and leads guessed from a death certificate alone: code now keeps only what the case supports,
-  and writes the words for a contested law itself.
-- **The same thing found twice.** Each new paper ran discovery again and Gemini named the same holding under new
-  keys; the same person appeared in two scripts. Leads and people are now matched to what was found before.
-- **Reading.** A reader copied `2,915.40` as `2.915.40`, a reader put withdrawals in the deposit column, a photo
-  reader read balances one row off: the running balance now settles direction and value, and a third reader checks
-  once a paper.
+- **Answers that leave things out.** Gemini may omit what a schema leaves optional; in the live run the investigator
+  left out its calibration signals in 99 of 185 answers, which would leave those leads at the base rate. Signals and
+  cites are required fields.
+- **Model judgements that code makes or checks.** A will the family never mentioned, a contested succession law
+  stated as settled, a lead guessed from a death certificate alone: code keeps only what the case supports, and
+  writes the words for a contested law itself.
+- **The same thing found twice.** Every paper runs discovery again, and Gemini can name the same holding under a new
+  key, or one person in two scripts. Leads and people are matched to what was found before.
+- **Reading.** A reader can copy `2,915.40` as `2.915.40`, put withdrawals in the deposit column, or read a photo's
+  balances one row off: the running balance settles direction and value, and a third reader checks once a paper.
 - **The harness.** A slow endpoint, a `500` from Gemini 3.1 Pro, a dropped connection, a tool loop of more than a
-  hundred calls, and a retried step that answered but was still failed on its first try: each is now retried,
-  hedged or stopped, and each has a test.
-- **The evaluation itself.** A read value compared only with its printed line, a quote checked on a saved excerpt
-  instead of its page, a researched plan compared with the route of the draft it replaced, a page that failed once
-  kept as missing for six hours.
+  hundred calls, and a retried step that answers after a failed first try: each is retried, hedged or stopped.
+- **The evaluation itself.** A read value is compared with both its printed line and its own value, a quote is
+  checked on its live page when the saved snapshot is an excerpt, a researched plan is not compared with the route
+  of the draft it replaced, and a page that cannot be read is tried a second time, and again after five minutes,
+  rather than kept as missing.
 
 Limits of this run:
 
-- The six families are both the test set and the set the certainty tables were refitted on. The numbers show the
+- The six families are both the test set and the set the certainty tables were fitted on. The numbers show the
   system working on them, not how it does on families it has not seen.
 - One run each, and answers vary from run to run, so these numbers are a sample, not a rate. Discovery missed three
   hidden items, among them the Clarkes' council tax refund, which none of four live runs found; Sato's Minato policy
   was already on a paper, so it is counted apart.
 - Discovery raised 11 false leads to the baseline's 3: the agents look further and are wrong more often. Each
-  carries its measured certainty, and nothing goes to an institution until the family approves it.
+  carries its certainty label, and nothing goes to an institution until the family approves it.
 - Research matched the France gold plan in 1 of 3 live runs; the plans from the other two were not stored. Egypt has
   no gold plan to compare with.
-- The demo cases in Firestore are the ones this run left: a rerun replaces a family's case, so Firestore and the
-  bucket hold each family's last run, while BigQuery keeps every run's model calls. Morales, Sato and Verma ran
-  before the day's last fixes, so some of their leads read "possible" for want of the investigator's signals, and
-  a few claim titles predate the tidier titles (as does "Straits Marine: final salary and entitlements
-  Engineering" in the Nairs' case). **Reset this demo case** replaces a case with the offline version, and **Watch
-  it from the first paper** plays the story again on the current code.

@@ -1,10 +1,11 @@
-# Everything `python tools/dev.py check` checks, on every push and pull request, plus the browser tests and the
-# container builds. Nothing here calls a model or a Google Cloud service: the whole flow runs on scripted responses.
+# Everything `python tools/dev.py check` checks, on every push to master and every pull request, plus the browser
+# tests, the Terraform check and the container builds. Nothing here calls a model or a Google Cloud service: the whole
+# flow runs on scripted responses.
 name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
   workflow_dispatch:
 

@@ -16,7 +16,7 @@ import { Why } from '@/components/Why';
 import { Button, ErrorNote, Skeleton, Spinner } from '@/components/ui';
 import { localeNames, type Locale } from '@/i18n/routing';
 import { perform } from '@/lib/changes';
-import { cls, personName } from '@/lib/format';
+import { caseTitle, cls, personName } from '@/lib/format';
 import { useAsk, useConversation, useMeta } from '@/lib/queries';
 
 function isQa(u: Utterance) {
@@ -164,12 +164,12 @@ export function AskScreen({ caseId }: { caseId: string }) {
 
   if (conv.isError) return <ErrorNote error={conv.error} retry={() => conv.refetch()} />;
   const qa = (conv.data?.utterances ?? []).filter(isQa);
-  const caseName = header?.case.title ?? '';
+  const caseName = caseTitle(header?.case.title);
   return (
     <div className="mx-auto flex min-h-[calc(100vh-180px)] w-full max-w-[760px] flex-col gap-4">
       <header className="flex items-end justify-between gap-3 border-b border-rule pb-3">
         <div>
-          <p className="m-0 text-[14px] text-ink-faint">{t('caseOf', { name: caseName })}</p>
+          {caseName ? <p className="m-0 text-[14px] text-ink-faint">{t('caseOf', { name: caseName })}</p> : null}
           <h1 className="m-0 font-serif text-[26px] font-semibold sm:text-[30px]">{t('title')}</h1>
         </div>
         <span className="rounded-full border-[1.5px] border-ledger px-2.5 py-1 text-[14px] font-bold text-ledger">

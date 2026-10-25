@@ -9,7 +9,7 @@ import { Avatar, CertaintyPill, ErrorNote, h1Class, h2BigClass, h2Class, People,
 import { useSpeech } from '@/components/Voice';
 import { Link } from '@/i18n/navigation';
 import { localeNames, type Locale } from '@/i18n/routing';
-import { cls, dayMonth, daysBetween, localText, personFirst, weekdayDate } from '@/lib/format';
+import { caseTitle, cls, dayMonth, daysBetween, localText, personFirst, weekdayDate } from '@/lib/format';
 import { useRefreshToday, useToday } from '@/lib/queries';
 
 function MoneyCard({ totals, unknown }: { totals: CurrencyTotals; unknown: number }) {
@@ -146,7 +146,7 @@ function PhoneToday({ today, locale, greeting }: { today: TodayView; locale: str
   return (
     <div className="flex flex-col gap-3 lg:hidden">
       <div>
-        <p className="m-0 text-[15px] text-ink-faint">{header?.case.title}</p>
+        {caseTitle(header?.case.title) ? <p className="m-0 text-[15px] text-ink-faint">{caseTitle(header?.case.title)}</p> : null}
         <h1 className="m-0 font-serif text-[28px] font-semibold leading-snug">{weekdayDate(today.date, locale)}</h1>
         <p className="m-0 mt-1 text-[17px] text-ink-soft">{greeting}</p>
       </div>

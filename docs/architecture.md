@@ -15,8 +15,9 @@ by Google Cloud adapters live. This page explains how the parts fit; the [decisi
 3. **Evidence or nothing.** A rule exists only as an assertion: one sentence, the verbatim quote that supports it,
    the page it is on, the date it was checked and its level of verification. A quote that is not on its page word
    for word is dropped.
-4. **Honest labels.** Certainty comes from measured accuracy (a calibration table), not from a model. Every screen
-   and report says whether what it shows came from scripted responses, a live run or a replay.
+4. **Honest labels.** Certainty comes from calibration tables, never from a model's own confidence: measured accuracy
+   where a group holds enough items, a value set by hand (and marked as such) until then. Every screen and report
+   says whether what it shows came from scripted responses, a live run or a replay.
 5. **The family's language, the institution's language.** People read and speak in theirs; institutions receive
    theirs; names, numbers and dates are identical in both.
 6. **One harness for every call.** Every model call and every tool call goes through the same wrappers and plugins,
@@ -85,8 +86,8 @@ researchers as parallel workers, a pair per question group.
 
 Gemini 3 models are tuned for their default sampling, so only the thinking level is set (low, medium or high).
 `AL_AGENT_TIERS` moves an agent to another tier without a new build (`situation_extractor=flash,gap_planner=flash`).
-The intake agents moved from flash to lite on 18 October 2026, after a live test: each reply took 8-14 s with the
-two of them on Gemini 3.8 Flash (3-8 s each), against under a second each on Flash-Lite in asia-south1.
+The intake agents run on Flash-Lite because a person waits on every reply: with two of them on Gemini 3.8 Flash a
+reply took 8-14 s (3-8 s each), against under a second each on Flash-Lite in asia-south1.
 With `AL_LLM_RECORD_DIR` set, a live run also writes each call as a cassette that `AL_LLM=replay` plays back
 (`AL_LLM_REPLAY_STRICT=true` makes a call with no cassette an error instead of a scripted answer).
 
@@ -173,8 +174,8 @@ directory, payment-rail profiles, coverage lists, rates and the reviewed transla
 
 ### Changes and background work
 
-Changed on 19 October 2026, after a live test in which an approval waited up to two minutes behind papers being
-prepared (`concurrency.py`):
+A family's action never waits behind background work, such as an approval behind papers being prepared
+(`concurrency.py`):
 - Each case has two locks. The write lock serialises changes: a family's action holds it for the little time the
   action takes. The jobs lock keeps one background job at a time on the case (working out what the papers point
   to, planning, preparing papers, Today), so two jobs never work out the same thing twice. Reading papers runs
@@ -212,7 +213,7 @@ and answer are saved in the conversation.
 
 On Google Cloud: the API and the web app on Cloud Run; Firestore, Cloud Storage and BigQuery for state, files and
 traces; Cloud Tasks for background work; Document AI, Cloud Translation, check grounding, Model Armor and Gemini on
-Agent Platform; Cloud Trace for spans. The API runs as a single instance (each store keeps a write-through cache and each case a lock in
+Agent Platform; Cloud Trace for spans. The API runs as a single instance (each store keeps a write-through cache and each case two locks in
 memory), with CPU always allocated so background work and event streams continue between requests, and a
 request timeout of an hour for streams and voice. The demo cases are built offline when the image is built and
 imported into Firestore and Cloud Storage at first start. Logs are one JSON object per line, so Cloud Logging
@@ -222,7 +223,7 @@ reads their severity. See [runbooks/deploy-gcp.md](runbooks/deploy-gcp.md), and
 ### Load on the one instance
 
 Work runs side by side wherever it can, with a limit at each level so a busy case never starves the others, and
-nothing held in memory grows without bound (changed on 19 October 2026, after a live test with real statements):
+nothing held in memory grows without bound:
 
 | What | Side by side | Limit (where) |
 |---|---|---|
@@ -235,9 +236,8 @@ nothing held in memory grows without bound (changed on 19 October 2026, after a 
 | Gemini clients | one per model and endpoint, kept with its open connections | (`agents/factory.py`) |
 
 Background jobs come from Cloud Tasks, up to 32 at a time: a job waits only for its own case's earlier work, so
-one family's burst of changes never holds up another's (until 19 October 2026 four at a time, which one busy case
-could fill). Measured during the live test: memory peaked at 29% of 2 GiB and CPU at 10%; the time went to waiting
-for Gemini.
+one family's burst of changes never holds up another's. In a live test with real statements, memory peaked at 29% of
+2 GiB and CPU at 10%; the time went to waiting for Gemini.
 
 ### Growing beyond one instance
 

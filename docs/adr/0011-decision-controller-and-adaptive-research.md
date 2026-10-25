@@ -1,10 +1,11 @@
 # 0011 The decision controller chooses the next move; research runs in rounds until nothing is open
 
 ## Context
-Fixed rules decided too much: every value that was not sure became a question for the family, every open lead a
-question, and research ran once, by two researchers over every question, whatever was found. The controller in
-`domain/decision.py` (act, ask, research, wait or hand to a professional, from measured probabilities, stakes and
-costs) existed but nothing called it, and the adjudicator's list of points to research again was ignored.
+Fixed rules decide too much: under them every value that is not sure becomes a question for the family, every open
+lead a question, and research runs once, by two researchers over every question, whatever is found. A family's
+effort and a research budget are better spent where they change the outcome: the controller in
+`domain/decision.py` weighs measured probabilities, stakes and costs to act, ask, research, wait or hand to a
+professional, and the adjudicator's list of points to research again says where more research is needed.
 
 ## Decision
 With `AL_DECISIONS=controller` (the default):
@@ -18,7 +19,7 @@ With `AL_DECISIONS=controller` (the default):
   use (standard depth, or deep when it cites few rules). Offline there is nothing new to find, so the decision is
   traced and the stored plan used.
 
-Every decision goes to the trace with its scores. `AL_DECISIONS=rules` restores the fixed rules.
+Every decision goes to the trace with its scores. `AL_DECISIONS=rules` uses the fixed rules instead.
 
 With `AL_RESEARCH_MODE=adaptive` (the default), research runs in rounds. Each question group gets its own pair of
 researchers (parallel workers, at most `AL_RESEARCH_PARALLEL` at once); after the citation check and the
@@ -35,4 +36,4 @@ search does not fix.
 - Research costs more where it is needed and less where it is not. Offline fixtures show both stop rules: France
   finds a missing step in round 2 and still matches its gold plan; Egypt stops after round 2 with no official page
   and a plan that starts by asking the bank in writing.
-- `AL_RESEARCH_MODE=fixed` restores the single pass by two researchers.
+- `AL_RESEARCH_MODE=fixed` runs a single pass by two researchers instead.

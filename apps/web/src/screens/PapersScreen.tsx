@@ -14,7 +14,7 @@ import { Button, ErrorNote, h1Class, h2Class, Sheet, Skeleton, Spinner } from '@
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { apiUrl } from '@/lib/api';
 import { perform } from '@/lib/changes';
-import { cls, dayMonth } from '@/lib/format';
+import { caseTitle, cls, dayMonth } from '@/lib/format';
 import { useAnswer, useDeletePaper, useMoney, usePaper, usePapers, useUpload } from '@/lib/queries';
 
 type Variant = 'primary' | 'secondary' | 'dark';
@@ -440,7 +440,9 @@ function EmptyPapers() {
   const { header } = useCase();
   return (
     <div className="mx-auto flex max-w-[560px] flex-col gap-5 py-4">
-      {header ? <p className="m-0 text-[15px] text-ink-faint">{t('caseOf', { name: header.case.title })}</p> : null}
+      {caseTitle(header?.case.title) ? (
+        <p className="m-0 text-[15px] text-ink-faint">{t('caseOf', { name: caseTitle(header?.case.title) })}</p>
+      ) : null}
       <svg width="132" height="104" viewBox="0 0 132 104" aria-hidden="true">
         <rect x="18" y="14" width="64" height="82" rx="6" fill="#FFFFFF" stroke="#A9C3B1" strokeWidth="2" transform="rotate(-6 50 55)" />
         <rect x="46" y="8" width="64" height="82" rx="6" fill="#FFFFFF" stroke="#14202B" strokeWidth="2" />
@@ -460,6 +462,7 @@ function EmptyPapers() {
           <li>{t('help4')}</li>
         </ul>
         <p className="m-0 mt-3 text-[15px] text-ink-faint">{t('noneRequired')}</p>
+        <p className="m-0 mt-2 text-[15px] text-ink-soft">{t('findsOnly')}</p>
       </Sheet>
       <div className="flex flex-col gap-2.5 sm:flex-row">
         <AddPapers photo label={t('takePhoto')} size="lg" className="sm:flex-1" />

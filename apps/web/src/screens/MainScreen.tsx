@@ -7,7 +7,7 @@ import { ChallengeForm } from '@/components/ChallengeForm';
 import { Button, ButtonLink, Chip, ErrorNote, Logo, ScrollX, Skeleton, SlowNote, Wordmark } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 import { perform } from '@/lib/changes';
-import { countryName, longDate } from '@/lib/format';
+import { caseTitle, countryName, longDate } from '@/lib/format';
 import { myCasesSnapshot, onMyCasesChange } from '@/lib/mycases';
 import { useCases, useDeleteCase, useDeleteQuestion, useFamilies, useMyQuestions } from '@/lib/queries';
 import { useSite } from '@/lib/site';
@@ -49,7 +49,7 @@ function YourCases() {
           const where = [c.died_in, c.country_codes[0] ? countryName(c.country_codes[0], locale) : null].filter(Boolean).join(', ');
           return (
             <li key={c.id} className="flex flex-col gap-1.5 rounded-[14px] border border-rule bg-sheet px-5 py-4">
-              <h3 className="m-0 font-serif text-[20px] font-semibold leading-tight">{c.title}</h3>
+              <h3 className="m-0 font-serif text-[20px] font-semibold leading-tight">{caseTitle(c.title) || tc('newCase')}</h3>
               <p className="m-0 text-[15px] text-ink-soft">
                 {[c.died_on ? longDate(c.died_on, locale) : null, where || null, c.stage === 'intake' ? t('stillTelling') : null]
                   .filter(Boolean)

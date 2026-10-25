@@ -1,8 +1,8 @@
 'use client';
 /**
  * Why AfterLedger: what it is for, the problem it solves (with figures and their sources), why demand is growing,
- * what sets it apart, and why a team of AI agents is the right way to do it. Written in English; on a page in
- * another language it says so to the browser (lang="en").
+ * what sets it apart, why a team of AI agents is the right way to do it, and what it cannot find. Written in English;
+ * on a page in another language it says so to the browser (lang="en").
  */
 import { useLocale } from 'next-intl';
 
@@ -105,11 +105,13 @@ export function WhyAfterLedger() {
     <div lang={locale === 'en' ? undefined : 'en'} dir="ltr" className="flex flex-col gap-10">
       <div className="max-w-[52em]">
         <p className="m-0 text-[19px] leading-[1.6]">
-          When someone dies, the family inherits a paperwork problem. There are bank accounts, insurance policies, pensions, investments and
-          debts that nobody listed, each held by an institution with its own forms, documents and deadlines, often in another language or
-          another country. Money is lost not because it is not owed, but because nobody knows it exists, or how to claim it.{' '}
-          <strong>AfterLedger</strong> is the family&apos;s own guide: it reads the papers they already have, finds what nobody listed, and
-          prepares each claim the way that institution&apos;s regulator says it must be handled, with the source behind every step.
+          When someone dies without having arranged for their assets to reach the right people (a nominee named on each account and policy,
+          a will, a record of what they held), the family inherits a paperwork problem. There are bank accounts, insurance policies,
+          pensions, investments and debts that nobody listed, each held by an institution with its own forms, documents and deadlines, often
+          in another language or another country. Money is lost not because it is not owed, but because nobody knows it exists, or how to
+          claim it. <strong>AfterLedger</strong> is the family&apos;s own guide: it reads the papers they already have, finds what nobody
+          listed, and prepares each claim the way that institution&apos;s regulator says it must be handled, with the source behind every
+          step.
         </p>
       </div>
 
@@ -181,8 +183,8 @@ export function WhyAfterLedger() {
           </h3>
           <ul className="m-0 mt-3 flex list-disc flex-col gap-2 ps-5 text-[16px]">
             <li>
-              Today&apos;s tools search databases, notify organisations, or are concierge services paid a share of the estate. None reads
-              the family&apos;s own papers to find what nobody listed.
+              Existing tools search databases, notify organisations, or are concierge services paid a share of the estate. None reads the
+              family&apos;s own papers to find what nobody listed.
             </li>
             <li>
               AfterLedger infers from the lines of a statement: a ₹436 debit every May is the premium of a government life cover worth
@@ -232,6 +234,19 @@ export function WhyAfterLedger() {
             <li>You confirm only what you can know, at seven points along the way; the agents do the rest.</li>
             <li>Every step says why, in the regulator&apos;s own words, with a link to the page.</li>
             <li>Each family member sees the case in their own language, on a phone or a laptop.</li>
+          </ul>
+        </section>
+        <section className={card} aria-labelledby="why-limits">
+          <h3 id="why-limits" className={h3}>
+            What it cannot find
+          </h3>
+          <ul className="m-0 mt-3 flex list-disc flex-col gap-2 ps-5 text-[16px]">
+            <li>
+              AfterLedger finds what the family&apos;s papers point to. If the family has no papers to add, or nothing in them points to an
+              account, policy or investment, that asset can stay undiscovered.
+            </li>
+            <li>The more statements, passbooks and policy letters the family adds, the more there is to find.</li>
+            <li>Anything the family already knows about can simply be told to it, by voice or text, and it is planned like the rest.</li>
           </ul>
         </section>
       </div>

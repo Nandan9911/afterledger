@@ -149,8 +149,8 @@ error, instead of falling back to its offline stand-in, so a test cannot pass on
 - **Upload papers**: photos and scans are read by Document AI and two readers; disagreements get a closer look.
 - **Live challenge**: name a country, an institution and a situation, and watch the research.
 - **Watch it from the first paper** (a demo case's menu, or **Watch** on the home page) replays a family's whole
-  story through Gemini. On 15 October a story took 15 to 45 minutes, 120 to 340 model calls and $0.80 to $2 of
-  model use ([evaluation.md](../evaluation.md), section 5); afterwards the case is a live case. A sample's claims use
+  story through Gemini. A story takes 15 to 45 minutes, 120 to 340 model calls and $0.80 to $2 of model use
+  ([evaluation.md](../evaluation.md), section 5); afterwards the case is a live case. A sample's claims use
   the stored plans: research into rules no plan covers yet starts only for a family's own case. **Reset this demo case** puts back the saved version: the offline one, unless you saved a live one with
   `afterledger seed KEY --snapshot`.
 
@@ -194,8 +194,8 @@ A model that is slow on its endpoint gives way to the same model on `AL_LLM_BACK
 (`AL_MODEL_FLASH_PEERS`), after `AL_LLM_HEDGE_AFTER_S` seconds with no answer, or `AL_LLM_HEDGE_INTERACTIVE_S` for
 the agents a person waits on as they type or speak ([decision record
 0012](../adr/0012-routes-hedging-and-resumable-recordings.md)). The Evaluation page lists the endpoints that were slow;
-the trace's `model` column names the one that answered (`gemini-3.8-flash@us`). On 15 October Gemini 3.6 Flash
-answered more than half of all calls this way. It is retired on the Agent Platform on 19 November 2026: before then,
+the trace's `model` column names the one that answered (`gemini-3.8-flash@us`). In the live evaluation run, Gemini
+3.6 Flash answered more than half of all calls this way. It is retired on the Agent Platform on 19 November 2026: before then,
 set `AL_MODEL_FLASH_PEERS` to the model that replaces it, or leave it empty.
 
 ## 7. Firestore and Cloud Storage from your computer (optional)

@@ -89,6 +89,11 @@ export function shortName(name: string | null | undefined): string {
   return parts[0];
 }
 
+/** A case's title once the person who died is named; empty while the API still calls it "New case". */
+export function caseTitle(title: string | null | undefined): string {
+  return title && title !== 'New case' ? title : '';
+}
+
 /** Prefer the text in the reader's language when the API has one for it. */
 export function localText(
   english: string | null | undefined,

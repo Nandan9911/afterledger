@@ -20,7 +20,7 @@ Platform. There are two ways to do it, and both create the same things:
 | Artifact Registry | `afterledger` | the two images |
 | Firestore | `(default)`, Native mode | case files, and research results for the next family |
 | Cloud Storage bucket | `afterledger-PROJECT_ID` (script) | papers, page images, filled forms |
-| BigQuery | dataset `afterledger`, table `traces` (partitioned by day) | one row per model call (with tokens and estimated cost), agent run, tool call and decision; a table from an earlier deployment gets the token and cost columns |
+| BigQuery | dataset `afterledger`, table `traces` (partitioned by day) | one row per model call (with tokens and estimated cost), agent run, tool call and decision; an existing table is given the token and cost columns it lacks |
 | Cloud Tasks queue | `afterledger-work` | background work, delivered back to the API |
 | Document AI processor | `afterledger-ocr` (Enterprise Document OCR) | reading papers |
 | Model Armor template | `afterledger-screen`, in `us-central1` | screens fetched pages, uploaded papers and replies for planted instructions and malicious links, in any language (`asia-south1` offers neither filter) |
@@ -103,7 +103,7 @@ salted scrypt hashes. `AL_AUTH=off` turns accounts off; `AL_AUTH=required` turns
 Firebase Hosting gives the web app the address `https://PROJECT_ID.web.app`, with SSL and Google's CDN in front,
 and passes every request to the `afterledger-web` service on Cloud Run (`firebase.json` at the repository root;
 change its `region` if you deploy elsewhere than `asia-south1`). The browser calls the API at its own `run.app`
-address, which already accepts the Firebase addresses, so voice and live updates work as before.
+address, which accepts the Firebase addresses too, so voice and live updates work there as well.
 
 Once per project, in Cloud Shell:
 

@@ -68,7 +68,8 @@
     "loadingSlow": "Still loading. The first page after a quiet spell can take up to half a minute.",
     "notFoundNote": "The link may be old or mistyped. Every case and page can be reached from the home page.",
     "startCase": "Start a case",
-    "samplePage": "A sample institution's page, not a real site"
+    "samplePage": "A sample institution's page, not a real site",
+    "newCase": "New case"
   },
   "nav": {
     "today": "Today",
@@ -124,7 +125,7 @@
     "anyCountry": "Any country",
     "evaluation": "Evaluation",
     "heroTitle": "Find everything they left behind. Settle it one claim at a time.",
-    "heroText": "AfterLedger reads a family's own papers in any language, finds the accounts and policies nobody listed, and prepares each institution's claim from its current rules, with the source behind every line.",
+    "heroText": "When someone dies without leaving a record of what they held, or of who should receive it, their family is left to find and claim it all. AfterLedger reads the family's own papers in any language, finds the accounts and policies nobody listed, and prepares each institution's claim from its current rules, with the source behind every line.",
     "openDemo": "Open a sample case",
     "orCountry": "Or name any country",
     "noAccount": "No account needed. The sample families, banks and papers are fictional; the rules and their sources are real.",
@@ -337,6 +338,7 @@
     "help3": "Letters from pension schemes or insurers",
     "help4": "Any notes they kept about their money",
     "noneRequired": "None is required. You can add more at any time.",
+    "findsOnly": "AfterLedger can only find what the papers point to: an account or policy that no paper mentions may stay hidden. The more statements, passbooks and policy letters you add, the more it can find.",
     "takePhoto": "Take a photo",
     "chooseFiles": "Choose files",
     "uploading": "Adding your papers…",

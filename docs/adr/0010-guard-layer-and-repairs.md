@@ -3,9 +3,9 @@
 ## Context
 The agents read text AfterLedger did not write (official pages, the family's papers, banks' replies) and act through
 tools (fetching pages). Live models stall, run out of quota and sometimes answer outside their schema. A letter or
-form can be well formed and still carry a number the case does not hold. Before this record, a malformed answer
-stopped a whole step, discovery's parallel calls never reached the trace, any address could be fetched, and a failed
-check was reported but not fixed.
+form can be well formed and still carry a number the case does not hold. Without one harness, a malformed answer
+stops a whole step, parallel calls escape the trace, any address can be fetched, and a failed check is only
+reported, never repaired.
 
 ## Decision
 One harness wraps every call, whatever the module:
@@ -40,7 +40,7 @@ blocking template cannot give and a logging-only one does not return. Its templa
   agent and model.
 - A spent case budget (`AL_CASE_BUDGET_USD`) stops only optional work (extra research rounds, repairs); reading,
   planning and answering carry on. Second asks for a malformed answer are not optional and are never stopped.
-- Every behaviour has a setting that switches it off and restores the earlier behaviour (`AL_REASK_MALFORMED=0`,
-  `AL_FALLBACK=false`, `AL_SCREEN=off`, `AL_REPAIR_ROUNDS=0`).
+- Every behaviour has a setting that switches it off (`AL_REASK_MALFORMED=0`, `AL_FALLBACK=false`, `AL_SCREEN=off`,
+  `AL_REPAIR_ROUNDS=0`).
 - Offline, the Vermas' first reminder carries a scripted wrong figure, so the demo shows a repair; the Activity line
   says it is scripted.

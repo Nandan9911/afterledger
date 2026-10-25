@@ -68,7 +68,8 @@
     "loadingSlow": "Sigue cargando. La primera página después de un rato sin uso puede tardar hasta medio minuto.",
     "notFoundNote": "Puede que el enlace sea antiguo o esté mal escrito. Todos los casos y páginas se abren desde la página de inicio.",
     "startCase": "Empezar un caso",
-    "samplePage": "Página de una entidad de muestra, no es un sitio real"
+    "samplePage": "Página de una entidad de muestra, no es un sitio real",
+    "newCase": "Caso nuevo"
   },
   "nav": {
     "today": "Hoy",
@@ -124,7 +125,7 @@
     "anyCountry": "Cualquier país",
     "evaluation": "Evaluación",
     "heroTitle": "Encuentre todo lo que dejaron. Resuélvalo reclamación por reclamación.",
-    "heroText": "AfterLedger lee los propios documentos de la familia en cualquier idioma, encuentra las cuentas y pólizas que nadie anotó y prepara la reclamación de cada entidad según sus normas actuales, con la fuente detrás de cada línea.",
+    "heroText": "Cuando alguien fallece sin dejar constancia de lo que tenía ni de quién debe recibirlo, a su familia le toca encontrarlo y reclamarlo todo. AfterLedger lee los propios documentos de la familia en cualquier idioma, encuentra las cuentas y pólizas que nadie anotó y prepara la reclamación de cada entidad según sus normas actuales, con la fuente detrás de cada línea.",
     "openDemo": "Abrir un caso de muestra",
     "orCountry": "O escriba cualquier país",
     "noAccount": "No necesita cuenta. Las familias, los bancos y los documentos de muestra son ficticios; las normas y sus fuentes son reales.",
@@ -337,6 +338,7 @@
     "help3": "Cartas de planes de pensiones o aseguradoras",
     "help4": "Cualquier nota que guardara sobre su dinero",
     "noneRequired": "Ninguno es obligatorio. Puede añadir más cuando quiera.",
+    "findsOnly": "AfterLedger solo puede encontrar lo que los documentos señalan: una cuenta o póliza que ningún documento menciona puede quedar oculta. Cuantos más extractos, libretas y cartas de pólizas añada, más podrá encontrar.",
     "takePhoto": "Tomar una foto",
     "chooseFiles": "Elegir archivos",
     "uploading": "Añadiendo sus documentos…",

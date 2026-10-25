@@ -15,7 +15,7 @@ import { localeNames, locales, type Locale } from '@/i18n/routing';
 import { ApiError } from '@/lib/api';
 import { perform } from '@/lib/changes';
 import { useCaseEvents } from '@/lib/events';
-import { cls, countryName, languageName, longDate, personName } from '@/lib/format';
+import { caseTitle, cls, countryName, languageName, longDate, personName } from '@/lib/format';
 import { rememberCase } from '@/lib/mycases';
 import { useCaseHeader, useConversation, useRefreshToday, useResetDemo } from '@/lib/queries';
 import { useSite } from '@/lib/site';
@@ -228,7 +228,7 @@ export function CaseShell({ caseId, children }: { caseId: string; children: Reac
     <div className="rounded-xl border border-rule bg-paper p-3">
       {h ? (
         <>
-          <p className="m-0 font-serif text-[18px] font-semibold leading-tight">{h.case.title}</p>
+          <p className="m-0 font-serif text-[18px] font-semibold leading-tight">{caseTitle(h.case.title) || tc('newCase')}</p>
           {h.case.title_en && h.case.title_en !== h.case.title ? <p className="m-0 text-[14px] text-ink-faint">{h.case.title_en}</p> : null}
           {died ? <p className="m-0 mt-1 text-[14px] text-ink-soft">{died}</p> : null}
           {h.case.synthetic ? <p className="m-0 mt-2 text-[13px] font-bold text-blank">{tc('synthetic')}</p> : null}
@@ -339,7 +339,7 @@ export function CaseShell({ caseId, children }: { caseId: string; children: Reac
             </Link>
             <div className="min-w-0 flex-1">
               <p dir="auto" className="m-0 truncate text-[15px] font-bold">
-                {h?.case.title ?? ''}
+                {h ? caseTitle(h.case.title) || tc('newCase') : ''}
               </p>
               {h?.case.synthetic ? <p className="m-0 text-[12px] font-bold text-blank">{tc('synthetic')}</p> : null}
             </div>

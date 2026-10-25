@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   asDate,
+  caseTitle,
   cls,
   dayMonth,
   daysBetween,
@@ -74,6 +75,12 @@ describe('names are never translated', () => {
     expect(shortName('Amit Verma')).toBe('Amit');
     expect(shortName('R. P. Shukla')).toBe('R. P. Shukla');
     expect(shortName('R P Shukla')).toBe('R P Shukla');
+  });
+
+  it('names a case only once the person who died is known', () => {
+    expect(caseTitle('New case')).toBe('');
+    expect(caseTitle(undefined)).toBe('');
+    expect(caseTitle('Rajesh Kumar Verma')).toBe('Rajesh Kumar Verma');
   });
 });
 
